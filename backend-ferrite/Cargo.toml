@@ -1,0 +1,42 @@
+[workspace]
+resolver = "2"
+members = ["crates/ferrite-engine", "crates/ferrite-sidecar"]
+
+[workspace.package]
+version = "27.1.19"
+edition = "2021"
+license = "Proprietary"
+publish = false
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "io-util", "io-std", "sync", "time", "fs", "net"] }
+tokio-util = "0.7"
+futures-util = "0.3"
+bytes = "1"
+reqwest = { version = "0.12", default-features = false, features = ["native-tls", "stream"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+regex = "1"
+uuid = { version = "1", features = ["v4"] }
+sha2 = "0.10"
+base64 = "0.22"
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Com",
+    "Win32_System_Console",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_Environment",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

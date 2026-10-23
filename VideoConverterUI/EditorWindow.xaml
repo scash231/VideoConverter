@@ -1,0 +1,575 @@
+<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:VideoConverterUI.Controls"
+        xmlns:helpers="clr-namespace:VideoConverterUI.Services"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="VideoConverterUI.EditorWindow"
+        Title="Video Editor" Width="940" Height="620"
+        Icon="Icons/Editor.ico"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        PreviewKeyDown="Window_PreviewKeyDown">
+
+    <Window.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="Assets/FormStyles.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+
+        <!-- ══════ Inspector tabs (icon segments); the chosen one is an accent tile, like a Settings sidebar item ══════ -->
+        <Style x:Key="InspectorTab" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="InspectorTabs"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" CornerRadius="8" Background="Transparent" Margin="1,0" SnapsToDevicePixels="True">
+                            <ui:SymbolIcon x:Name="Glyph" Symbol="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint0D}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextOnMedia}"/>
+                                <Setter TargetName="Glyph" Property="Filled" Value="True"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Pop-up menus sit at the right end of their row (as in Settings) -->
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="DockPanel.Dock" Value="Right"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Width" Value="128"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- Labels in the inspector are a touch smaller than in Settings: the column is narrower -->
+        <Style x:Key="InsLabel" TargetType="TextBlock" BasedOn="{StaticResource Label}">
+            <Setter Property="FontSize" Value="12.5"/>
+        </Style>
+        <Style x:Key="InsPush" TargetType="Button" BasedOn="{StaticResource Push}">
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- Small chip in the controls row (speed, volume) -->
+        <Style x:Key="HudChip" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Tint14}"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="7,2"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ══════ Timeline: thin track, accent progress, tinted trim range, white knob (like the Settings sliders) ══════ -->
+        <Style x:Key="TimelineSlider" TargetType="{x:Type Slider}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="IsMoveToPointEnabled" Value="True"/>
+            <Setter Property="MinHeight" Value="24"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Grid Background="Transparent">
+                            <!-- Track with the trim range (positioned by the Slider through PART_SelectionRange) -->
+                            <Border x:Name="TrackBackground" Height="6" CornerRadius="3" Background="{DynamicResource Tint1A}"
+                                    VerticalAlignment="Center" Margin="7,0">
+                                <Canvas HorizontalAlignment="Left" VerticalAlignment="Stretch">
+                                    <Rectangle x:Name="PART_SelectionRange" Height="6" RadiusX="3" RadiusY="3"
+                                               Fill="{DynamicResource Accent}" Opacity="0.25" Visibility="Collapsed"/>
+                                </Canvas>
+                            </Border>
+                            <Track x:Name="PART_Track" VerticalAlignment="Center">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                <Grid Background="Transparent">
+                                                    <Border Background="{DynamicResource Accent}" Height="6" CornerRadius="3,0,0,3"
+                                                            VerticalAlignment="Center" Margin="7,0,0,0"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Width="14" Height="24" Focusable="False" Cursor="Hand">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Grid Background="Transparent">
+                                                    <Ellipse x:Name="Knob" Width="14" Height="14" Fill="White" Stroke="#20000000" StrokeThickness="0.5"
+                                                             RenderTransformOrigin="0.5,0.5">
+                                                        <Ellipse.RenderTransform>
+                                                            <ScaleTransform/>
+                                                        </Ellipse.RenderTransform>
+                                                        <Ellipse.Effect>
+                                                            <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.3"/>
+                                                        </Ellipse.Effect>
+                                                    </Ellipse>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="Knob" Property="RenderTransform">
+                                                            <Setter.Value>
+                                                                <ScaleTransform ScaleX="1.25" ScaleY="1.25"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelectionRangeEnabled" Value="True">
+                                <Setter TargetName="PART_SelectionRange" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TrackBackground" Property="Background" Value="{DynamicResource Tint26}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Thumb" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <helpers:SquircleBorder x:Name="RootBorder" CornerRadius="16"
+            Background="{DynamicResource BgDeep}"
+            BorderBrush="{DynamicResource BorderSub}" BorderThickness="1"
+            Opacity="100" RenderTransformOrigin="0.5,0.5">
+        <helpers:SquircleBorder.RenderTransform>
+            <TransformGroup>
+                <ScaleTransform x:Name="WindowScale"/>
+                <TranslateTransform x:Name="WindowTranslate"/>
+            </TransformGroup>
+        </helpers:SquircleBorder.RenderTransform>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="34"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- ═══════════ TITLE BAR ═══════════ -->
+            <Border Grid.Row="0" Background="Transparent"
+                    MouseLeftButtonDown="TitleBar_Drag">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                        <TextBlock Text="{DynamicResource EditorTitle}" FontWeight="SemiBold"
+                                   FontSize="12" Foreground="{DynamicResource TextPrimary}"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{DynamicResource Tint12}" CornerRadius="5" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Alpha" FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"/>
+                        </Border>
+                    </StackPanel>
+                    <!-- Close button: a small Liquid Glass circle (surface "Button"), as in Settings -->
+                    <Border Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,4,10,0">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                        </Border.Effect>
+                        <controls:LiquidGlassPanel Surface="Button" CornerRadius="12" BackdropSource="{Binding ElementName=ContentLayer}">
+                            <Button Style="{StaticResource IconBtn}" Width="24" Height="24" Padding="0"
+                                    ToolTip="{DynamicResource PrefClose}" Click="Close_Click">
+                                <ui:SymbolIcon Symbol="Dismiss24" FontSize="10" Foreground="{DynamicResource TextPrimary}"/>
+                            </Button>
+                        </controls:LiquidGlassPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ═══════════ MAIN LAYOUT ═══════════ -->
+            <Grid Grid.Row="1" Margin="10,6,10,10">
+                <!-- What the glass shows through: the preview (must not contain the glass) -->
+                <Grid x:Name="ContentLayer">
+                    <!-- LEFT: VIDEO PREVIEW, in the cut-out of the ⅃ platform (8 px from its arms: 280 wide, 86 tall) -->
+                    <Border x:Name="PreviewCard" Margin="0,0,288,94" CornerRadius="12" Background="{DynamicResource BgCard}"
+                                BorderBrush="{DynamicResource Tint0D}" BorderThickness="0.5"
+                                ClipToBounds="True" helpers:ClipHelper.CornerRadiusClip="True">
+                            <Grid x:Name="PlayerGrid">
+                                <!-- What the playback bar's glass shows: the video (must not contain the bar itself) -->
+                                <Grid x:Name="VideoLayer" Background="Transparent">
+                                    <MediaElement x:Name="VideoPlayer"
+                                                  LoadedBehavior="Manual" UnloadedBehavior="Close"
+                                                  ScrubbingEnabled="True" Stretch="Uniform"
+                                                  MediaOpened="VideoPlayer_MediaOpened"
+                                                  MediaFailed="VideoPlayer_MediaFailed"
+                                                  MediaEnded="VideoPlayer_MediaEnded"
+                                                  SizeChanged="VideoPlayer_SizeChanged"/>
+                                </Grid>
+
+                                <!-- Empty state; also the loading / preview-copy / failed messages (ShowPreviewMessage) -->
+                                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24,0">
+                                    <TextBlock x:Name="TxtNoVideo" Text="{DynamicResource EditorNoVideo}"
+                                               FontSize="13" Foreground="{DynamicResource TextSec}" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtLoadDetail" Visibility="Collapsed" MaxWidth="360" Margin="0,6,0,0"
+                                               FontSize="11.5" Foreground="{DynamicResource TextSec}" Opacity="0.8"
+                                               TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center"/>
+                                    <Button x:Name="BtnEmptyOpen" Style="{StaticResource PushPrimary}" HorizontalAlignment="Center" Height="28" Padding="14,0" Margin="0,12,0,0"
+                                            Click="BrowseVideo_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="FolderOpen24" FontSize="13" Margin="0,0,6,0" Foreground="{DynamicResource TextOnMedia}"/>
+                                            <TextBlock Text="{DynamicResource EditorBrowse}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- Crop guide (rule of thirds) over the video -->
+                                <Border x:Name="CropOverlay" BorderBrush="{DynamicResource Accent}" BorderThickness="1.5" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" IsHitTestVisible="False">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="10" Opacity="0.6" ShadowDepth="0"/>
+                                    </Border.Effect>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Line Grid.Row="0" Grid.ColumnSpan="3" X1="0" Y1="0" X2="1" Y2="0" Stretch="Fill" Stroke="#50FFFFFF" StrokeThickness="1" StrokeDashArray="3,3" VerticalAlignment="Bottom"/>
+                                        <Line Grid.Row="1" Grid.ColumnSpan="3" X1="0" Y1="0" X2="1" Y2="0" Stretch="Fill" Stroke="#50FFFFFF" StrokeThickness="1" StrokeDashArray="3,3" VerticalAlignment="Bottom"/>
+                                        <Line Grid.RowSpan="3" Grid.Column="0" X1="0" Y1="0" X2="0" Y2="1" Stretch="Fill" Stroke="#50FFFFFF" StrokeThickness="1" StrokeDashArray="3,3" HorizontalAlignment="Right"/>
+                                        <Line Grid.RowSpan="3" Grid.Column="1" X1="0" Y1="0" X2="0" Y2="1" Stretch="Fill" Stroke="#50FFFFFF" StrokeThickness="1" StrokeDashArray="3,3" HorizontalAlignment="Right"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+                </Grid>
+
+                <!-- ═══════ INSPECTOR + TIMELINE: one backwards-L Liquid Glass platform (surface "Inspector") ═══════
+                     The inspector is its right arm, the timeline its bottom arm; the preview sits in the cut-out.
+                     Outside ContentLayer (a glass can't show itself). The Border carries the shadow, which follows the L. -->
+                <Border>
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.14"/>
+                    </Border.Effect>
+                    <controls:LiquidGlassPanel Surface="Inspector" ReverseLArms="280,86" BackdropSource="{Binding ElementName=ContentLayer}">
+                        <controls:LiquidGlassPanel.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="280"/>
+                        </controls:LiquidGlassPanel.ColumnDefinitions>
+                        <controls:LiquidGlassPanel.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="86"/>
+                        </controls:LiquidGlassPanel.RowDefinitions>
+
+                        <!-- Right arm: tabbed inspector -->
+                        <Grid Grid.Column="1" Grid.Row="0" Margin="12,10,12,2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Segmented tab header -->
+                            <Border Grid.Row="0" Style="{StaticResource GlassSegmentTrack}" CornerRadius="10" Margin="0,0,0,12">
+                                <UniformGrid Rows="1">
+                                    <RadioButton x:Name="TabVideo" Style="{StaticResource InspectorTab}" Tag="{x:Static ui:SymbolRegular.Video24}"
+                                                 ToolTip="{DynamicResource EditorTabVideo}" IsChecked="True" Checked="InspectorTab_Checked"/>
+                                    <RadioButton x:Name="TabAudio" Style="{StaticResource InspectorTab}" Tag="{x:Static ui:SymbolRegular.Speaker224}"
+                                                 ToolTip="{DynamicResource EditorTabAudio}" Checked="InspectorTab_Checked"/>
+                                    <RadioButton x:Name="TabSubs" Style="{StaticResource InspectorTab}" Tag="{x:Static ui:SymbolRegular.Chat24}"
+                                                 ToolTip="{DynamicResource EditorTabCaptions}" Checked="InspectorTab_Checked"/>
+                                    <RadioButton x:Name="TabExport" Style="{StaticResource InspectorTab}" Tag="{x:Static ui:SymbolRegular.ArrowUpload24}"
+                                                 ToolTip="{DynamicResource EditorExport}" Checked="InspectorTab_Checked"/>
+                                </UniformGrid>
+                            </Border>
+
+                            <!-- Tab views -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <Grid>
+                                    <!-- 🎥 VIDEO -->
+                                    <Border x:Name="InspectorVideo" Visibility="Visible" Background="Transparent"><StackPanel>
+                                        <TextBlock Style="{StaticResource Header}" Text="{DynamicResource EditorCropHeader}"/>
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,12">
+                                            <Border Style="{StaticResource GlassSegmentTrack}" Margin="8">
+                                                <UniformGrid Rows="1">
+                                                    <RadioButton x:Name="RadCropOriginal" Style="{StaticResource GlassSegment}" Content="{DynamicResource EditorCropOriginal}" Tag="Original" IsChecked="True" GroupName="CropRatio" Click="CropRatio_Click" IsEnabled="False"/>
+                                                    <RadioButton x:Name="RadCrop916" Style="{StaticResource GlassSegment}" Content="9:16" Tag="9:16" GroupName="CropRatio" Click="CropRatio_Click" IsEnabled="False"/>
+                                                    <RadioButton x:Name="RadCrop169" Style="{StaticResource GlassSegment}" Content="16:9" Tag="16:9" GroupName="CropRatio" Click="CropRatio_Click" IsEnabled="False"/>
+                                                    <RadioButton x:Name="RadCrop11" Style="{StaticResource GlassSegment}" Content="1:1" Tag="1:1" GroupName="CropRatio" Click="CropRatio_Click" IsEnabled="False"/>
+                                                </UniformGrid>
+                                            </Border>
+                                        </Border>
+
+                                        <TextBlock Style="{StaticResource Header}" Text="{DynamicResource EditorTransformHeader}"/>
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,12">
+                                            <StackPanel>
+                                                <DockPanel Style="{StaticResource Row}">
+                                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="TxtRotation" Text="0°" Style="{StaticResource Value}" FontSize="12.5" Margin="0,0,10,0"/>
+                                                        <Button x:Name="BtnRotateCCW" Style="{StaticResource InsPush}" Padding="7,0" IsEnabled="False"
+                                                                ToolTip="{DynamicResource EditorRotateCCW}" Click="RotateCCW_Click">
+                                                            <ui:SymbolIcon Symbol="ArrowRotateCounterclockwise24" FontSize="14" Foreground="{DynamicResource TextPrimary}"/>
+                                                        </Button>
+                                                        <Button x:Name="BtnRotateCW" Style="{StaticResource InsPush}" Padding="7,0" Margin="4,0,0,0" IsEnabled="False"
+                                                                ToolTip="{DynamicResource EditorRotateCW}" Click="RotateCW_Click">
+                                                            <ui:SymbolIcon Symbol="ArrowRotateClockwise24" FontSize="14" Foreground="{DynamicResource TextPrimary}"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                    <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorRotation}"/>
+                                                </DockPanel>
+                                                <Border Style="{StaticResource Sep}"/>
+                                                <DockPanel Style="{StaticResource Row}">
+                                                    <CheckBox x:Name="BtnFlipH" Style="{StaticResource Switch}" IsEnabled="False" Click="FlipH_Click"/>
+                                                    <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorMirror}"/>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel></Border>
+
+                                    <!-- 🔊 AUDIO & SPEED -->
+                                    <Border x:Name="InspectorAudio" Visibility="Collapsed" Background="Transparent"><StackPanel>
+                                        <TextBlock Style="{StaticResource Header}" Text="{DynamicResource EditorPlaybackSpeed}"/>
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,12">
+                                            <Border Style="{StaticResource GlassSegmentTrack}" Margin="8">
+                                                <UniformGrid Rows="1">
+                                                    <RadioButton x:Name="RadSpeed05" Style="{StaticResource GlassSegment}" Content="0.5x" GroupName="PlaybackSpeed" Click="Speed_Click" IsEnabled="False"/>
+                                                    <RadioButton x:Name="RadSpeed10" Style="{StaticResource GlassSegment}" Content="1.0x" IsChecked="True" GroupName="PlaybackSpeed" Click="Speed_Click" IsEnabled="False"/>
+                                                    <RadioButton x:Name="RadSpeed15" Style="{StaticResource GlassSegment}" Content="1.5x" GroupName="PlaybackSpeed" Click="Speed_Click" IsEnabled="False"/>
+                                                    <RadioButton x:Name="RadSpeed20" Style="{StaticResource GlassSegment}" Content="2.0x" GroupName="PlaybackSpeed" Click="Speed_Click" IsEnabled="False"/>
+                                                </UniformGrid>
+                                            </Border>
+                                        </Border>
+
+                                        <TextBlock Style="{StaticResource Header}" Text="{DynamicResource EditorVolume}"/>
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,12">
+                                            <StackPanel Margin="12,10,12,10">
+                                                <DockPanel>
+                                                    <TextBlock x:Name="TxtVolumeVal" DockPanel.Dock="Right" Text="100%" Style="{StaticResource Value}" FontSize="12.5"/>
+                                                    <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorVolumeBoost}"/>
+                                                </DockPanel>
+                                                <DockPanel Margin="0,6,0,0">
+                                                    <ui:SymbolIcon Symbol="Speaker024" DockPanel.Dock="Left" FontSize="14" Margin="0,0,8,0"
+                                                                   Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                    <ui:SymbolIcon Symbol="Speaker224" DockPanel.Dock="Right" FontSize="14" Margin="8,0,0,0"
+                                                                   Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                    <Slider x:Name="SliderVolume" Minimum="0" Maximum="2" Value="1" SmallChange="0.05" LargeChange="0.1"
+                                                            IsEnabled="False" VerticalAlignment="Center" ValueChanged="SliderVolume_ValueChanged"/>
+                                                </DockPanel>
+                                                <TextBlock Style="{StaticResource Sub}" Text="{DynamicResource EditorVolumeSub}" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,12">
+                                            <DockPanel Style="{StaticResource Row}">
+                                                <CheckBox x:Name="ChkMuteAudio" Style="{StaticResource Switch}" IsEnabled="False"/>
+                                                <StackPanel Style="{StaticResource LabelStack}">
+                                                    <TextBlock Style="{StaticResource LabelInStack}" FontSize="12.5" Text="{DynamicResource EditorMuteAudio}"/>
+                                                    <TextBlock Style="{StaticResource Sub}" Text="{DynamicResource EditorMuteSub}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </StackPanel></Border>
+
+                                    <!-- 💬 CAPTIONS -->
+                                    <Border x:Name="InspectorSubs" Visibility="Collapsed" Background="Transparent"><StackPanel>
+                                        <TextBlock Style="{StaticResource Header}" Text="{DynamicResource EditorTabCaptions}"/>
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <DockPanel Style="{StaticResource Row}">
+                                                    <ComboBox x:Name="CmbSubModel" SelectedIndex="1">
+                                                        <ComboBoxItem Content="tiny" Tag="tiny"/>
+                                                        <ComboBoxItem Content="base" Tag="base"/>
+                                                        <ComboBoxItem Content="small" Tag="small"/>
+                                                        <ComboBoxItem Content="medium" Tag="medium"/>
+                                                    </ComboBox>
+                                                    <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorSubModel}"/>
+                                                </DockPanel>
+                                                <Border Style="{StaticResource Sep}"/>
+                                                <DockPanel Style="{StaticResource Row}">
+                                                    <ComboBox x:Name="CmbSubLang" SelectedIndex="0">
+                                                        <ComboBoxItem Content="Auto" Tag="auto"/>
+                                                        <ComboBoxItem Content="Deutsch" Tag="de"/>
+                                                        <ComboBoxItem Content="English" Tag="en"/>
+                                                        <ComboBoxItem Content="Español" Tag="es"/>
+                                                        <ComboBoxItem Content="Français" Tag="fr"/>
+                                                    </ComboBox>
+                                                    <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorSubLang}"/>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Button x:Name="BtnGenSubs" Style="{StaticResource InsPush}" HorizontalAlignment="Stretch" Height="28"
+                                                Content="{DynamicResource EditorGenSubs}" IsEnabled="False" Click="GenSubs_Click"/>
+                                        <ProgressBar x:Name="PbSubs" Height="2" Margin="2,6,2,0" IsIndeterminate="True" Visibility="Collapsed"
+                                                     Foreground="{DynamicResource Accent}" Background="Transparent"/>
+                                        <TextBlock x:Name="TxtSubStatus" Style="{StaticResource Sub}" Margin="2,4,2,0" Visibility="Collapsed"/>
+                                        <TextBox x:Name="TxtSubPreview" FontSize="11" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                                 TextWrapping="Wrap" Visibility="Collapsed" Margin="0,8,0,0"/>
+
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,8,0,12">
+                                            <DockPanel Style="{StaticResource Row}">
+                                                <CheckBox x:Name="ChkBurnSubs" Style="{StaticResource Switch}" IsEnabled="False"/>
+                                                <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorBurnSubs}"/>
+                                            </DockPanel>
+                                        </Border>
+                                    </StackPanel></Border>
+
+                                    <!-- ⤴ EXPORT -->
+                                    <Border x:Name="InspectorExport" Visibility="Collapsed" Background="Transparent"><StackPanel>
+                                        <!-- File info -->
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,12">
+                                            <DockPanel Style="{StaticResource Row}">
+                                                <Button x:Name="BtnBrowseVideo" Style="{StaticResource InsPush}" Content="{DynamicResource EditorBrowse}" Click="BrowseVideo_Click"/>
+                                                <ui:SymbolIcon Symbol="Document24" DockPanel.Dock="Left" FontSize="15" Margin="0,0,8,0"
+                                                               Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="TxtFileName" Style="{StaticResource InsLabel}" Margin="0,0,10,0"
+                                                           Text="{DynamicResource EditorNoFileLoaded}"/>
+                                            </DockPanel>
+                                        </Border>
+
+                                        <!-- Export options -->
+                                        <TextBlock Style="{StaticResource Header}" Text="{DynamicResource EditorOutputHeader}"/>
+                                        <Border Style="{StaticResource GlassGroup}" Margin="0,0,0,12">
+                                            <StackPanel>
+                                                <DockPanel Style="{StaticResource Row}">
+                                                    <ComboBox x:Name="CmbResolution" SelectedIndex="0" IsEnabled="False" Width="132">
+                                                        <ComboBoxItem Content="{DynamicResource EditorResOriginal}" Tag="original"/>
+                                                        <ComboBoxItem Content="{DynamicResource EditorRes1080p}" Tag="1080p"/>
+                                                        <ComboBoxItem Content="{DynamicResource EditorRes720p}" Tag="720p"/>
+                                                        <ComboBoxItem Content="{DynamicResource EditorRes480p}" Tag="480p"/>
+                                                    </ComboBox>
+                                                    <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorResolution}"/>
+                                                </DockPanel>
+                                                <Border Style="{StaticResource Sep}"/>
+                                                <DockPanel Style="{StaticResource Row}">
+                                                    <ComboBox x:Name="CmbFormat" SelectedIndex="0" IsEnabled="False" Width="132">
+                                                        <ComboBoxItem Content="{DynamicResource EditorFormatMp4}" Tag="mp4"/>
+                                                        <ComboBoxItem Content="{DynamicResource EditorFormatMkv}" Tag="mkv"/>
+                                                        <ComboBoxItem Content="{DynamicResource EditorFormatWebm}" Tag="webm"/>
+                                                    </ComboBox>
+                                                    <TextBlock Style="{StaticResource InsLabel}" Text="{DynamicResource EditorFormat}"/>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Border>
+                                        <Button x:Name="BtnExport" Style="{StaticResource PushPrimary}" Height="34" FontSize="13" FontWeight="SemiBold"
+                                                IsEnabled="False" Content="{DynamicResource EditorExport}" Click="Export_Click"/>
+                                    </StackPanel></Border>
+                                </Grid>
+                            </ScrollViewer>
+                        </Grid>
+
+                        <!-- Bottom arm: timeline & trim console -->
+                        <Grid Grid.Row="1" Grid.ColumnSpan="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Timeline row -->
+                            <DockPanel Grid.Row="0" Margin="14,8,14,6">
+                                <TextBlock x:Name="TxtCurrentTime" DockPanel.Dock="Left" Text="0:00" Width="44"
+                                           Style="{StaticResource Value}" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="TxtDuration" DockPanel.Dock="Right" Text="0:00" Width="44" TextAlignment="Right"
+                                           Style="{StaticResource Value}" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                <Slider x:Name="SliderTimeline"
+                                        Minimum="0" Maximum="100" Value="0"
+                                        IsEnabled="False"
+                                        IsSelectionRangeEnabled="True"
+                                        Style="{StaticResource TimelineSlider}"
+                                        Margin="6,0"
+                                        ValueChanged="SliderTimeline_ValueChanged"
+                                        PreviewMouseLeftButtonDown="SliderTimeline_DragStarted"
+                                        PreviewMouseLeftButtonUp="SliderTimeline_DragCompleted"/>
+                            </DockPanel>
+                            <Border Grid.Row="1" Style="{StaticResource Sep}" Margin="12,0"/>
+
+                            <!-- Controls row: playback (left), trim (centre), speed and volume (right) -->
+                            <DockPanel Grid.Row="2" Margin="10,0,14,0">
+                                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button x:Name="BtnPlay" Style="{StaticResource GlassRoundBtn}" Width="30" Height="30" IsEnabled="False"
+                                            ToolTip="{DynamicResource EditorPlayPause}" Click="Play_Click">
+                                        <ui:SymbolIcon x:Name="PlayIcon" Symbol="Play24" Filled="True" FontSize="15" Foreground="{DynamicResource TextPrimary}"/>
+                                    </Button>
+                                    <Button x:Name="BtnStop" Style="{StaticResource GlassRoundBtn}" Width="30" Height="30" IsEnabled="False" Margin="2,0,0,0"
+                                            ToolTip="{DynamicResource EditorStop}" Click="Stop_Click">
+                                        <ui:SymbolIcon Symbol="Stop24" Filled="True" FontSize="14" Foreground="{DynamicResource TextPrimary}"/>
+                                    </Button>
+                                    <Button x:Name="BtnMuteToggle" Style="{StaticResource GlassRoundBtn}" Width="30" Height="30" IsEnabled="False" Margin="2,0,0,0"
+                                            ToolTip="{DynamicResource EditorMutePreview}" Click="MuteToggle_Click">
+                                        <ui:SymbolIcon x:Name="MuteIcon" Symbol="Speaker224" FontSize="15" Foreground="{DynamicResource TextPrimary}"/>
+                                    </Button>
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Style="{StaticResource HudChip}">
+                                        <TextBlock x:Name="TxtSpeedBadge" Text="1.0x" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                                    </Border>
+                                    <Border x:Name="BdVolumeBadge" Style="{StaticResource HudChip}" Margin="5,0,0,0">
+                                        <TextBlock x:Name="TxtVolumeBadge" Text="100%" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Style="{StaticResource Value}" FontSize="12" Text="{DynamicResource EditorStartLabel}" Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="TxtTrimStart" Text="0:00" FontSize="12" FontWeight="SemiBold" MinWidth="30"
+                                               Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <Button x:Name="BtnSetStart" Style="{StaticResource Push}" FontSize="12" IsEnabled="False"
+                                            Content="{DynamicResource EditorMarkStart}" Click="SetStart_Click"/>
+
+                                    <TextBlock Style="{StaticResource Value}" FontSize="12" Text="{DynamicResource EditorEndLabel}" Margin="16,0,5,0"/>
+                                    <TextBlock x:Name="TxtTrimEnd" Text="0:00" FontSize="12" FontWeight="SemiBold" MinWidth="30"
+                                               Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <Button x:Name="BtnSetEnd" Style="{StaticResource Push}" FontSize="12" IsEnabled="False"
+                                            Content="{DynamicResource EditorMarkEnd}" Click="SetEnd_Click"/>
+
+                                    <Button x:Name="BtnResetTrim" Style="{StaticResource Push}" FontSize="12" Margin="12,0,0,0" IsEnabled="False" Click="ResetTrim_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="ArrowReset24" FontSize="12" Margin="0,0,5,0" Foreground="{DynamicResource TextPrimary}"/>
+                                            <TextBlock Text="{DynamicResource EditorResetTrim}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </DockPanel>
+                        </Grid>
+                    </controls:LiquidGlassPanel>
+                </Border>
+            </Grid>
+
+            <!-- Corner Resize Grip Handle -->
+            <Border x:Name="WindowCornerGrip"
+                    Grid.RowSpan="2"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Width="32" Height="32" Margin="0,0,0,0"
+                    Background="Transparent" Cursor="SizeNWSE"
+                    Panel.ZIndex="9999"
+                    Visibility="Collapsed"
+                    MouseLeftButtonDown="WindowCornerGrip_MouseDown"
+                    MouseEnter="WindowCornerGrip_MouseEnter"
+                    MouseLeave="WindowCornerGrip_MouseLeave">
+                <!-- iPadOS-style corner: arc along the window's rounded corner, lens on hover -->
+                <controls:CornerResizeGlyph/>
+            </Border>
+        </Grid>
+    </helpers:SquircleBorder>
+</Window>

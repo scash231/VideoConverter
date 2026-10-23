@@ -1,0 +1,44 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="VideoConverter"
+           Manufacturer="VideoConverter Team"
+           Version="2.0.0.0"
+           UpgradeCode="4C37E84B-12F1-94E6-952F-981A468B35A2"
+           Scope="perMachine">
+    
+    <MajorUpgrade DowngradeErrorMessage="A newer version of VideoConverter is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="VideoConverter">
+        <Component Id="MainExecutableComponent" Guid="A37E84B1-2F19-4E69-952F-981A468B35A2">
+          <File Id="MainExe" Source="..\publish\VideoConverterUI.exe" KeyPath="yes">
+            <Shortcut Id="DesktopShortcut"
+                      Directory="DesktopFolder"
+                      Name="VideoConverter"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Advertise="yes" />
+            <Shortcut Id="StartMenuShortcut"
+                      Directory="ProgramMenuFolder"
+                      Name="VideoConverter"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Advertise="yes" />
+          </File>
+        </Component>
+        <!-- Ferrite (Rust) media engine, started by the app as a sidecar process -->
+        <Component Id="FerriteComponent" Guid="6E2B7C41-8D0A-4F3B-9C5E-2A71D4F80B19">
+          <File Id="FerriteExe" Source="..\publish\ferrite.exe" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="MainFeature" Title="VideoConverter" Level="1">
+      <ComponentRef Id="MainExecutableComponent" />
+      <ComponentRef Id="FerriteComponent" />
+      <Files Include="..\publish\ffmpeg_bin\**" Subdirectory="ffmpeg_bin" />
+    </Feature>
+  </Package>
+</Wix>

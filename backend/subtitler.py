@@ -4,6 +4,9 @@ from __future__ import annotations
 import os, subprocess, sys, tempfile
 from typing import Optional
 
+# Import shared helpers (single source of truth)
+from downloader import _safe_print, _safe_remove
+
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
@@ -18,7 +21,7 @@ def generate_subtitles(
     try:
         from faster_whisper import WhisperModel
     except ImportError:
-        print("[subtitler] Installing faster-whisper …", flush=True)
+        _safe_print("[subtitler] Installing faster-whisper …")
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "faster-whisper", "-q"]
         )
@@ -27,37 +30,50 @@ def generate_subtitles(
     if not os.path.isfile(video_path):
         raise FileNotFoundError(f"Video not found: {video_path}")
 
-    tmp_wav = tempfile.mktemp(suffix=".wav")
+    app_temp = os.path.join(tempfile.gettempdir(), "VideoConverter", "temp")
+    os.makedirs(app_temp, exist_ok=True)
+    with tempfile.NamedTemporaryFile(suffix=".wav", dir=app_temp, delete=False) as tf:
+        tmp_wav = tf.name
+
     try:
-        print(f"[subtitler] Extracting audio from {video_path!r}", flush=True)
+        _safe_print(f"[subtitler] Extracting audio from {video_path!r}")
         _extract_audio(video_path, tmp_wav)
 
-        print(f"[subtitler] Loading model '{model_size}' …", flush=True)
+        _safe_print(f"[subtitler] Loading model '{model_size}' …")
         model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
         lang_arg = language if language and language != "auto" else None
-        print(f"[subtitler] Transcribing (language={lang_arg or 'auto-detect'}) …", flush=True)
+        _safe_print(f"[subtitler] Transcribing (language={lang_arg or 'auto-detect'}) …")
         segments, info = model.transcribe(tmp_wav, language=lang_arg, beam_size=5)
 
         srt_lines: list[str] = []
+        seg_count = 0
         for i, seg in enumerate(segments, start=1):
+            seg_count = i
             srt_lines.append(str(i))
             srt_lines.append(f"{_fmt_ts(seg.start)} --> {_fmt_ts(seg.end)}")
             srt_lines.append(seg.text.strip())
             srt_lines.append("")
 
         detected = info.language if hasattr(info, "language") else "?"
-        print(f"[subtitler] Done – {i if srt_lines else 0} segments, detected language: {detected}", flush=True)
+        _safe_print(f"[subtitler] Done – {seg_count} segments, detected language: {detected}")
         return "\n".join(srt_lines)
     finally:
-        if os.path.exists(tmp_wav):
-            os.remove(tmp_wav)
+        _safe_remove(tmp_wav)
+
+
+def _get_ffmpeg_exe() -> str:
+    """Find ffmpeg binary from local bundle or PATH."""
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg_bin", "ffmpeg.exe")
+    if os.path.isfile(local):
+        return local
+    return "ffmpeg"
 
 
 def _extract_audio(video_path: str, wav_path: str) -> None:
     """Extract audio from video to 16 kHz mono WAV using ffmpeg."""
     cmd = [
-        "ffmpeg", "-y",
+        _get_ffmpeg_exe(), "-y",
         "-i", video_path,
         "-vn",
         "-acodec", "pcm_s16le",

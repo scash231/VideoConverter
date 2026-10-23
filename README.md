@@ -3,7 +3,14 @@
 Alpha - https://github.com/scash231/VideoConverter/releases/tag/27H1
 
 Modern C# WPF desktop application with a high-performance Python backend for downloading, converting, and auto-uploading media across YouTube Music, YouTube Shorts, Instagram Reels, TikTok, and universal web sources with built-in anti-detection video fingerprinting.
-Check Requirments.txt
+
+## Install
+
+Download and run **[VideoConverterSetup.exe](https://scash.uk/vc)**. Nothing else is needed: setup downloads the app, the Ferrite engine, the .NET runtime (if missing), FFmpeg and yt-dlp. It installs for your Windows user only (no admin rights, except Windows asks once if .NET has to be installed). Run it again to update; uninstall in Windows Settings → Apps.
+
+The Python (Legacy) engine is no longer supported and is not part of the installer. If you still need it, get [VideoConverter-Legacy-Python.zip](https://scash.uk/vc/VideoConverter-Legacy-Python.zip) and follow its README.
+
+Releasing (maintainer): `.\installer\build_release.ps1 -Upload` builds everything into `dist\vc` and uploads it to scash.uk.
 
 # 26H2 Beta
 

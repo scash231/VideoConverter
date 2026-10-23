@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="VideoConverterSetup/VideoConverterSetup.csproj" />
+  <Project Path="VideoConverterUI/VideoConverterUI.csproj" />
+</Solution>

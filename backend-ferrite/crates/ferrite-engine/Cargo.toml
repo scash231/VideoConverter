@@ -1,0 +1,21 @@
+[package]
+name = "ferrite-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Ferrite media engine: a 1:1 Rust port of VideoConverter's Native C# engine"
+
+[dependencies]
+tokio.workspace = true
+tokio-util.workspace = true
+futures-util.workspace = true
+bytes.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+regex.workspace = true
+uuid.workspace = true
+sha2.workspace = true
+base64.workspace = true
+windows-sys.workspace = true
+url = "2"

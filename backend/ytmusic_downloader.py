@@ -7,51 +7,28 @@ Features:
 - Automatic ID3/MP4 Metadata Tagging and Cover Art Embedding into output files
 """
 from __future__ import annotations
-import os, re, shutil, uuid
+import os, re, sys, time, uuid
 import yt_dlp
 
-_UA = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/130.0.0.0 Safari/537.36"
+# Import shared helpers from downloader (single source of truth)
+from downloader import (
+    _safe_print, _clean_url, _safe_title, _clean_stem_files,
+    _cookie_opts_for, _logger, _UA,
+    DownloadCancelled,
+    _SilentLogger,
 )
-
-_INVISIBLE_RE = re.compile(
-    "[\u200b\u200c\u200d\u200e\u200f"
-    "\u202a\u202b\u202c\u202d\u202e"
-    "\u2060\u2066\u2067\u2068\u2069"
-    "\ufeff\u00ad\u034f\u061c\u115f\u1160"
-    "\u17b4\u17b5\u180e\ufff0-\ufff8\ufffa-\ufffd]"
-)
-
-class DownloadCancelled(Exception):
-    """Raised when a download is cancelled by the user."""
-
-class _SilentLogger:
-    def debug(self, msg): pass
-    def info(self, msg): pass
-    def warning(self, msg): pass
-    def error(self, msg): pass
 
 _silent_logger = _SilentLogger()
 
-def _clean_url(raw: str) -> str:
-    """Strip invisible Unicode chars and whitespace from a pasted URL."""
-    return _INVISIBLE_RE.sub("", raw).strip()
-
-def _safe_title(raw: str) -> str:
-    """Sanitise a song/album title into a Windows-safe filename stem."""
-    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', raw).strip('. ')
-    if re.match(r'^(CON|PRN|AUX|NUL|COM\d|LPT\d)$', name, re.IGNORECASE):
-        name = f"_{name}"
-    return name[:80] or "song"
 
 def is_ytmusic_url(url: str) -> bool:
-    """Check if the provided URL is a YouTube Music URL."""
-    clean = _clean_url(url).lower()
-    return "music.youtube.com" in clean or ("youtube.com" in clean and "list=" in clean)
+    """Check if the provided URL is a YouTube Music URL.
 
-from downloader import _cookie_opts_for, _logger
+    Regular YouTube links with a ``list=`` parameter (e.g. a video opened from a playlist)
+    are *not* music – treating them as such downloaded audio only.
+    """
+    return "music.youtube.com" in _clean_url(url).lower()
+
 
 def fetch_ytmusic_metadata(url: str) -> dict:
     """Extract detailed metadata for a YouTube Music track/album."""
@@ -121,6 +98,8 @@ def fetch_ytmusic_metadata(url: str) -> dict:
         "tags": ["YouTubeMusic", "Audio", clean_artist] if clean_artist else ["YouTubeMusic", "Audio"],
     }
 
+
+
 def download_ytmusic_audio(
     url: str,
     output_dir: str,
@@ -134,8 +113,8 @@ def download_ytmusic_audio(
     os.makedirs(output_dir, exist_ok=True)
     stem = uuid.uuid4().hex[:12]
 
-    print(f"[ytmusic_downloader] Downloading URL: {url}", flush=True)
-    print(f"[ytmusic_downloader] Quality mode: {quality}", flush=True)
+    _safe_print(f"[ytmusic_downloader] Downloading URL: {url}")
+    _safe_print(f"[ytmusic_downloader] Quality mode: {quality}")
 
     def _hook(d: dict):
         if cancel_check and cancel_check():
@@ -204,24 +183,27 @@ def download_ytmusic_audio(
                 info = ydl.extract_info(url, download=True)
         except Exception as first_exc:
             if cancel_check and cancel_check():
+                _clean_stem_files(output_dir, stem)
                 return None
-            print(f"[ytmusic_downloader] Fast download without cookies failed ({type(first_exc).__name__}), retrying with cookies…", flush=True)
+            _safe_print(f"[ytmusic_downloader] Fast download without cookies failed ({type(first_exc).__name__}), retrying with cookies…")
             opts.update(_cookie_opts_for(url))
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(url, download=True)
 
         if not info:
+            _clean_stem_files(output_dir, stem)
             return None
 
         # Find downloaded file
         downloaded = None
         for f in os.listdir(output_dir):
             if f.startswith(stem) and os.path.isfile(os.path.join(output_dir, f)):
-                if not f.endswith(('.part', '.ytdl', '.temp', '.jpg', '.webp', '.png')):
+                if not f.endswith(('.part', '.ytdl', '.temp', '.jpg', '.webp', '.png', '.aria2')):
                     downloaded = os.path.join(output_dir, f)
                     break
 
         if not downloaded:
+            _clean_stem_files(output_dir, stem)
             return None
 
         # Rename to clean "Artist - Title.ext"
@@ -245,14 +227,20 @@ def download_ytmusic_audio(
 
         try:
             os.rename(downloaded, target)
-            print(f"[ytmusic_downloader] Renamed to: {target}", flush=True)
-            return target
+            _safe_print(f"[ytmusic_downloader] Renamed to: {target}")
+            final_path = target
         except OSError:
-            return downloaded
+            final_path = downloaded
+
+        # Clean up any leftover temporary files (including extracted thumbnail images)
+        _clean_stem_files(output_dir, stem, exclude_path=final_path)
+        return final_path
 
     except DownloadCancelled:
-        print("[ytmusic_downloader] Download cancelled", flush=True)
+        _safe_print("[ytmusic_downloader] Download cancelled")
+        _clean_stem_files(output_dir, stem)
         return None
     except Exception as exc:
-        print(f"[ytmusic_downloader] Error downloading: {exc}", flush=True)
+        _safe_print(f"[ytmusic_downloader] Error downloading: {exc}")
+        _clean_stem_files(output_dir, stem)
         raise

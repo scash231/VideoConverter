@@ -1,0 +1,180 @@
+<Window x:Class="VideoConverterUI.DevConsoleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:VideoConverterUI.Controls"
+        xmlns:anim="clr-namespace:VideoConverterUI.Animations"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:helpers="clr-namespace:VideoConverterUI.Services"
+        Title="{DynamicResource DevConsoleTitle}" Width="520" Height="320"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Icon="Icons/app.ico">
+
+    <helpers:SquircleBorder x:Name="RootBorder" CornerRadius="16"
+            Background="{DynamicResource BgDeep}"
+            BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
+            Opacity="100" RenderTransformOrigin="0.5,0.5">
+        <helpers:SquircleBorder.RenderTransform>
+            <TransformGroup>
+                <ScaleTransform x:Name="WinScale"/>
+                <TranslateTransform x:Name="WinTranslate"/>
+            </TransformGroup>
+        </helpers:SquircleBorder.RenderTransform>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title bar -->
+            <Border Grid.Row="0" Background="Transparent" CornerRadius="16,16,0,0"
+                    BorderBrush="{DynamicResource BorderSub}" BorderThickness="0,0,0,0.5"
+                    Padding="12,0" MouseLeftButtonDown="TitleBar_Drag">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{DynamicResource DevConsoleTitle}" FontSize="9.5"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource TextSec}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="BtnConsoleHelp"
+                                Style="{StaticResource IconBtn}"
+                                Width="22" Height="22" Margin="0,0,2,0"
+                                Click="Help_Click"
+                                ToolTip="{DynamicResource DevConsoleHelpTip}">
+                            <ui:SymbolIcon Symbol="QuestionCircle24" FontSize="10.5" VerticalAlignment="Center"/>
+                        </Button>
+                        <Button Style="{StaticResource IconBtn}"
+                                Width="22" Height="22" Margin="0,0,2,0"
+                                Click="Clear_Click"
+                                ToolTip="{DynamicResource DevConsoleClear}">
+                            <ui:SymbolIcon Symbol="Delete24" FontSize="10.5" VerticalAlignment="Center"/>
+                        </Button>
+                        <Button Style="{StaticResource IconBtn}"
+                                Width="22" Height="22" Margin="0,0,2,0"
+                                Click="Minimize_Click"
+                                ToolTip="{DynamicResource DevConsoleMinimize}">
+                            <ui:SymbolIcon Symbol="Subtract24" FontSize="10.5" VerticalAlignment="Center"/>
+                        </Button>
+                        <Button Style="{StaticResource IconBtn}"
+                                Width="22" Height="22"
+                                Click="Reattach_Click"
+                                ToolTip="{DynamicResource DevConsoleReattach}">
+                            <ui:SymbolIcon Symbol="Pin24" FontSize="10.5" VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                    <Popup x:Name="ConsoleHelpPopup"
+                           Placement="Bottom"
+                           VerticalOffset="4"
+                           StaysOpen="True"
+                           AllowsTransparency="True"
+                           PopupAnimation="None">
+                        <Border x:Name="HelpPopupBorder" controls:LiquidGlass.Surface="Popup" Background="{DynamicResource PopupBg}"
+                                BorderBrush="{DynamicResource PopupBorder}"
+                                BorderThickness="1"
+                                anim:FluidMotion.CornerRadiusValue="55"
+                                Padding="10,8" MinWidth="260" MaxHeight="250"
+                                Opacity="0" RenderTransformOrigin="0.5,0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="22" ShadowDepth="2" Color="Black" Opacity="0.25"/>
+                            </Border.Effect>
+                            <Border.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                    <TranslateTransform Y="-4"/>
+                                </TransformGroup>
+                            </Border.RenderTransform>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource DevConsoleHelpTitle}" FontSize="10.5" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextSec}" Margin="0,0,0,8"/>
+                                    
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="help" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdHelpDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="clear / cls" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdClearDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="status" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdStatusDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="ping" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdPingDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="restart" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdRestartDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="config" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdConfigDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="python" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdPythonDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="ffmpeg" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdFfmpegDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="open &lt;downloads|appdata&gt;" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdOpenDesc}" Margin="0,0,0,5"/>
+
+                                    <TextBlock FontFamily="Consolas" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Text="info" Margin="0,0,0,1"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextPrimary}" Text="{DynamicResource CmdInfoDesc}" Margin="0,0,0,6"/>
+
+                                    <Border Height="1" Background="{DynamicResource BorderSub}" Margin="0,2,0,6"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextSec}"
+                                               Text="{DynamicResource CmdFallbackDesc}"
+                                               TextWrapping="Wrap" FontStyle="Italic"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
+                </Grid>
+            </Border>
+
+            <!-- Console output -->
+            <TextBox x:Name="TxtConsole" Grid.Row="1" Style="{x:Null}"
+                     Background="Transparent" BorderThickness="0"
+                     Foreground="{DynamicResource ConsoleText}" FontFamily="Verdana" FontSize="10.5"
+                     IsReadOnly="True" TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto" Padding="12,8"/>
+
+            <!-- Command input -->
+            <Border Grid.Row="2" Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}"
+                    BorderThickness="0,0.5,0,0" CornerRadius="0,0,14,14" Padding="12,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="›" FontSize="15" FontWeight="ExtraBold"
+                               Foreground="{DynamicResource Accent}"
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox x:Name="TxtInput" Grid.Column="1" Style="{x:Null}"
+                             Background="Transparent" BorderThickness="0"
+                             Foreground="{DynamicResource TextPrimary}" FontFamily="Cascadia Code, Consolas" FontSize="11"
+                             CaretBrush="{DynamicResource TextPrimary}" Padding="0"
+                             KeyDown="TxtInput_KeyDown"
+                             VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Corner Resize Grip Handle -->
+            <Border x:Name="WindowCornerGrip"
+                    Grid.RowSpan="3"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Width="32" Height="32" Margin="0,0,0,0"
+                    Background="Transparent" Cursor="SizeNWSE"
+                    Panel.ZIndex="9999"
+                    Visibility="Collapsed"
+                    MouseLeftButtonDown="WindowCornerGrip_MouseDown"
+                    MouseEnter="WindowCornerGrip_MouseEnter"
+                    MouseLeave="WindowCornerGrip_MouseLeave">
+                <!-- iPadOS-style corner: arc along the window's rounded corner, lens on hover -->
+                <controls:CornerResizeGlyph/>
+            </Border>
+        </Grid>
+    </helpers:SquircleBorder>
+</Window>

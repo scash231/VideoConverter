@@ -10,10 +10,11 @@ _URL = (
 
 def ensure_ffmpeg() -> None:
     here = os.path.dirname(os.path.abspath(__file__))
-    legacy = os.path.join(os.path.dirname(here), "insta to shorts 1 vid", "ffmpeg_bin")
     local = os.path.join(here, "ffmpeg_bin")
+    # Directory used by the app's built-in FFmpeg installer (FFmpegInstallerService)
+    app_install = os.path.join(os.environ.get("LOCALAPPDATA", ""), "VideoConverter", "ffmpeg", "bin")
 
-    for d in (legacy, local):
+    for d in (local, app_install):
         if (os.path.isfile(os.path.join(d, "ffmpeg.exe")) and
                 os.path.isfile(os.path.join(d, "ffprobe.exe"))):
             _add(d)

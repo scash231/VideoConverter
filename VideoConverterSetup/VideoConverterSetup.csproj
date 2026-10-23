@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Web-Installer für VideoConverter. Bewusst .NET Framework 4.8: das ist auf jedem Windows 10 (ab 1903) und 11
+	     vorinstalliert, die Setup-.exe läuft also ohne irgendeine Abhängigkeit und bleibt eine einzelne kleine Datei.
+	     Keine NuGet-Pakete hinzufügen, sonst liegen DLLs neben der .exe. -->
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net48</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<RootNamespace>VideoConverterSetup</RootNamespace>
+		<AssemblyName>VideoConverterSetup</AssemblyName>
+		<ApplicationIcon>..\Icons\app.ico</ApplicationIcon>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<Prefer32Bit>false</Prefer32Bit>
+		<DebugType>none</DebugType>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<Version>1.0.0</Version>
+		<Product>VideoConverter Setup</Product>
+		<Company>scash</Company>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Include="System.Net.Http" />
+		<Reference Include="System.IO.Compression" />
+		<Reference Include="System.IO.Compression.FileSystem" />
+		<Reference Include="System.Runtime.Serialization" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Resource Include="..\Icons\app.ico" Link="app.ico" />
+	</ItemGroup>
+</Project>
