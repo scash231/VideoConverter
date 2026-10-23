@@ -17,6 +17,8 @@ import json, os, subprocess, sys
 from functools import lru_cache
 from typing import Callable
 
+from downloader import _safe_remove
+
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 # -- Method presets ------------------------------------------------------------
@@ -59,29 +61,24 @@ _HW_ACCEL: dict[str, str] = {
 
 @lru_cache(maxsize=1)
 def _best_hw_encoder() -> tuple[str, str] | None:
-    """Return (encoder, hwaccel) for the best available HW encoder, or None.
+    """Return (encoder, hwaccel) for the best *working* HW encoder, or None.
 
-    Priority: NVENC (NVIDIA) > QSV (Intel) > AMF (AMD).
+    Priority: NVENC (NVIDIA) > QSV (Intel) > AMF (AMD). Full FFmpeg builds list all three
+    encoders even without the matching GPU, so each one is verified with a tiny test encode.
     """
-    try:
-        r = subprocess.run(
-            ["ffmpeg", "-hide_banner", "-encoders"],
-            capture_output=True, encoding="utf-8", errors="replace",
-            timeout=10, creationflags=_NO_WINDOW,
-        )
-        stdout = r.stdout or ""
-        for enc in ("h264_nvenc", "h264_qsv", "h264_amf"):
-            if enc in stdout:
+    for enc in ("h264_nvenc", "h264_qsv", "h264_amf"):
+        try:
+            r = subprocess.run(
+                ["ffmpeg", "-hide_banner", "-loglevel", "error",
+                 "-f", "lavfi", "-i", "color=c=black:s=256x256:d=0.1",
+                 "-frames:v", "1", "-c:v", enc, "-f", "null", "-"],
+                capture_output=True, timeout=15, creationflags=_NO_WINDOW,
+            )
+            if r.returncode == 0:
                 return enc, _HW_ACCEL[enc]
-    except Exception:
-        pass
+        except Exception:
+            continue
     return None
-
-
-# Keep for back-compat with server.py (use_gpu flag still works)
-def _has_nvenc() -> bool:
-    hw = _best_hw_encoder()
-    return hw is not None and hw[0] == "h264_nvenc"
 
 
 def _probe_video(path: str) -> tuple[int | None, int | None, float]:
@@ -113,7 +110,7 @@ def _run_ffmpeg(
     progress_cb: Callable[[float], None] | None,
     cancel_check: Callable[[], bool] | None = None,
 ) -> int:
-    """Run ffmpeg with real-time progress.  Returns -1 when cancelled."""
+    """Run ffmpeg with real-time progress. Returns -1 when cancelled."""
     if not progress_cb or duration <= 0:
         proc = subprocess.Popen(
             cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -121,10 +118,13 @@ def _run_ffmpeg(
         )
         while True:
             try:
-                return proc.wait(timeout=0.5)
+                return proc.wait(timeout=0.2)
             except subprocess.TimeoutExpired:
                 if cancel_check and cancel_check():
-                    proc.terminate()
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
                     proc.wait()
                     return -1
 
@@ -135,17 +135,27 @@ def _run_ffmpeg(
     )
 
     cancelled = False
-    for line in proc.stdout:                        # type: ignore[union-attr]
-        if cancel_check and cancel_check():
-            proc.terminate()
-            cancelled = True
-            break
-        if line.startswith("out_time_us="):
+    try:
+        for line in proc.stdout:  # type: ignore[union-attr]
+            if cancel_check and cancel_check():
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                cancelled = True
+                break
+            if line.startswith("out_time_us="):
+                try:
+                    us = int(line.split("=", 1)[1])
+                    if us > 0:
+                        progress_cb(min(us / 1_000_000 / duration, 1.0))
+                except ValueError:
+                    pass
+    finally:
+        if proc.stdout:
             try:
-                us = int(line.split("=", 1)[1])
-                if us > 0:
-                    progress_cb(min(us / 1_000_000 / duration, 1.0))
-            except ValueError:
+                proc.stdout.close()
+            except Exception:
                 pass
 
     rc = proc.wait()
@@ -173,9 +183,10 @@ def transform_video(
             capture_output=True, encoding="utf-8", errors="replace",
             creationflags=_NO_WINDOW,
         ).returncode
-        if rc != 0:
+        if rc != 0 or (cancel_check and cancel_check()):
+            _safe_remove(out)
             return input_path
-        os.remove(input_path)
+        _safe_remove(input_path)
         return out
 
     # -- Filter-based methods --------------------------------------------------
@@ -259,10 +270,13 @@ def transform_video(
     ]
 
     rc = _run_ffmpeg(cmd, duration, progress_cb, cancel_check)
-    if rc != 0:
-        if os.path.isfile(out):
-            os.remove(out)
+    if rc != 0 and encoder and not (cancel_check and cancel_check()):
+        # GPU encode failed (driver/resolution limits) – retry once on the CPU
+        _safe_remove(out)
+        return transform_video(input_path, method, progress_cb, False, cancel_check)
+    if rc != 0 or (cancel_check and cancel_check()):
+        _safe_remove(out)
         return input_path
 
-    os.remove(input_path)
+    _safe_remove(input_path)
     return out

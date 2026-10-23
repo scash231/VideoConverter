@@ -46,3 +46,13 @@ settings.json
 
 publish/
 dist/
+
+# Local artefacts (large backups, installer output, WiX cache, scratch files)
+_backups/
+installer/*.msi
+installer/*.wixpdb
+.wix/
+scratch/
+
+# Ferrite (Rust) build output
+backend-ferrite/target/

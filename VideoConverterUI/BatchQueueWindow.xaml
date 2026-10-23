@@ -1,0 +1,1728 @@
+<Window x:Class="VideoConverterUI.BatchQueueWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:anim="clr-namespace:VideoConverterUI.Animations"
+        xmlns:helpers="clr-namespace:VideoConverterUI.Services"
+        xmlns:controls="clr-namespace:VideoConverterUI.Controls"
+        Title="{DynamicResource BatchQueueTitle}" Width="920" Height="640"
+        MinWidth="740" MinHeight="500"
+        Icon="Icons/app.ico"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        AllowDrop="True"
+        anim:MiddleClickScrollBehavior.IsEnabled="True"
+        PreviewDragEnter="Window_DragEnter"
+        PreviewDragOver="Window_DragOver"
+        PreviewDragLeave="Window_DragLeave"
+        PreviewDrop="Window_Drop"
+        PreviewKeyDown="Window_PreviewKeyDown">
+
+    <Window.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="Assets/FormStyles.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+
+        <!-- ═══════════ QUEUE CARD ═══════════ -->
+        <Style x:Key="QueueItemBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BgCard}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSub}"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="10,7"/>
+        </Style>
+
+        <!-- Shadow under a queue card: three translucent card-shaped layers that fall off below the card. No blur effect:
+             a blurred shadow per card cost a lot while scrolling long queues (every newly shown card recomputed it). -->
+        <Style x:Key="QueueCardShadow" TargetType="Border">
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+
+        <!-- ═══════════ TOOLBAR PILL (container for every toolbar group) ═══════════ -->
+        <Style x:Key="ToolbarPill" TargetType="Border">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Background" Value="{DynamicResource Tint0A}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Tint12}"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+            <Setter Property="Padding" Value="3"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Hairline divider inside toolbar pills -->
+        <Style x:Key="PillDivider" TargetType="Border">
+            <Setter Property="Width" Value="1"/>
+            <Setter Property="Margin" Value="2,7"/>
+            <Setter Property="Background" Value="{DynamicResource Tint14}"/>
+        </Style>
+
+        <!-- Section surface: queue, storage bin, footer and live log share one material -->
+        <Style x:Key="BatchSurface" TargetType="Border">
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Background" Value="{DynamicResource Tint06}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSub}"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+        </Style>
+
+
+        <!-- ═══════════ BATCH CAPSULE BUTTON ═══════════ -->
+        <Style x:Key="BatchCapsuleBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="1,1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="10" Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ SEAMLESS INPUT TEXTBOX (No Inner Box/Highlight, Full Stretch) ═══════════ -->
+        <Style x:Key="SeamlessInputTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid Background="Transparent" VerticalAlignment="Stretch">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                            <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}"
+                                       Foreground="{DynamicResource TextSec}" Opacity="0.55"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       VerticalAlignment="Center" IsHitTestVisible="False"
+                                       Margin="{TemplateBinding Padding}" TextTrimming="CharacterEllipsis"
+                                       Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ BATCH CAPSULE COMBOBOX TOGGLE (Seamless, No Inner Border/Highlight) ═══════════ -->
+        <ControlTemplate x:Key="BatchCapsuleComboToggle" TargetType="ToggleButton">
+            <Border x:Name="Bd" CornerRadius="10"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    SnapsToDevicePixels="True">
+                <ui:SymbolIcon x:Name="ArrowIcon" Symbol="ChevronUpDown16" FontSize="12"
+                               Foreground="{DynamicResource TextSec}"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Margin="0,0,6,0" IsHitTestVisible="False"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="ArrowIcon" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="ArrowIcon" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- ═══════════ BATCH CAPSULE COMBOBOX (Fluid Seamless Dropdown) ═══════════ -->
+        <Style x:Key="BatchCapsuleComboBox" TargetType="ComboBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="MaxDropDownHeight" Value="320"/>
+            <Setter Property="anim:DropdownAnimBehavior.IsEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid x:Name="MainGrid" SnapsToDevicePixels="True" Background="Transparent">
+                            <ToggleButton x:Name="ToggleButton"
+                                          Style="{x:Null}"
+                                          Template="{StaticResource BatchCapsuleComboToggle}"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Focusable="False" ClickMode="Press"/>
+                            <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              Margin="8,0,20,0"
+                                              VerticalAlignment="Center" HorizontalAlignment="Left">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource ComboSelectionText}"/>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                            <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" Focusable="False"
+                                   PopupAnimation="None" Placement="Bottom">
+                                <!-- Host keeps the popup window still while the surface scales in -->
+                                <Grid x:Name="PopupHost">
+                                    <Border Style="{StaticResource ComboMenuSurface}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                        <controls:LiquidGlassPanel Surface="Dropdown">
+                                            <ScrollViewer Margin="5" SnapsToDevicePixels="True" VerticalScrollBarVisibility="Auto">
+                                                <StackPanel IsItemsHost="True"
+                                                            KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                            </ScrollViewer>
+                                        </controls:LiquidGlassPanel>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ ROUND CHECKBOX (macOS-style selection circle for queue items) ═══════════ -->
+        <Style x:Key="RoundCheckBox" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid x:Name="Root" Background="Transparent" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="Pop" ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+                            <Ellipse x:Name="Ring" Stroke="{DynamicResource Tint50}" StrokeThickness="1.4" Fill="Transparent"/>
+                            <Ellipse x:Name="Dot" Fill="{DynamicResource Accent}" Opacity="0"/>
+                            <Rectangle x:Name="Dash" Width="8" Height="2" RadiusX="1" RadiusY="1" Fill="{DynamicResource TextOnMedia}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0"/>
+                            <Path x:Name="Check" Width="9" Height="9" Stretch="Uniform"
+                                  Data="M1,5.2 L4.2,8.4 L9.5,1.4"
+                                  Stroke="{DynamicResource TextOnMedia}" StrokeThickness="2"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource Accent}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Check" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Pop" Storyboard.TargetProperty="ScaleX">
+                                                <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0.82"/>
+                                                <EasingDoubleKeyFrame KeyTime="0:0:0.24" Value="1">
+                                                    <EasingDoubleKeyFrame.EasingFunction>
+                                                        <BackEase EasingMode="EaseOut" Amplitude="0.6"/>
+                                                    </EasingDoubleKeyFrame.EasingFunction>
+                                                </EasingDoubleKeyFrame>
+                                            </DoubleAnimationUsingKeyFrames>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Pop" Storyboard.TargetProperty="ScaleY">
+                                                <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0.82"/>
+                                                <EasingDoubleKeyFrame KeyTime="0:0:0.24" Value="1">
+                                                    <EasingDoubleKeyFrame.EasingFunction>
+                                                        <BackEase EasingMode="EaseOut" Amplitude="0.6"/>
+                                                    </EasingDoubleKeyFrame.EasingFunction>
+                                                </EasingDoubleKeyFrame>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Check" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="{x:Null}">
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="Dot" Property="Opacity" Value="1"/>
+                                <Setter TargetName="Dash" Property="Opacity" Value="1"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsChecked" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource TextSec}"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ TINTED ACCENT BUTTON (secondary action: accent label on a soft accent wash) ═══════════ -->
+        <Style x:Key="BatchAccentBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="Margin" Value="2,2"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root">
+                            <Border x:Name="Wash" CornerRadius="20" Background="{DynamicResource Accent}" Opacity="0.14"/>
+                            <Border Padding="{TemplateBinding Padding}" Background="Transparent">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Wash" Property="Opacity" Value="0.22"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Wash" Property="Opacity" Value="0.32"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+        <!-- ═══════════ ITEM ACTION BUTTON (Sleek Circle/Square) ═══════════ -->
+        <Style x:Key="BatchItemActionBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ ITEM DELETE BUTTON ═══════════ -->
+        <Style x:Key="BatchItemDeleteBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint20}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint30}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ TITLE BAR CLOSE BUTTON ═══════════ -->
+        <Style x:Key="BatchCloseBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint25}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint35}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ TITLE BAR MINIMIZE BUTTON ═══════════ -->
+        <Style x:Key="BatchMinimizeBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ PRIMARY ACTION BUTTON (accent fill, like a macOS default button) ═══════════
+             Tag="stop" turns it into the red "Stop" state while a batch is running. -->
+        <Style x:Key="BatchPrimaryBtn" TargetType="Button">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextOnMedia}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+                            <Border x:Name="Bd" CornerRadius="18" Background="{DynamicResource Accent}">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.16"/>
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="Sheen" CornerRadius="18" Background="{DynamicResource TextOnMedia}" Opacity="0" IsHitTestVisible="False"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="stop">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ErrorRed}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Sheen" Property="Opacity" Value="0.12"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Sheen" Property="Opacity" Value="0.22"/>
+                                <Setter TargetName="Root" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint1A}"/>
+                                <Setter TargetName="Bd" Property="Effect" Value="{x:Null}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════════ PROGRESS BARS (accent fill; no endless sheen: it kept the whole window and its glass redrawing) ═══════════ -->
+        <ControlTemplate x:Key="AccentProgressTemplate" TargetType="ProgressBar">
+            <Border Background="{TemplateBinding Background}" CornerRadius="3" ClipToBounds="True" Height="{TemplateBinding Height}">
+                <Grid x:Name="PART_Track">
+                    <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="3"
+                            Background="{TemplateBinding Foreground}"/>
+                </Grid>
+            </Border>
+        </ControlTemplate>
+
+        <Style x:Key="ModernLiquidProgressBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="5"/>
+            <Setter Property="Background" Value="{DynamicResource Tint14}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template" Value="{StaticResource AccentProgressTemplate}"/>
+        </Style>
+
+        <Style x:Key="ModernLiquidOverallProgressBar" TargetType="ProgressBar" BasedOn="{StaticResource ModernLiquidProgressBar}">
+            <Setter Property="Height" Value="6"/>
+        </Style>
+
+        <!-- ═══════════ CAPSULE PUSH (Settings push button in the toolbar's capsule shape) ═══════════ -->
+        <Style x:Key="CapsulePush" TargetType="Button" BasedOn="{StaticResource Push}">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="13,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="16" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint1C}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint26}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Accent-filled capsule (Settings' primary push) for the Fetch button -->
+        <Style x:Key="CapsulePrimary" TargetType="Button" BasedOn="{StaticResource CapsulePush}">
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextOnMedia}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="16" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Title-bar pill buttons (add links, Options, save & exit): icon plus a label shown with "Show icon labels" -->
+        <Style x:Key="TitlePillBtn" TargetType="Button">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="14" Padding="{TemplateBinding Padding}" Background="Transparent">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint14}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint1F}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="TitlePillLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Padding" Value="6,0,2,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <!-- ═══════════════════ ROOT BORDER (Liquid Glass Container) ═══════════════════ -->
+    <helpers:SquircleBorder x:Name="RootBorder" CornerRadius="16"
+            Background="{DynamicResource BgDeep}"
+            BorderBrush="{DynamicResource BorderSub}"
+            BorderThickness="1"
+            RenderTransformOrigin="0.5,0.5">
+        <helpers:SquircleBorder.RenderTransform>
+            <TransformGroup>
+                <ScaleTransform x:Name="WindowScale" ScaleX="1" ScaleY="1"/>
+                <TranslateTransform x:Name="WindowTranslate" X="0" Y="0"/>
+            </TransformGroup>
+        </helpers:SquircleBorder.RenderTransform>
+        <Grid x:Name="RootGrid">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="54"/>
+                <!-- 0: Title bar -->
+                <RowDefinition Height="*"/>
+                <!-- 1: Main Content Body -->
+            </Grid.RowDefinitions>
+
+            <!-- ═══════════ TITLE BAR ═══════════ -->
+            <Border Grid.Row="0" Background="Transparent" CornerRadius="16,16,0,0"
+                    MouseLeftButtonDown="TitleBar_Drag">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- What the add-links pill shows through: nothing moves behind it, so a static, empty backdrop -->
+                    <Border x:Name="TitleBackdrop" Grid.ColumnSpan="2" Background="Transparent" IsHitTestVisible="False"/>
+                    <!-- What the other capsules show through: the same, plus a stand-in for the accent Fetch button kept under it
+                         (UpdateFetchReflection), so their rims catch its blue as it slides (a capsule's content can't be part of
+                         another capsule's backdrop). On screen the stand-in always sits under the opaque pill. -->
+                    <Canvas x:Name="TitleReflections" Grid.ColumnSpan="2" IsHitTestVisible="False" ClipToBounds="True">
+                        <Border x:Name="FetchReflection" CornerRadius="13" Background="{DynamicResource Accent}" Visibility="Collapsed"
+                                Opacity="{Binding Opacity, ElementName=LinkFieldContent}"/>
+                    </Canvas>
+
+                    <!-- Left: app tile, title and live queue summary -->
+                    <StackPanel x:Name="TitleInfo" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{DynamicResource BatchQueueTitle}" FontWeight="SemiBold" FontSize="13.5" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock x:Name="TxtLoadedCount" Text="Queue is empty" FontSize="10.5" Margin="0,1,0,0"
+                                       Foreground="{DynamicResource TextSec}" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Right: add links, Queue Options, save & exit and the window controls, each on a small
+                         Liquid Glass capsule (surface "Button", like the Settings close button). The Borders carry the shadows.
+                         The pills' labels follow "Show icon labels" (UpdateOptionsTextVisibility). -->
+                    <StackPanel x:Name="TitleActions" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,14,0" VerticalAlignment="Center">
+                        <!-- Add links: a pill that grows to the left into a link field when clicked and folds back once the
+                             links are loaded (or on Esc / clicking away while empty): SetLinkFieldOpen -->
+                        <Border x:Name="AddLinksGlass" Height="32" Margin="0,0,8,0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                            </Border.Effect>
+                            <controls:LiquidGlassPanel Surface="Button" CornerRadius="16" BackdropSource="{Binding ElementName=TitleBackdrop}">
+                                <StackPanel Orientation="Horizontal" Margin="2,0">
+                                    <Button x:Name="BtnAddLinks" Style="{StaticResource TitlePillBtn}" Click="AddLinks_Click"
+                                            ToolTip="Add a playlist or video links to the queue">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="Link24" FontSize="13" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtAddLinksLabel" Text="{DynamicResource BatchAddLinks}" Style="{StaticResource TitlePillLabel}"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <!-- The field: a clipping window whose Width animates between 0, the room the title bar has, and
+                                         (while links load) just the Fetch button. Its content keeps its full width and is pinned to the
+                                         right edge (Canvas.Right), so the Fetch button stays put and the glass uncovers it instead of
+                                         pushing it in from under the capsules beside it -->
+                                    <Canvas x:Name="LinkFieldHost" Width="0" Height="28" VerticalAlignment="Center" ClipToBounds="True" Visibility="Collapsed">
+                                    <Grid x:Name="LinkFieldContent" Canvas.Right="0" Height="28" Opacity="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="TxtPlaylistUrl" Grid.Column="0"
+                                                 Style="{StaticResource SeamlessInputTextBox}"
+                                                 Padding="2,0,6,0" FontSize="12"
+                                                 Tag="{DynamicResource BatchQueuePlaceholder}"
+                                                 KeyDown="TxtPlaylistUrl_KeyDown" LostKeyboardFocus="TxtPlaylistUrl_LostKeyboardFocus"/>
+                                        <Button x:Name="BtnPasteLinks" Grid.Column="1" Style="{StaticResource GlassRoundBtn}" Margin="0,0,2,0" Focusable="False"
+                                                ToolTip="Paste links from the clipboard and add them (Ctrl+V)" Click="Paste_Click">
+                                            <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
+                                        </Button>
+                                        <Button Grid.Column="2" x:Name="BtnFetchPlaylist"
+                                                Style="{StaticResource CapsulePrimary}"
+                                                FontWeight="SemiBold" FontSize="11.5"
+                                                Padding="11,0" Margin="0" Height="26" VerticalAlignment="Center"
+                                                ToolTip="Load the links and add them to the queue (Enter)"
+                                                Click="FetchPlaylist_Click" Focusable="False">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <ui:SymbolIcon x:Name="IconFetchSpinner" Symbol="Add24" FontSize="12" Margin="0,0,4,0" RenderTransformOrigin="0.5,0.5"
+                                                               Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="TxtBtnFetch" Text="{DynamicResource BtnLoadPlaylist}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                    </Canvas>
+                                </StackPanel>
+                            </controls:LiquidGlassPanel>
+                        </Border>
+
+                        <!-- Queue Options (its glass capsule springs open with the popup: AnimateOptionsPillOpen) -->
+                        <Border x:Name="OptionsGlass" Height="32" Margin="0,0,8,0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                            </Border.Effect>
+                            <controls:LiquidGlassPanel Surface="TitleButton" CornerRadius="16" BackdropSource="{Binding ElementName=TitleReflections}">
+                                <Button x:Name="BtnBatchOptions" Style="{StaticResource TitlePillBtn}" Margin="2" Click="BatchOptions_Click"
+                                        ToolTip="Queue options: parallel downloads, cloud upload, automation">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="Options24" FontSize="13" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TxtBatchOptionsLabel" Text="Options" Style="{StaticResource TitlePillLabel}" Visibility="Collapsed"/>
+                                    </StackPanel>
+                                </Button>
+                            </controls:LiquidGlassPanel>
+                        </Border>
+
+                        <!-- Save & exit -->
+                        <Border Height="32" Margin="0,0,10,0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                            </Border.Effect>
+                            <controls:LiquidGlassPanel Surface="TitleButton" CornerRadius="16" BackdropSource="{Binding ElementName=TitleReflections}">
+                                <Button x:Name="BtnSaveAndExit" Style="{StaticResource TitlePillBtn}" Margin="2" Click="SaveAndExit_Click"
+                                        ToolTip="Save the queue and close (restored next time)">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="Save24" FontSize="13" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TxtSaveAndExitLabel" Text="{DynamicResource BtnSaveAndExit}" Style="{StaticResource TitlePillLabel}" Visibility="Collapsed"/>
+                                    </StackPanel>
+                                </Button>
+                            </controls:LiquidGlassPanel>
+                        </Border>
+
+                        <!-- Window controls -->
+                        <Border Height="32">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                            </Border.Effect>
+                            <controls:LiquidGlassPanel Surface="TitleButton" CornerRadius="16" BackdropSource="{Binding ElementName=TitleReflections}">
+                                <StackPanel Orientation="Horizontal" Margin="2,0" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource GlassRoundBtn}" Click="Minimize_Click" ToolTip="{DynamicResource TipMinimize}">
+                                        <ui:SymbolIcon Symbol="Subtract24" FontSize="11" Foreground="{DynamicResource TextPrimary}"/>
+                                    </Button>
+                                    <Button Style="{StaticResource GlassRoundBtn}" Click="Close_Click" ToolTip="{DynamicResource TipClose}">
+                                        <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource TextPrimary}"/>
+                                    </Button>
+                                </StackPanel>
+                            </controls:LiquidGlassPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ═══════════ MAIN CONTENT BODY ═══════════ -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ═══ LEFT: BATCH QUEUE MAIN VIEW ═══ -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- 0: Toolbar (floating) -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- 1: Settings toolbar -->
+                        <RowDefinition Height="*"/>
+                        <!-- 2: Queue items list -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- 3: Bottom summary & action footer -->
+                    </Grid.RowDefinitions>
+
+                    <!-- ═══════════ FLOATING HEADER: toolbar on Liquid Glass (surface "Toolbar") ═══════════
+                         Same layering as the footer; the queue scrolls underneath both. The Border carries the shadow. -->
+                    <Grid x:Name="HeaderHost" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Top" Margin="18,6,18,0" Panel.ZIndex="5">
+                        <!-- The shadow comes from a plain shape under the glass: as the parent's effect it was redrawn every time
+                             the queue behind the glass moved (a large share of the scrolling cost) -->
+                        <Border CornerRadius="20" Background="{DynamicResource BgDeep}" IsHitTestVisible="False">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.22"/>
+                            </Border.Effect>
+                        </Border>
+                    <controls:LiquidGlassPanel Surface="Toolbar" CornerRadius="20" BackdropSource="{Binding ElementName=QueueSection}">
+                        <StackPanel Margin="7">
+                            <!-- ═══════════ TOOLBAR: SELECTION, QUALITY, CLOUD, SAVE FOLDER ═══════════ -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- 0: Selection controls -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- 1: Quality dropdown -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- 2: Cloud Toggle Pill -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- 3: Storage bin -->
+                                    <ColumnDefinition Width="*"/>
+                                    <!-- 4: Save folder (right aligned) -->
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Selection: one circle for all / none (dash = some), the count, and clear -->
+                                <Border Grid.Column="0" Style="{StaticResource ToolbarPill}" Padding="7,0,3,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <CheckBox x:Name="ChkSelectAll" Style="{StaticResource RoundCheckBox}" IsThreeState="True"
+                                                  VerticalAlignment="Center" Click="SelectAllToggle_Click" ToolTip="Include every video, or none (Ctrl+A)"/>
+                                        <TextBlock x:Name="TxtSelectionCount" Text="None selected" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"
+                                                   Margin="8,0,9,0" VerticalAlignment="Center"/>
+                                        <Border Style="{StaticResource PillDivider}"/>
+                                        <Button x:Name="BtnClearQueue" Style="{StaticResource BatchItemDeleteBtn}" Width="30" Height="26"
+                                                Click="ClearQueue_Click" ToolTip="Clear the queue (can be undone)">
+                                            <ui:SymbolIcon Symbol="Delete24" FontSize="12" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Quality Pill -->
+                                <Border Grid.Column="1" Style="{StaticResource ToolbarPill}" Margin="8,0,0,0" Padding="10,0,2,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="Video24" FontSize="12" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" Margin="0,0,2,0"/>
+                                        <ComboBox x:Name="CmbBatchQuality" Style="{StaticResource BatchCapsuleComboBox}"
+                                                  Width="140" Height="26" SelectedIndex="0" SelectionChanged="CmbBatchQuality_SelectionChanged" Cursor="Hand"
+                                                  ToolTip="Quality for every video in the batch">
+                                            <ComboBoxItem Content="Best Available" Tag="best"/>
+                                            <ComboBoxItem Content="4K UHD (2160p)" Tag="2160"/>
+                                            <ComboBoxItem Content="2K QHD (1440p)" Tag="1440"/>
+                                            <ComboBoxItem Content="1080p Full HD" Tag="1080"/>
+                                            <ComboBoxItem Content="720p HD" Tag="720"/>
+                                            <ComboBoxItem Content="480p SD" Tag="480"/>
+                                            <ComboBoxItem Content="360p Low" Tag="360"/>
+                                            <ComboBoxItem Content="Audio MP3 (320k)" Tag="audio"/>
+                                            <ComboBoxItem Content="Audio M4A (256k)" Tag="m4a"/>
+                                            <ComboBoxItem Content="Audio FLAC" Tag="flac"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Cloud Upload Quick Toggle Pill -->
+                                <Border x:Name="PillBatchCloud" Grid.Column="2" Style="{StaticResource ToolbarPill}" Margin="8,0,0,0" Padding="7,0,3,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <CheckBox x:Name="ChkBatchCloudUpload" Style="{StaticResource Switch}" Click="ChkBatchCloudUpload_Click"
+                                                  ToolTip="Upload every finished video to your cloud" Margin="0,0,8,0"/>
+                                        <TextBlock x:Name="TxtBatchCloudLabel" Text="Cloud" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"
+                                                   Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <Border Style="{StaticResource PillDivider}"/>
+                                        <Button x:Name="BtnBatchCloudConfig" Style="{StaticResource BatchItemActionBtn}" Width="28" Height="26"
+                                                Click="BtnBatchCloudConfig_Click" ToolTip="Choose the cloud provider &amp; destination">
+                                            <ui:SymbolIcon Symbol="Settings24" FontSize="12" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Storage bin: park videos outside the batch (opens the side-by-side bin) -->
+                                <Border Grid.Column="3" Style="{StaticResource ToolbarPill}" Margin="8,0,0,0">
+                                    <!-- Storage bin toggle -->
+                                    <ToggleButton x:Name="BtnToggleSplitStorage" Height="26" Margin="0" Padding="9,0"
+                                                  Click="BtnToggleSplitStorage_Click" ToolTip="Storage bin: park videos outside the batch (drag &amp; drop supported)" Cursor="Hand"
+                                                  FocusVisualStyle="{x:Null}">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border x:Name="Bd" CornerRadius="13" Padding="{TemplateBinding Padding}" Background="Transparent">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon x:Name="IconSplit" Symbol="Archive24" FontSize="12" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="TxtSplitLabel" Text="Storage" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                        <Border x:Name="BadgeStored" Background="{DynamicResource Accent}" CornerRadius="8" MinWidth="16" Padding="5,0.5" Margin="5,0,0,0" Visibility="Collapsed">
+                                                            <TextBlock x:Name="TxtBadgeStoredCount" Text="0" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextOnMedia}" HorizontalAlignment="Center"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint14}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint1F}"/>
+                                                        <Setter TargetName="IconSplit" Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                        <Setter TargetName="IconSplit" Property="Filled" Value="True"/>
+                                                        <Setter TargetName="TxtSplitLabel" Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+                                </Border>
+
+                                <!-- Save Folder Pill: folder name (click to change) + reveal in Explorer -->
+                                <Border Grid.Column="4" Style="{StaticResource ToolbarPill}" Margin="8,0,0,0" HorizontalAlignment="Right" MaxWidth="280">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Source of truth for the output path (read by the download code) -->
+                                        <TextBox x:Name="TxtBatchOutputDir" Visibility="Collapsed" IsReadOnly="True" TextChanged="TxtBatchOutputDir_TextChanged"/>
+                                        <Button x:Name="BtnBrowseOutputDir" Grid.Column="0" Style="{StaticResource BatchCapsuleBtn}" Height="26" Margin="0"
+                                                Padding="10,0" Click="BrowseOutputDir_Click" HorizontalContentAlignment="Left">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <ui:SymbolIcon Symbol="Folder24" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource Accent}"/>
+                                                <TextBlock x:Name="TxtOutputFolderName" Text="Videos" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <ui:SymbolIcon Symbol="ChevronUpDown16" FontSize="11" Margin="5,0,0,0" VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource TextSec}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Border Grid.Column="1" Style="{StaticResource PillDivider}"/>
+                                        <Button Grid.Column="2" Style="{StaticResource BatchItemActionBtn}" Width="28" Height="26"
+                                                Click="OpenOutputDir_Click" ToolTip="Open the save folder in Explorer">
+                                            <ui:SymbolIcon Symbol="Open24" FontSize="12" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </controls:LiquidGlassPanel>
+                    </Grid>
+
+                    <!-- ═══════════ QUEUE ITEM LIST & SPLIT STORAGE BIN (runs under the floating footer) ═══════════ -->
+                    <Grid x:Name="QueueSection" Grid.Row="0" Grid.RowSpan="4" Margin="12,0,12,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="ColActiveQueue" Width="*"/>
+                            <ColumnDefinition x:Name="ColSplitter" Width="Auto"/>
+                            <ColumnDefinition x:Name="ColStoredQueue" Width="0"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- ═══ LEFT / MAIN: ACTIVE QUEUE PANEL ═══ -->
+                        <Border Grid.Column="0" Style="{StaticResource BatchSurface}" Padding="6">
+                            <Grid x:Name="ActiveQueueGrid">
+                                <!-- Empty State -->
+                                <StackPanel x:Name="EmptyQueueState" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                            MaxWidth="380" Visibility="Visible">
+                                    <Grid Width="64" Height="64" HorizontalAlignment="Center" Margin="0,0,0,14">
+                                        <Ellipse Fill="{DynamicResource Accent}" Opacity="0.12"/>
+                                        <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="28" Foreground="{DynamicResource Accent}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <TextBlock Text="Your queue is empty" FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Add a playlist or a few video links with the link button at the top, or drop them anywhere in this window."
+                                               FontSize="11.5" Foreground="{DynamicResource TextSec}" TextWrapping="Wrap" TextAlignment="Center"
+                                               HorizontalAlignment="Center" Margin="0,6,0,16"/>
+                                    <Button Style="{StaticResource BatchPrimaryBtn}" Height="32" Padding="16,0" HorizontalAlignment="Center"
+                                            Click="Paste_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                           Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                            <TextBlock Text="Paste from Clipboard" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- Virtualized Queue List (Active Download Queue) -->
+                                <ListBox x:Name="QueueItemsList"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         ScrollViewer.CanContentScroll="True"
+                                         VirtualizingPanel.IsVirtualizing="True"
+                                         VirtualizingPanel.VirtualizationMode="Recycling"
+                                         VirtualizingPanel.ScrollUnit="Pixel"
+                                         VirtualizingPanel.CacheLengthUnit="Item"
+                                         VirtualizingPanel.CacheLength="3,3"
+                                         SelectionMode="Single">
+                                    <ListBox.Template>
+                                        <!-- Plain scroller: the presenter's bottom margin (set in code) leaves room to scroll past the floating footer -->
+                                        <ControlTemplate TargetType="ListBox">
+                                            <ScrollViewer Focusable="False" Padding="0"
+                                                          CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                                                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                                                <ItemsPresenter x:Name="ItemsHost"/>
+                                            </ScrollViewer>
+                                        </ControlTemplate>
+                                    </ListBox.Template>
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="Margin" Value="0,0,0,0"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Focusable" Value="False"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <ContentPresenter HorizontalAlignment="Stretch"/>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,6">
+                                                <Border Style="{StaticResource QueueCardShadow}" Margin="-2,1,-2,-4" CornerRadius="14" Background="#0C000000"/>
+                                                <Border Style="{StaticResource QueueCardShadow}" Margin="-1,1,-1,-2.5" CornerRadius="13" Background="#14000000"/>
+                                                <Border Style="{StaticResource QueueCardShadow}" Margin="-0.5,1,-0.5,-1.5" CornerRadius="12.5" Background="#22000000"/>
+                                                <Border x:Name="Card" Style="{StaticResource QueueItemBorder}" BorderBrush="{Binding CardBorderBrush}">
+                                                    <Border.ContextMenu>
+                                                        <ContextMenu>
+                                                            <MenuItem Header="Set Quality">
+                                                                <MenuItem Header="Default (Batch Quality)" Tag="default" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="Best Available" Tag="best" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="4K UHD (2160p)" Tag="2160" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="2K QHD (1440p)" Tag="1440" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="1080p Full HD" Tag="1080" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="720p HD" Tag="720" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="480p SD" Tag="480" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="360p Low" Tag="360" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="Audio MP3 (320k)" Tag="audio" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="Audio M4A (256k)" Tag="m4a" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                                <MenuItem Header="Audio FLAC" Tag="flac" Click="ContextSetQuality_Click" CommandParameter="{Binding}"/>
+                                                            </MenuItem>
+                                                            <MenuItem Header="Move to Storage Bin" Click="ContextStore_Click" Tag="{Binding}"/>
+                                                            <Separator/>
+                                                            <MenuItem Header="Retry Download" Click="ContextRetry_Click" Tag="{Binding}"/>
+                                                            <MenuItem Header="Copy Video URL" Click="ContextCopyUrl_Click" Tag="{Binding}"/>
+                                                            <MenuItem Header="Open in Browser" Click="ContextOpenBrowser_Click" Tag="{Binding}"/>
+                                                            <Separator/>
+                                                            <MenuItem Header="Remove from Queue" Click="ContextRemove_Click" Tag="{Binding}"/>
+                                                        </ContextMenu>
+                                                    </Border.ContextMenu>
+                                                    <Grid>
+                                                        <!-- Thumbnail colour wash (only on included items) and hover highlight -->
+                                                        <Border Background="{Binding CardBackground}" CornerRadius="12" Margin="-10,-8" IsHitTestVisible="False"/>
+                                                        <Border x:Name="HoverLayer" Background="{DynamicResource CardHoverBg}" CornerRadius="12" Margin="-10,-8"
+                                                                IsHitTestVisible="False" Opacity="0"/>
+
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <!-- 0: Selection circle -->
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <!-- 1: Thumbnail -->
+                                                                <ColumnDefinition Width="*"/>
+                                                                <!-- 2: Title, channel, progress / error -->
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <!-- 3: Per-video quality -->
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <!-- 4: Status chip -->
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <!-- 5: Actions -->
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      Style="{StaticResource RoundCheckBox}"
+                                                                      IsEnabled="{Binding IsLoaded}"
+                                                                      VerticalAlignment="Center" Margin="2,0,12,0"
+                                                                      ToolTip="Include in the batch"/>
+
+                                                            <!-- ═══ SKELETON LOADING PLACEHOLDER ═══ -->
+                                                            <Grid Grid.Column="1" Grid.ColumnSpan="2" Visibility="{Binding LoadingVisibility}" VerticalAlignment="Center">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <!-- Pulses only while the item is loading (a hidden endless animation still redraws the window) -->
+                                                                <Grid.Style>
+                                                                    <Style TargetType="Grid">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                                                                <DataTrigger.EnterActions>
+                                                                                    <BeginStoryboard x:Name="SkeletonPulse">
+                                                                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.35" To="0.9" Duration="0:0:0.8"/>
+                                                                                        </Storyboard>
+                                                                                    </BeginStoryboard>
+                                                                                </DataTrigger.EnterActions>
+                                                                                <DataTrigger.ExitActions>
+                                                                                    <StopStoryboard BeginStoryboardName="SkeletonPulse"/>
+                                                                                </DataTrigger.ExitActions>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Grid.Style>
+                                                                <Border Grid.Column="0" Width="80" Height="45" CornerRadius="8"
+                                                                        Background="{DynamicResource Tint14}" Margin="0,0,12,0"/>
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="0,0,12,0">
+                                                                    <Border Height="12" CornerRadius="6" Background="{DynamicResource Tint1A}" HorizontalAlignment="Stretch" Margin="0,0,60,8"/>
+                                                                    <Border Height="10" CornerRadius="5" Background="{DynamicResource Tint12}" HorizontalAlignment="Left" Width="120"/>
+                                                                </StackPanel>
+                                                            </Grid>
+
+                                                            <!-- ═══ LOADED ITEM CONTENT ═══ -->
+                                                            <Grid Grid.Column="1" Grid.ColumnSpan="2" Visibility="{Binding LoadedVisibility}">
+                                                                <Grid.Style>
+                                                                    <Style TargetType="Grid">
+                                                                        <Style.Triggers>
+                                                                            <Trigger Property="Visibility" Value="Visible">
+                                                                                <Trigger.EnterActions>
+                                                                                    <BeginStoryboard>
+                                                                                        <Storyboard>
+                                                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.35">
+                                                                                                <DoubleAnimation.EasingFunction>
+                                                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                                                </DoubleAnimation.EasingFunction>
+                                                                                            </DoubleAnimation>
+                                                                                        </Storyboard>
+                                                                                    </BeginStoryboard>
+                                                                                </Trigger.EnterActions>
+                                                                            </Trigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Grid.Style>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <!-- Thumbnail with badges -->
+                                                                <Border Grid.Column="0" Width="80" Height="45" CornerRadius="8"
+                                                                        Background="{DynamicResource Tint14}" ClipToBounds="True" Margin="0,0,12,0"
+                                                                        Opacity="{Binding ContentOpacity}">
+                                                                    <Grid>
+                                                                        <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"
+                                                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                                                                        <!-- Top-Left: Cloud destination badge -->
+                                                                        <Border Background="#C8000000" CornerRadius="4" Padding="4,1.5"
+                                                                                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,4,0,0"
+                                                                                Visibility="{Binding CloudBadgeVisibility}">
+                                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                                <ui:SymbolIcon Symbol="CloudArrowUp24" FontSize="8.5" Foreground="{DynamicResource TextOnMedia}" Margin="0,0,2.5,0" VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="{Binding CloudBadgeText}" FontSize="8" FontWeight="Bold" Foreground="{DynamicResource TextOnMedia}" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </Border>
+
+                                                                        <!-- Bottom-Right: Duration badge -->
+                                                                        <Border Background="#B0000000" CornerRadius="4" Padding="4,1.5"
+                                                                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,4,4"
+                                                                                Visibility="{Binding DurationTextVisibility}">
+                                                                            <TextBlock Text="{Binding DurationText}" FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextOnMedia}"/>
+                                                                        </Border>
+                                                                    </Grid>
+                                                                </Border>
+
+                                                                <!-- Title, channel, live speed / ETA, cloud step, progress or error -->
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="0,0,12,0">
+                                                                    <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource TextPrimary}"
+                                                                               Opacity="{Binding ContentOpacity}"
+                                                                               ToolTip="{Binding Title}"
+                                                                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+
+                                                                    <DockPanel Margin="0,3,0,0" Opacity="{Binding ContentOpacity}">
+                                                                        <TextBlock Text="{Binding Uploader}" FontSize="10.5"
+                                                                                   Foreground="{DynamicResource TextSec}" DockPanel.Dock="Left" TextTrimming="CharacterEllipsis"/>
+                                                                        <TextBlock Text="{Binding Speed}" FontSize="10" Foreground="{DynamicResource TextSec}"
+                                                                                   FontWeight="SemiBold" Margin="8,0,0,0" Visibility="{Binding SpeedVisibility}" DockPanel.Dock="Left"/>
+                                                                        <TextBlock Text="{Binding Eta}" FontSize="10" Foreground="{DynamicResource TextSec}"
+                                                                                   Margin="6,0,0,0" Visibility="{Binding EtaVisibility}" DockPanel.Dock="Left"/>
+                                                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" Margin="8,0,0,0"
+                                                                                    Visibility="{Binding CloudStatusVisibility}">
+                                                                            <ui:SymbolIcon Symbol="CloudArrowUp24" FontSize="9.5" Foreground="{DynamicResource Accent}" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                                                                            <TextBlock Text="{Binding CloudStatusMessage}" FontSize="10" FontWeight="SemiBold"
+                                                                                       Foreground="{DynamicResource Accent}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                                        </StackPanel>
+                                                                    </DockPanel>
+
+                                                                    <!-- Failed: what went wrong and the first fix (details in the tooltip) -->
+                                                                    <StackPanel Margin="0,4,0,0" Visibility="{Binding ErrorVisibility}" ToolTip="{Binding ErrorTooltip}"
+                                                                                ToolTipService.ShowDuration="30000">
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <ui:SymbolIcon Symbol="Warning24" FontSize="10" Foreground="{DynamicResource ErrorRed}" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                                            <TextBlock Text="{Binding ErrorTitle}" FontSize="10.5" FontWeight="SemiBold"
+                                                                                       Foreground="{DynamicResource ErrorRed}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                                        </StackPanel>
+                                                                        <TextBlock Text="{Binding ErrorHint}" FontSize="10" Foreground="{DynamicResource TextSec}"
+                                                                                   TextWrapping="Wrap" MaxHeight="28" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                                                                    </StackPanel>
+
+                                                                    <ProgressBar Style="{StaticResource ModernLiquidProgressBar}"
+                                                                                 Value="{Binding Progress}" Maximum="100"
+                                                                                 Margin="0,7,0,0" Visibility="{Binding ProgressVisibility}"/>
+                                                                </StackPanel>
+                                                            </Grid>
+
+                                                            <!-- 3: Per-video quality picker -->
+                                                            <ComboBox Grid.Column="3" Width="118" Height="26" FontSize="10.5"
+                                                                      SelectedValue="{Binding SelectedQuality, Mode=TwoWay}"
+                                                                      SelectedValuePath="Tag"
+                                                                      Visibility="{Binding PerVideoQualityVisibility}"
+                                                                      IsEnabled="{Binding IsLoaded}"
+                                                                      VerticalAlignment="Center" Margin="0,0,8,0"
+                                                                      ToolTip="Quality for this video only">
+                                                                <ComboBoxItem Content="Default (Batch)" Tag="default"/>
+                                                                <ComboBoxItem Content="Best Quality" Tag="best"/>
+                                                                <ComboBoxItem Content="4K (2160p)" Tag="2160"/>
+                                                                <ComboBoxItem Content="1440p QHD" Tag="1440"/>
+                                                                <ComboBoxItem Content="1080p FHD" Tag="1080"/>
+                                                                <ComboBoxItem Content="720p HD" Tag="720"/>
+                                                                <ComboBoxItem Content="480p SD" Tag="480"/>
+                                                                <ComboBoxItem Content="360p Low" Tag="360"/>
+                                                                <ComboBoxItem Content="Audio MP3" Tag="audio"/>
+                                                                <ComboBoxItem Content="Audio M4A" Tag="m4a"/>
+                                                                <ComboBoxItem Content="Audio FLAC" Tag="flac"/>
+                                                            </ComboBox>
+
+                                                            <!-- 4: Status chip (Ready / 45% / Done / Failed …) -->
+                                                            <Border Grid.Column="4" CornerRadius="9" Padding="8,2.5" Background="{DynamicResource Tint0C}"
+                                                                    VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="52" Margin="4,0,0,0"
+                                                                    Visibility="{Binding LoadedVisibility}">
+                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                    <ui:SymbolIcon Symbol="{Binding ActivePillSymbol}" FontSize="9.5" Margin="0,0,3,0" VerticalAlignment="Center"
+                                                                                   Foreground="{Binding StatusColor}" Visibility="{Binding ActivePillVisibility}"/>
+                                                                    <TextBlock Text="{Binding StatusText}" FontSize="10" FontWeight="SemiBold"
+                                                                               Foreground="{Binding StatusColor}" VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+
+                                                            <!-- 5: Actions: retry stays visible on failures, the rest appears on hover -->
+                                                            <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="6,0,0,0">
+                                                                <Button Style="{StaticResource BatchItemActionBtn}" Width="26" Height="26"
+                                                                        Click="RetrySingleItem_Click" Tag="{Binding}" ToolTip="Retry download"
+                                                                        Visibility="{Binding ErrorVisibility}">
+                                                                    <ui:SymbolIcon Symbol="ArrowClockwise24" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                                                </Button>
+                                                                <StackPanel x:Name="HoverActions" Orientation="Horizontal" Opacity="0">
+                                                                    <Button Style="{StaticResource BatchItemActionBtn}" Width="26" Height="26"
+                                                                            Click="StoreSingleItem_Click" Tag="{Binding}" ToolTip="Move to the storage bin (excluded from the batch)"
+                                                                            Visibility="{Binding StoreButtonVisibility}">
+                                                                        <ui:SymbolIcon Symbol="Archive24" FontSize="12" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                                                    </Button>
+                                                                    <Button Style="{StaticResource BatchItemDeleteBtn}" Width="26" Height="26"
+                                                                            Click="RemoveItem_Click" Tag="{Binding}" ToolTip="Remove from queue">
+                                                                        <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <Trigger SourceName="Card" Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="HoverLayer" Property="Opacity" Value="1"/>
+                                                    <Setter TargetName="HoverActions" Property="Opacity" Value="1"/>
+                                                </Trigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- ═══ CENTER: SPLITTER DIVIDER ═══ -->
+                        <GridSplitter x:Name="StorageSplitter" Grid.Column="1" Width="10" Margin="1,0"
+                                      HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                                      Background="Transparent" ShowsPreview="False" Visibility="Collapsed">
+                            <GridSplitter.Template>
+                                <ControlTemplate TargetType="GridSplitter">
+                                    <Border Background="Transparent" Cursor="SizeWE" Width="10" HorizontalAlignment="Center">
+                                        <Border x:Name="Grip" Width="4" Height="36" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Background="{DynamicResource Tint30}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Grip" Property="Background" Value="{DynamicResource Accent}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </GridSplitter.Template>
+                        </GridSplitter>
+
+                        <!-- ═══ RIGHT: STORAGE BIN (On Hold) ═══ -->
+                        <Border x:Name="StoredPanelContainer" Grid.Column="2" Style="{StaticResource BatchSurface}"
+                                Padding="6" Visibility="Collapsed">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6,4,6,8">
+                                    <ui:SymbolIcon Symbol="Archive24" FontSize="12" Foreground="{DynamicResource TextSec}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="STORAGE BIN" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Empty State for Stored Bin -->
+                                <StackPanel x:Name="EmptyStoredState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Visible" Margin="10,0">
+                                    <ui:SymbolIcon Symbol="Archive24" FontSize="28" Foreground="{DynamicResource TextSec}" Opacity="0.45" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Nothing parked" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Drag videos here to keep them out of the batch for now." FontSize="10.5" Foreground="{DynamicResource TextSec}"
+                                               HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                </StackPanel>
+
+                                <!-- Virtualized List for Stored Items -->
+                                <ListBox x:Name="StoredItemsList" Grid.Row="1"
+                                             Background="Transparent" BorderThickness="0" Padding="0"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                                             VirtualizingPanel.ScrollUnit="Pixel" SelectionMode="Single">
+                                    <ListBox.Template>
+                                        <!-- Plain scroller: the presenter's bottom margin (set in code) leaves room to scroll past the floating footer -->
+                                        <ControlTemplate TargetType="ListBox">
+                                            <ScrollViewer Focusable="False" Padding="0"
+                                                          CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                                                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                                                <ItemsPresenter x:Name="ItemsHost"/>
+                                            </ScrollViewer>
+                                        </ControlTemplate>
+                                    </ListBox.Template>
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="Margin" Value="0,0,0,0"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Focusable" Value="False"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <ContentPresenter HorizontalAlignment="Stretch"/>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,6">
+                                                <Border Style="{StaticResource QueueCardShadow}" Margin="-2,1,-2,-4" CornerRadius="14" Background="#0C000000"/>
+                                                <Border Style="{StaticResource QueueCardShadow}" Margin="-1,1,-1,-2.5" CornerRadius="13" Background="#14000000"/>
+                                                <Border Style="{StaticResource QueueCardShadow}" Margin="-0.5,1,-0.5,-1.5" CornerRadius="12.5" Background="#22000000"/>
+                                                <Border x:Name="Card" Style="{StaticResource QueueItemBorder}">
+                                                    <Border.ContextMenu>
+                                                        <ContextMenu>
+                                                            <MenuItem Header="Move to Download Queue" Click="ContextRestore_Click" Tag="{Binding}"/>
+                                                            <Separator/>
+                                                            <MenuItem Header="Copy Video URL" Click="ContextCopyUrl_Click" Tag="{Binding}"/>
+                                                            <MenuItem Header="Open in Browser" Click="ContextOpenBrowser_Click" Tag="{Binding}"/>
+                                                            <Separator/>
+                                                            <MenuItem Header="Remove from Storage" Click="RemoveStoredItem_Click" Tag="{Binding}"/>
+                                                        </ContextMenu>
+                                                    </Border.ContextMenu>
+                                                    <Grid>
+                                                        <Border x:Name="HoverLayer" Background="{DynamicResource CardHoverBg}" CornerRadius="12" Margin="-10,-8"
+                                                                IsHitTestVisible="False" Opacity="0"/>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <Border Grid.Column="0" Width="80" Height="45" CornerRadius="7"
+                                                                    Background="{DynamicResource Tint14}" ClipToBounds="True" Margin="0,0,10,0">
+                                                                <Grid>
+                                                                    <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"
+                                                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                                                           Visibility="{Binding LoadedVisibility}"/>
+                                                                    <Border Background="#B0000000" CornerRadius="4" Padding="3,1"
+                                                                            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,3,3"
+                                                                            Visibility="{Binding DurationTextVisibility}">
+                                                                        <TextBlock Text="{Binding DurationText}" FontSize="8" FontWeight="SemiBold" Foreground="{DynamicResource TextOnMedia}"/>
+                                                                    </Border>
+                                                                </Grid>
+                                                            </Border>
+
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0" ClipToBounds="True">
+                                                                <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource TextPrimary}" ToolTip="{Binding Title}"
+                                                                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                                <TextBlock Text="{Binding Uploader}" FontSize="10"
+                                                                           Foreground="{DynamicResource TextSec}" Margin="0,2,0,0"
+                                                                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Button Style="{StaticResource BatchItemActionBtn}" Width="26" Height="26"
+                                                                        Click="RestoreSingleItem_Click" Tag="{Binding}" ToolTip="Move back to the download queue">
+                                                                    <ui:SymbolIcon Symbol="ArrowUndo24" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                                                </Button>
+                                                                <Button x:Name="BtnRemoveStored" Style="{StaticResource BatchItemDeleteBtn}" Width="26" Height="26" Opacity="0"
+                                                                        Click="RemoveStoredItem_Click" Tag="{Binding}" ToolTip="Remove from storage">
+                                                                    <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                                                </Button>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <Trigger SourceName="Card" Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="HoverLayer" Property="Opacity" Value="1"/>
+                                                    <Setter TargetName="BtnRemoveStored" Property="Opacity" Value="1"/>
+                                                </Trigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- ═══ DROP OVERLAY (shown while links are dragged over the window) ═══ -->
+                        <Grid x:Name="DropOverlay" Grid.ColumnSpan="3" Visibility="Collapsed" IsHitTestVisible="False" Opacity="0">
+                            <Border CornerRadius="16" Background="{DynamicResource PopupBg}" Opacity="0.94"/>
+                            <Rectangle RadiusX="16" RadiusY="16" Margin="1" Stroke="{DynamicResource Accent}" StrokeThickness="2"
+                                       StrokeDashArray="5 4" Fill="Transparent"/>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Grid Width="60" Height="60" HorizontalAlignment="Center" Margin="0,0,0,12">
+                                    <Ellipse Fill="{DynamicResource Accent}" Opacity="0.14"/>
+                                    <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="26" Foreground="{DynamicResource Accent}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="Drop to add to the queue" FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Links, playlists or .txt files with one link per line" FontSize="11"
+                                           Foreground="{DynamicResource TextSec}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- ═══════════ FLOATING FOOTER: Liquid Glass bar (surface "Toolbar") over the queue ═══════════
+                         The glass shows a live copy of the queue scrolling behind it. The Border carries the shadow. -->
+                    <Grid x:Name="FooterHost" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Bottom" Margin="18,0,18,18" Panel.ZIndex="5">
+                        <!-- The shadow comes from a plain shape under the glass: as the parent's effect it was redrawn every time
+                             the queue behind the glass moved (a large share of the scrolling cost) -->
+                        <Border CornerRadius="24" Background="{DynamicResource BgDeep}" IsHitTestVisible="False">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.22"/>
+                            </Border.Effect>
+                        </Border>
+                    <controls:LiquidGlassPanel Surface="Toolbar" CornerRadius="24" BackdropSource="{Binding ElementName=QueueSection}">
+                        <Grid Margin="16,8,8,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Overall status & progress bar -->
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <DockPanel>
+                                    <TextBlock x:Name="TxtOverallProgressCount" Text="0 / 0" FontSize="11.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextSec}" DockPanel.Dock="Right" Margin="8,0,0,0"/>
+                                    <TextBlock x:Name="TxtOverallStatus" Text="Ready" FontSize="11.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                                <!-- Shown only during and right after a run (UpdateCounts / RunBatchAsync) -->
+                                <ProgressBar x:Name="OverallProgressBar" Margin="0,6,0,0" Visibility="Collapsed"
+                                             Style="{StaticResource ModernLiquidOverallProgressBar}"
+                                             Maximum="100" Value="0"/>
+                            </StackPanel>
+
+                            <!-- Retry failed, live log toggle and the primary Download / Stop button -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnRetryFailed" Style="{StaticResource BatchAccentBtn}" Height="32" Padding="12,0" Margin="0,0,6,0"
+                                        Click="RetryFailed_Click" Visibility="Collapsed" ToolTip="Download every failed video again">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="ArrowClockwise24" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"
+                                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                        <TextBlock x:Name="TxtRetryFailed" Text="Retry failed" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button x:Name="BtnToggleLiveLog" Style="{StaticResource CapsulePush}"
+                                        Margin="0,0,8,0" Click="ToggleLiveLog_Click" ToolTip="Show or hide the live engine log">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="WindowConsole20" FontSize="13" Margin="0,0,6,0" Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock x:Name="TxtToggleLogLabel" Text="Log" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button x:Name="BtnStartBatchDownload"
+                                        Style="{StaticResource BatchPrimaryBtn}" MinWidth="150"
+                                        Click="StartBatchDownload_Click" ToolTip="Download every included video (Ctrl+Enter)">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon x:Name="IconBatchStart" Symbol="ArrowDownload24" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                        <TextBlock x:Name="TxtBtnBatchStart" Text="Download" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </controls:LiquidGlassPanel>
+                    </Grid>
+                </Grid>
+
+                <!-- ═══ RIGHT: LIVE LOG SIDE PANEL (Expands to Right of Window) ═══ -->
+                <Border x:Name="LiveLogSidePanel" Grid.Column="1"
+                        Width="360" Margin="0,0,14,14" Style="{StaticResource BatchSurface}"
+                        Padding="14,12" Visibility="Collapsed" ClipToBounds="True">
+                    <!-- Fixed-width inner grid prevents WPF text re-flow/re-measuring during width animation -->
+                    <Grid Width="332" HorizontalAlignment="Left">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="WindowConsole20" FontSize="13" Foreground="{DynamicResource TextSec}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Live Log" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                <Border Background="{DynamicResource Tint0C}" CornerRadius="8" Padding="6,1.5" Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="TxtLogLineCount" Text="0 lines" FontSize="9.5" Foreground="{DynamicResource TextSec}"/>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Style="{StaticResource BatchItemActionBtn}" Width="26" Height="26" Margin="0,0,2,0"
+                                        Click="CopyLiveLog_Click" ToolTip="Copy the whole log">
+                                    <ui:SymbolIcon Symbol="Copy24" FontSize="11" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                </Button>
+                                <Button Style="{StaticResource BatchItemActionBtn}" Width="26" Height="26" Margin="0,0,2,0"
+                                        Click="ClearLiveLog_Click" ToolTip="Clear the log">
+                                    <ui:SymbolIcon Symbol="Delete24" FontSize="11" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                </Button>
+                                <Button Style="{StaticResource BatchItemActionBtn}" Width="26" Height="26"
+                                        Click="CloseLiveLog_Click" ToolTip="Close the log panel">
+                                    <ui:SymbolIcon Symbol="Dismiss24" FontSize="10" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="1" CornerRadius="10" Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" Padding="8">
+                            <TextBox x:Name="TxtLiveLog"
+                                     Background="Transparent" BorderThickness="0"
+                                     Foreground="{DynamicResource ConsoleText}" FontFamily="Cascadia Code, Consolas" FontSize="10.5"
+                                     IsReadOnly="True" TextWrapping="Wrap"
+                                     ScrollViewer.IsDeferredScrollingEnabled="True"
+                                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ═══════════ BATCH OPTIONS POPUP ═══════════ -->
+            <Popup x:Name="BatchOptionsPopup" PlacementTarget="{Binding ElementName=BtnBatchOptions}" Placement="Bottom" HorizontalOffset="-254" AllowsTransparency="True" StaysOpen="True"
+                   PopupAnimation="None" Closed="BatchOptionsPopup_Closed">
+                <Border x:Name="BatchOptionsPopupBorder" controls:LiquidGlass.Surface="Popup"
+                        Background="{DynamicResource PopupBg}"
+                        BorderBrush="{DynamicResource PopupBorder}"
+                        BorderThickness="0.5" CornerRadius="16"
+                        Padding="16,14" Margin="14,6,14,22" Width="330"
+                        RenderTransformOrigin="0.5,0">
+                    <Border.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                            <TranslateTransform Y="-4"/>
+                        </TransformGroup>
+                    </Border.RenderTransform>
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="28" ShadowDepth="6" Direction="270" Color="Black" Opacity="0.28"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Header -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid Grid.Column="0" Width="36" Height="36" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Border CornerRadius="11" Background="{DynamicResource Accent}" Opacity="0.15"/>
+                                <ui:SymbolIcon Symbol="Options24" FontSize="17" Foreground="{DynamicResource Accent}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Queue Options" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                                <TextBlock Text="Batch performance &amp; integrations" FontSize="10.5" Foreground="{DynamicResource TextSec}" Margin="0,1,0,0"/>
+                            </StackPanel>
+
+                            <Button Grid.Column="2" Style="{StaticResource BatchItemActionBtn}" Width="26" Height="26" VerticalAlignment="Center" Click="CloseBatchOptions_Click">
+                                <ui:SymbolIcon Symbol="Dismiss24" FontSize="10" Foreground="{DynamicResource TextSec}"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Multi-Downloads Concurrency Card -->
+                        <Border Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" CornerRadius="12" Padding="12,10" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="13" Foreground="{DynamicResource Accent}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Parallel Downloads" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <ComboBox x:Name="CmbMaxConcurrency" Grid.Column="1" Width="140" Height="26" SelectedIndex="1" SelectionChanged="CmbMaxConcurrency_SelectionChanged">
+                                    <ComboBoxItem Content="1 (Sequential)" Tag="1"/>
+                                    <ComboBoxItem Content="2 Simultaneous" Tag="2"/>
+                                    <ComboBoxItem Content="3 Simultaneous" Tag="3"/>
+                                    <ComboBoxItem Content="4 Simultaneous" Tag="4"/>
+                                    <ComboBoxItem Content="5 Simultaneous" Tag="5"/>
+                                    <ComboBoxItem Content="8 Simultaneous" Tag="8"/>
+                                    <ComboBoxItem Content="10 Simultaneous" Tag="10"/>
+                                    <ComboBoxItem Content="15 Simultaneous" Tag="15"/>
+                                    <ComboBoxItem Content="20 Simultaneous" Tag="20"/>
+                                    <ComboBoxItem Content="25 Simultaneous" Tag="25"/>
+                                    <ComboBoxItem Content="30 Simultaneous" Tag="30"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Cloud Storage Upload Section Card -->
+                        <Border Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" CornerRadius="12" Padding="12,10" Margin="0,0,0,10">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="CloudArrowUp24" FontSize="13" Foreground="{DynamicResource Accent}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Cloud Upload" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="ChkPopupCloudUpload" Style="{StaticResource SubtleToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="ChkPopupCloudUpload_Click"/>
+                                </Grid>
+
+                                <Grid x:Name="PanelPopupCloudSettings" Visibility="Collapsed">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,6,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="CmbPopupCloudProvider" Height="26" SelectedIndex="0" SelectionChanged="CmbPopupCloudProvider_SelectionChanged">
+                                            <ComboBoxItem Content="Google Drive" Tag="gdrive"/>
+                                            <ComboBoxItem Content="Dropbox" Tag="dropbox"/>
+                                            <ComboBoxItem Content="Microsoft OneDrive" Tag="onedrive"/>
+                                            <ComboBoxItem Content="Discord / Webhook" Tag="webhook"/>
+                                            <ComboBoxItem Content="Custom Cloud Folder" Tag="custom"/>
+                                        </ComboBox>
+                                        <Button x:Name="BtnPopupCloudConfig" Grid.Column="1" Style="{StaticResource BatchAccentBtn}"
+                                                Height="26" Margin="6,0,0,0" Padding="10,0" Click="BtnPopupCloudConfig_Click"
+                                                ToolTip="Configure Cloud Provider">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <ui:SymbolIcon Symbol="Settings24" FontSize="10" Margin="0,0,4,0"/>
+                                                <TextBlock Text="Setup" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Delete local file after upload label & switch -->
+                                    <Grid Grid.Row="1" Margin="0,6,0,2">
+                                        <TextBlock Text="Delete local file after upload" FontSize="10.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <CheckBox x:Name="ChkPopupCloudTempOnly" Style="{StaticResource SubtleToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="ChkPopupCloudTempOnly_Click"/>
+                                    </Grid>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Auto Behavior Toggles Card -->
+                        <Border Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" CornerRadius="12" Padding="12,8" Margin="0,0,0,14">
+                            <StackPanel>
+                                <Grid Margin="0,3,0,5">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="ArrowClockwise24" FontSize="12" Foreground="{DynamicResource TextSec}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Auto-retry on error" FontSize="10.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="ChkAutoRetry" Style="{StaticResource SubtleToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="ChkAutoRetry_Click"/>
+                                </Grid>
+                                <Border Height="1" Background="{DynamicResource BorderSub}" Margin="0,3" Opacity="0.4"/>
+                                <Grid Margin="0,5,0,3">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="DismissCircle24" FontSize="12" Foreground="{DynamicResource TextSec}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Auto-remove completed from queue" FontSize="10.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="ChkAutoRemoveDone" Style="{StaticResource SubtleToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="ChkAutoRemoveDone_Click"/>
+                                </Grid>
+                                <Border Height="1" Background="{DynamicResource BorderSub}" Margin="0,3" Opacity="0.4"/>
+                                <Grid Margin="0,5,0,3">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="Video24" FontSize="12" Foreground="{DynamicResource TextSec}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Show per-video quality selector" FontSize="10.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="ChkShowPerVideoQuality" Style="{StaticResource SubtleToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="ChkShowPerVideoQuality_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Action Buttons Bar: Cancel and Save -->
+                        <Grid Margin="0,2,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Style="{StaticResource BatchCapsuleBtn}" Height="30" Padding="14,0"
+                                    HorizontalAlignment="Left" Content="Cancel" Click="CancelBatchOptions_Click"/>
+                            <Button Grid.Column="1" Style="{StaticResource BatchPrimaryBtn}" Height="30" Padding="16,0"
+                                    HorizontalAlignment="Right" Content="Save" Click="SaveBatchOptions_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Popup>
+
+            <!-- Corner Resize Grip Handle -->
+            <Border x:Name="WindowCornerGrip"
+                    Grid.RowSpan="2"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Width="32" Height="32" Margin="0,0,0,0"
+                    Background="Transparent" Cursor="SizeNWSE"
+                    Panel.ZIndex="9999"
+                    Visibility="Collapsed"
+                    MouseLeftButtonDown="WindowCornerGrip_MouseDown"
+                    MouseEnter="WindowCornerGrip_MouseEnter"
+                    MouseLeave="WindowCornerGrip_MouseLeave">
+                <!-- iPadOS-style corner: arc along the window's rounded corner, lens on hover -->
+                <controls:CornerResizeGlyph/>
+            </Border>
+        </Grid>
+    </helpers:SquircleBorder>
+</Window>

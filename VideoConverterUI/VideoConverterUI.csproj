@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<RootNamespace>VideoConverterUI</RootNamespace>
+		<AssemblyName>VideoConverterUI</AssemblyName>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<ApplicationIcon>..\Icons\app.ico</ApplicationIcon>
+		<StartupObject>VideoConverterUI.Program</StartupObject>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>false</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<TieredPGO>true</TieredPGO>
+		<ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+		<ServerGarbageCollection>false</ServerGarbageCollection>
+		<IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+		<DebugType>none</DebugType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Resource Include="..\Icons\app.ico" Link="Icons\app.ico" />
+		<Resource Include="..\Icons\DescritpionEditor.ico" Link="Icons\DescritpionEditor.ico" />
+		<Resource Include="..\Icons\Editor.ico" Link="Icons\Editor.ico" />
+		<Resource Include="..\Icons\ProgressWindow.ico" Link="Icons\ProgressWindow.ico" />
+		<Resource Include="..\Icons\Settings.ico" Link="Icons\Settings.ico" />
+	</ItemGroup>
+
+	<!-- Nur FFmpeg-Binaries neben die .exe kopieren (kein Legacy Python Backend im Publish) -->
+	<ItemGroup>
+		<None Include="..\backend\ffmpeg_bin\**\*">
+			<Link>ffmpeg_bin\%(RecursiveDir)%(Filename)%(Extension)</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+		</None>
+		<Content Include="Resources\epic fire sword.ani">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Include="WPF-UI" Version="4.3.0" />
+	</ItemGroup>
+
+	<!-- Ferrite (Rust) Engine: ferrite.exe wird mit cargo gebaut und neben die .exe kopiert.
+	     Ohne Rust-Toolchain bleibt der Build gültig (Warnung), Ferrite ist dann nur nicht verfügbar.
+	     Mit /p:SkipFerriteBuild=true wird cargo übersprungen. -->
+	<PropertyGroup>
+		<FerriteDir>$(MSBuildThisFileDirectory)..\backend-ferrite\</FerriteDir>
+		<FerriteExe>$(FerriteDir)target\release\ferrite.exe</FerriteExe>
+	</PropertyGroup>
+	<Target Name="BuildFerrite" BeforeTargets="Build" Condition="'$(SkipFerriteBuild)' != 'true' And Exists('$(FerriteDir)Cargo.toml')">
+		<Exec Command="cargo build --release --bin ferrite" WorkingDirectory="$(FerriteDir)" ContinueOnError="WarnAndContinue" />
+	</Target>
+	<Target Name="CopyFerrite" AfterTargets="Build" Condition="Exists('$(FerriteExe)')">
+		<Copy SourceFiles="$(FerriteExe)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+	</Target>
+	<Target Name="PublishFerrite" AfterTargets="Publish" Condition="Exists('$(FerriteExe)')">
+		<Copy SourceFiles="$(FerriteExe)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+	</Target>
+</Project>

@@ -1,0 +1,94 @@
+<Window x:Class="VideoConverterUI.DropZoneWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:controls="clr-namespace:VideoConverterUI.Controls"
+        Title="Drop Zone" Width="360" Height="100"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ShowInTaskbar="False"
+        Topmost="True" SizeToContent="WidthAndHeight"
+        AllowDrop="True" PreviewDragEnter="DropZone_DragEnter"
+        PreviewDragOver="DropZone_DragOver" PreviewDragLeave="DropZone_DragLeave"
+        PreviewDrop="DropZone_Drop">
+
+    <Grid x:Name="RootGrid" Margin="14">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="51*"/>
+            <ColumnDefinition Width="32*"/>
+        </Grid.ColumnDefinitions>
+        <!-- Liquid Glass card (surface "Notification", like the toasts): shows the main window behind it (the Owner) -->
+        <Border x:Name="DropZoneBorder" controls:LiquidGlass.Surface="Notification" CornerRadius="20"
+                BorderBrush="{DynamicResource Tint35}" BorderThickness="1"
+                RenderTransformOrigin="0.5,0.0" Grid.ColumnSpan="2">
+            <Border.Background>
+                <DynamicResource ResourceKey="PopupBg"/>
+            </Border.Background>
+            <Border.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform x:Name="WindowScale" ScaleX="0.88" ScaleY="0.88"/>
+                    <TranslateTransform x:Name="WindowTranslate" Y="-20"/>
+                </TransformGroup>
+            </Border.RenderTransform>
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="26" ShadowDepth="4" Color="#000000" Opacity="0.5"/>
+            </Border.Effect>
+
+            <Grid Margin="18,14" Width="300">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Apple Glass Icon Capsule -->
+                    <Border Width="40" Height="40" Margin="0,0,14,0"
+                            CornerRadius="14" Background="{DynamicResource Tint1A}"
+                            BorderBrush="{DynamicResource Tint25}" BorderThickness="1"
+                            VerticalAlignment="Bottom">
+                        <ui:SymbolIcon x:Name="TxtIcon" Symbol="Link24" FontSize="18"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderTransformOrigin="0.5,0.5">
+                            <ui:SymbolIcon.RenderTransform>
+                                <ScaleTransform x:Name="IconScale" ScaleX="1.0" ScaleY="1.0"/>
+                            </ui:SymbolIcon.RenderTransform>
+                        </ui:SymbolIcon>
+                    </Border>
+
+                    <!-- Title & Custom Liquid Glass Loading Bar -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+
+                        <!-- Custom Liquid Glass Shimmer Loading Bar -->
+                        <TextBlock x:Name="TxtTitle" Text="{DynamicResource DragDropOverlayText}"
+                                   Foreground="{DynamicResource TextPrimary}" FontSize="13" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" LineHeight="17"/>
+
+                        <Grid x:Name="GridLoadingBar" Margin="0,8,0,0" Height="4" Visibility="Collapsed">
+                            <Border Height="4" CornerRadius="2" Background="{DynamicResource Tint25}" ClipToBounds="True" Margin="0,0,26,0">
+                                <Rectangle x:Name="LoadingBarGlow" Height="4" Width="120" RadiusX="2" RadiusY="2"
+                                           HorizontalAlignment="Left">
+                                    <Rectangle.RenderTransform>
+                                        <TranslateTransform x:Name="LoadingBarTranslate" X="-120"/>
+                                    </Rectangle.RenderTransform>
+                                    <Rectangle.Fill>
+                                        <DynamicResource ResourceKey="Accent"/>
+                                    </Rectangle.Fill>
+                                    <Rectangle.OpacityMask>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#00000000" Offset="0.0"/>
+                                            <GradientStop Color="#FF000000" Offset="0.5"/>
+                                            <GradientStop Color="#00000000" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.OpacityMask>
+                                </Rectangle>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Circular Cancel Button -->
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
