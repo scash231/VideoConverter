@@ -751,7 +751,7 @@ public partial class MainWindow : Window
     {
         if (_isUploadDisabledForYtMusic && SegmentTrack != null && SegmentTranslateX != null && SegmentScale != null && DownloadTranslateX != null)
         {
-            double colW = (SegmentTrack.ActualWidth - 5.0) / 2.0;
+            double colW = (SegmentTrack.ActualWidth - 6.0) / 2.0;
             if (colW > 0)
             {
                 SegmentTranslateX.X = colW / 2.0;
@@ -770,7 +770,7 @@ public partial class MainWindow : Window
         var bouncy = AppleSpringEase.Bouncy;
         var gentle = AppleSpringEase.Gentle;
 
-        double colW = (SegmentTrack?.ActualWidth > 0 ? (SegmentTrack.ActualWidth - 5.0) / 2.0 : (RbUpload?.ActualWidth > 0 ? RbUpload.ActualWidth : 150.0));
+        double colW = (SegmentTrack?.ActualWidth > 0 ? (SegmentTrack.ActualWidth - 6.0) / 2.0 : (RbUpload?.ActualWidth > 0 ? RbUpload.ActualWidth : 150.0));
 
         if (!enabled)
         {
@@ -1224,7 +1224,7 @@ public partial class MainWindow : Window
                     new GradientStop(baseCard, 1.0)
                 }
             };
-            BorderMeta.Background = gradient;
+            MetaTint.Background = gradient;  // on the card's glass (its own background lies under the glass)
 
             if (mode == "both")
             {
@@ -1290,7 +1290,7 @@ public partial class MainWindow : Window
 
     private void ResetThumbBackground()
     {
-        BorderMeta.SetResourceReference(Border.BackgroundProperty, "InputBg");
+        MetaTint.Background = null;
         ThumbBgBorder.SetResourceReference(Border.BackgroundProperty, "BgElevated");
 
         _lastDominantColor = null;
@@ -2317,7 +2317,8 @@ public partial class MainWindow : Window
         GridCompletedActions.Columns = columns;
         GridCompletedActions.Rows = 0;
 
-        BorderCompletedActions.Padding = new Thickness(10, 6, 10, 6);
+        // The card's inset: on glass, the padding lives on the content's host (LiquidGlass moved it there).
+        CompletedActionsHost.Margin = new Thickness(10, 6, 10, 6);
         BorderCompletedActions.Margin = new Thickness(0, 8, 0, 0);
 
         const double spacing = 4;
@@ -2337,7 +2338,7 @@ public partial class MainWindow : Window
         if (RowCompletedActions != null)
         {
             double chrome = BorderCompletedActions.Margin.Top
-                + BorderCompletedActions.Padding.Top + BorderCompletedActions.Padding.Bottom
+                + CompletedActionsHost.Margin.Top + CompletedActionsHost.Margin.Bottom
                 + BorderCompletedActions.BorderThickness.Top + BorderCompletedActions.BorderThickness.Bottom
                 + spacing * (rows - 1);
             RowCompletedActions.MinHeight = chrome + rows * ActionButtonMinHeight;
@@ -2780,7 +2781,7 @@ public partial class MainWindow : Window
         PillMotion.SetShown(BatchQueueSep, batch && settings, animate, pop: false);
         PillMotion.SetShown(BtnSettings, settings, animate);
 
-        PillMotion.SetShown(BtnLangPill, lang, animate);
+        PillMotion.SetShown(LangPillGlass, lang, animate);
 
         foreach (var label in new FrameworkElement?[]
                  { TxtErrorStatusLabel, TxtHelpLabel, TxtHeaderConsoleLabel, TxtHeaderLogLabel, TxtToolEditor, TxtToolBatchQueue, TxtToolSettings })
@@ -2802,24 +2803,24 @@ public partial class MainWindow : Window
         double room = Math.Max(80, windowWidth - reserved);
 
         if (perfOverlay) room -= 210;
-        room -= TwoButtonPillWidth(labels, (error, 70), (help, 65));
-        room -= TwoButtonPillWidth(labels, (console, 78), (log, 58));
-        if (lang) room -= 50;
+        room -= TwoButtonPillWidth(labels, (error, 76), (help, 71));
+        room -= TwoButtonPillWidth(labels, (console, 84), (log, 64));
+        if (lang) room -= 56;
 
         int count = (editor ? 1 : 0) + (batch ? 1 : 0) + (settings ? 1 : 0);
         double toolsWidth = labels
-            ? (editor ? 62 : 0) + (batch ? 68 : 0) + (settings ? 72 : 0) + Math.Max(0, count - 1) * 5 + 14
-            : count * 32.0 + Math.Max(0, count - 1) * 5.0 + 12.0;
+            ? (editor ? 68 : 0) + (batch ? 74 : 0) + (settings ? 78 : 0) + Math.Max(0, count - 1) * 5 + 6
+            : count * 34.0 + Math.Max(0, count - 1) * 5.0 + 6.0;
 
         const double unfoldMargin = 16;
         _toolsFolded = _toolsFolded ? room < toolsWidth + unfoldMargin : room < toolsWidth;
         return _toolsFolded;
     }
 
-    /// <summary>Width of a pill with up to two buttons: each one's width with its label, or 36 without labels.</summary>
+    /// <summary>Width of a pill with up to two buttons: each one's width with its label, or 39 without labels.</summary>
     private static double TwoButtonPillWidth(bool labels, (bool on, double labelled) a, (bool on, double labelled) b)
     {
-        if (!labels) return (a.on ? 36 : 0) + (b.on ? 36 : 0);
+        if (!labels) return (a.on ? 39 : 0) + (b.on ? 39 : 0);
         return (a.on ? a.labelled : 0) + (b.on ? b.labelled : 0) + (a.on && b.on ? 5 : 0);
     }
 

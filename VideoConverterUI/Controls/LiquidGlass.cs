@@ -24,14 +24,27 @@ public static class LiquidGlass
     public static readonly DependencyProperty BackdropProperty = DependencyProperty.RegisterAttached(
         "Backdrop", typeof(Visual), typeof(LiquidGlass), new PropertyMetadata(null, OnBackdropChanged));
 
+    public static readonly DependencyProperty TextShadowProperty = DependencyProperty.RegisterAttached(
+        "TextShadow", typeof(bool), typeof(LiquidGlass), new PropertyMetadata(true, OnTextShadowChanged));
+
     public static string? GetSurface(DependencyObject d) => (string?)d.GetValue(SurfaceProperty);
     public static void SetSurface(DependencyObject d, string? value) => d.SetValue(SurfaceProperty, value);
 
     public static Visual? GetBackdrop(DependencyObject d) => (Visual?)d.GetValue(BackdropProperty);
     public static void SetBackdrop(DependencyObject d, Visual? value) => d.SetValue(BackdropProperty, value);
 
+    /// <summary><see cref="LiquidGlassPanel.TextShadow"/> for the glass (on by default).</summary>
+    public static bool GetTextShadow(DependencyObject d) => (bool)d.GetValue(TextShadowProperty);
+    public static void SetTextShadow(DependencyObject d, bool value) => d.SetValue(TextShadowProperty, value);
+
     /// <summary>The glass created for a converted surface (null until it is initialized).</summary>
     public static LiquidGlassPanel? GetPanel(Decorator host) => host.Child as LiquidGlassPanel;
+
+    private static readonly DependencyProperty ContentProperty = DependencyProperty.RegisterAttached(
+        "Content", typeof(UIElement), typeof(LiquidGlass), new PropertyMetadata(null));
+
+    /// <summary>The border's original child, now sitting on the glass (null until converted).</summary>
+    public static UIElement? GetContent(Decorator host) => (UIElement?)host.GetValue(ContentProperty);
 
     private static void OnSurfaceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -52,14 +65,21 @@ public static class LiquidGlass
             panel.BackdropSource = (Visual?)e.NewValue;
     }
 
+    private static void OnTextShadowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is Decorator host && GetPanel(host) is { } panel)
+            panel.TextShadow = (bool)e.NewValue;
+    }
+
     private static void Convert(Decorator host, string surface)
     {
         if (GetPanel(host) != null) return;
 
         var child = host.Child;
         host.Child = null;
-        var panel = new LiquidGlassPanel { Surface = surface, BackdropSource = GetBackdrop(host) };
+        var panel = new LiquidGlassPanel { Surface = surface, BackdropSource = GetBackdrop(host), TextShadow = GetTextShadow(host) };
         if (child != null) panel.Children.Add(child);
+        host.SetValue(ContentProperty, child);
 
         switch (host)
         {

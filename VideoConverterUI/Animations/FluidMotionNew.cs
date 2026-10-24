@@ -5,6 +5,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using VideoConverterUI.Models;
+using VideoConverterUI.Controls;
 
 namespace VideoConverterUI.Animations;
 
@@ -462,7 +463,7 @@ public static class FluidMotion
             panel.Visibility = Visibility.Visible;
             panel.Opacity = 1;
             panel.RenderTransform = Transform.Identity;
-            if (panel.Child is StackPanel spNone)
+            if (ContentRows(panel) is StackPanel spNone)
                 StaggerIn(spNone);
             return;
         }
@@ -474,7 +475,7 @@ public static class FluidMotion
             panel.BeginAnimation(UIElement.OpacityProperty,
                 new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150))
                 { EasingFunction = AppleSpringEase.Smooth });
-            if (panel.Child is StackPanel spReduced)
+            if (ContentRows(panel) is StackPanel spReduced)
                 StaggerIn(spReduced);
             return;
         }
@@ -510,7 +511,7 @@ public static class FluidMotion
         st.BeginAnimation(ScaleTransform.ScaleYProperty,
             new DoubleAnimation(0.94, 1, springDur) { EasingFunction = spring });
 
-        if (panel.Child is StackPanel sp)
+        if (ContentRows(panel) is StackPanel sp)
             StaggerIn(sp, baseDelayMs: 40, stepMs: 35);
     }
 
@@ -526,6 +527,12 @@ public static class FluidMotion
     }
 
     // iOS 27 stretchy liquid glass crossfade with bouncy swing-tilt landing
+    /// <summary>
+    /// The rows a card's crossfade staggers in: the panel inside it, or on a Liquid Glass card the content on the glass
+    /// (its Child is then the glass, whose layers must not be animated one by one).
+    /// </summary>
+    internal static Panel? ContentRows(Border card) => (LiquidGlass.GetContent(card) ?? card.Child) as Panel;
+
     public static void LiquidGlassCrossfade(Border hidePanel, Border showPanel, double direction)
     {
         if (hidePanel == null || showPanel == null) return;
@@ -553,7 +560,7 @@ public static class FluidMotion
             showPanel.Visibility = Visibility.Visible;
             showPanel.Opacity = 1;
             showPanel.RenderTransform = Transform.Identity;
-            if (showPanel.Child is Panel spNone)
+            if (ContentRows(showPanel) is Panel spNone)
             {
                 foreach (UIElement child in spNone.Children)
                 {
@@ -577,7 +584,7 @@ public static class FluidMotion
                 new DoubleAnimation(1, TimeSpan.FromMilliseconds(150))
                 { BeginTime = TimeSpan.FromMilliseconds(60), EasingFunction = AppleSpringEase.Smooth });
 
-            if (showPanel.Child is Panel spReduced)
+            if (ContentRows(showPanel) is Panel spReduced)
             {
                 int idx = 0;
                 foreach (UIElement child in spReduced.Children)
@@ -677,7 +684,7 @@ public static class FluidMotion
             { BeginTime = showDelay, EasingFunction = springRot });
 
         // ── Apple Glassmorphic Staggered Child Blossom (Flicker-Free) ──
-        Panel? sp = showPanel.Child as Panel;
+        Panel? sp = ContentRows(showPanel);
         if (sp != null)
         {
             int idx = 0;

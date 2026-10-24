@@ -66,6 +66,14 @@ public static class GlassSurfaces
     public const string Inspector = "Inspector";
     /// <summary>The Multi Downloader's floating link bar/toolbar and its footer, over the queue.</summary>
     public const string Toolbar = "Toolbar";
+    /// <summary>The main window's header pills (help, console/log, tools, language, performance overlay).</summary>
+    public const string HeaderPill = "HeaderPill";
+    /// <summary>The main window's link field and its mode toggle's track.</summary>
+    public const string UrlBar = "UrlBar";
+    /// <summary>The main window's cards (preview, upload/download settings, finished actions).</summary>
+    public const string Card = "Card";
+    /// <summary>The main window's Start button (also the progress capsule while a job runs).</summary>
+    public const string StartButton = "StartButton";
 }
 
 /// <summary>
@@ -444,6 +452,180 @@ public static class GlassTuning
                 FallbackTintAlpha = 0xC8,
                 ShadowBlur = 24,
                 ShadowDepth = 4,
+                ShadowOpacity = 0.14,
+            }),
+        // The main window's glass lies on the window's own background (gradient included), so there is little to
+        // refract: the look comes from the rim, the lens bending the gradient and the sheen. 34 px capsules: the round
+        // buttons' thin rim, a little more tint for the small labels.
+        [GlassSurfaces.HeaderPill] = new("Main window header pills (help, console/log, tools, language)",
+            () => new GlassParams
+            {
+                CornerRadius = 17,
+                Frost = 6,
+                Refraction = 10,
+                Bevel = 4,
+                Dispersion = 0,
+                Highlight = 0.45,
+                Inset = 24,
+                Reflection = 0.4,
+                ReflectionReach = 20,
+                ReflectionWidth = 9,
+                BackdropBlur = 3,
+                TintAlpha = 0x34,
+                FallbackTintAlpha = 0xA8,
+                ShadowBlur = 10,
+                ShadowDepth = 2,
+                ShadowOpacity = 0.18,
+            },
+            () => new GlassParams
+            {
+                CornerRadius = 17,
+                Saturation = 1.6,
+                Brightness = 1.04,
+                Frost = 6,
+                Refraction = 10,
+                Bevel = 4,
+                Dispersion = 0,
+                Highlight = 0.3,
+                Inset = 24,
+                Reflection = 0.3,
+                ReflectionReach = 20,
+                ReflectionWidth = 9,
+                BackdropBlur = 3,
+                TintAlpha = 0x66,
+                FallbackTintAlpha = 0xC8,
+                ShadowBlur = 10,
+                ShadowDepth = 2,
+                ShadowOpacity = 0.12,
+            }),
+        // A wide capsule holding the link text: the Multi Downloader's link bar. The mode toggle's track shares it.
+        [GlassSurfaces.UrlBar] = new("Main window link field and mode toggle",
+            () => new GlassParams
+            {
+                CornerRadius = 25,
+                Frost = 7,
+                Refraction = 18,
+                Bevel = 9,
+                Dispersion = 0,
+                Highlight = 0.5,
+                Inset = 44,
+                Reflection = 0.3,
+                ReflectionReach = 40,
+                ReflectionWidth = 16,
+                BackdropBlur = 3,
+                TintAlpha = 0x30,
+                FallbackTintAlpha = 0xB4,
+                ShadowBlur = 18,
+                ShadowDepth = 3,
+                ShadowOpacity = 0.2,
+            },
+            () => new GlassParams
+            {
+                CornerRadius = 25,
+                Saturation = 1.6,
+                Brightness = 1.04,
+                Frost = 7,
+                Refraction = 18,
+                Bevel = 9,
+                Dispersion = 0,
+                Highlight = 0.35,
+                Inset = 44,
+                Reflection = 0.25,
+                ReflectionReach = 40,
+                ReflectionWidth = 16,
+                BackdropBlur = 3,
+                TintAlpha = 0x62,
+                FallbackTintAlpha = 0xC8,
+                ShadowBlur = 18,
+                ShadowDepth = 3,
+                ShadowOpacity = 0.12,
+            }),
+        // Large panels full of fields and small labels: the sidebar's lens and rim with a calmer reflection and more
+        // tint, so the text boxes and drop-downs on them stay easy to read. No shadow (their Borders carry none: a
+        // shadow effect over a card with text boxes redraws it on every caret blink).
+        [GlassSurfaces.Card] = new("Main window cards (preview, upload/download settings, finished actions)",
+            () => new GlassParams
+            {
+                CornerRadius = 16,
+                Frost = 12,
+                Refraction = 18,
+                Bevel = 9,
+                Dispersion = 0,
+                Highlight = 0.5,
+                Inset = 52,
+                Reflection = 0.3,
+                ReflectionReach = 44,
+                ReflectionWidth = 18,
+                BackdropBlur = 5,
+                TintAlpha = 0x3C,
+                FallbackTintAlpha = 0xB8,
+                ShadowBlur = 0,
+                ShadowDepth = 0,
+                ShadowOpacity = 0,
+            },
+            () => new GlassParams
+            {
+                CornerRadius = 16,
+                Saturation = 1.6,
+                Brightness = 1.04,
+                Frost = 12,
+                Refraction = 18,
+                Bevel = 9,
+                Dispersion = 0,
+                Highlight = 0.35,
+                Inset = 52,
+                Reflection = 0.25,
+                ReflectionReach = 44,
+                ReflectionWidth = 18,
+                BackdropBlur = 5,
+                TintAlpha = 0x70,
+                FallbackTintAlpha = 0xD0,
+                ShadowBlur = 0,
+                ShadowDepth = 0,
+                ShadowOpacity = 0,
+            }),
+        // The main action: a brighter rim and sheen than the link field, so it reads as a button, not a field.
+        [GlassSurfaces.StartButton] = new("Main window Start button and its progress capsule",
+            () => new GlassParams
+            {
+                CornerRadius = 21,
+                Frost = 7,
+                Refraction = 16,
+                Bevel = 8,
+                Dispersion = 0,
+                Highlight = 0.65,
+                Inset = 40,
+                Reflection = 0.35,
+                ReflectionReach = 36,
+                ReflectionWidth = 14,
+                BackdropBlur = 3,
+                TintAlpha = 0x3C,
+                SheenAlpha = 0x22,
+                FallbackTintAlpha = 0xB4,
+                ShadowBlur = 18,
+                ShadowDepth = 3,
+                ShadowOpacity = 0.24,
+            },
+            () => new GlassParams
+            {
+                CornerRadius = 21,
+                Saturation = 1.6,
+                Brightness = 1.05,
+                Frost = 7,
+                Refraction = 16,
+                Bevel = 8,
+                Dispersion = 0,
+                Highlight = 0.45,
+                Inset = 40,
+                Reflection = 0.3,
+                ReflectionReach = 36,
+                ReflectionWidth = 14,
+                BackdropBlur = 3,
+                TintAlpha = 0x70,
+                SheenAlpha = 0x22,
+                FallbackTintAlpha = 0xC8,
+                ShadowBlur = 18,
+                ShadowDepth = 3,
                 ShadowOpacity = 0.14,
             }),
     };

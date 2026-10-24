@@ -45,7 +45,35 @@
             </DoubleAnimation>
         </Storyboard>
 
-        <!-- Minimal Integrated Log Text Button (Light Liquid Glass Sheen) -->
+        <!-- The main window's cards: the Card look on Liquid Glass (surface Card) over the window's background.
+             No text shadow: the cards hold text boxes, and an effect over them redraws the card on every caret blink. -->
+        <Style x:Key="GlassCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="controls:LiquidGlass.Surface" Value="Card"/>
+            <Setter Property="controls:LiquidGlass.Backdrop" Value="{Binding ElementName=GlassBackdrop}"/>
+            <Setter Property="controls:LiquidGlass.TextShadow" Value="False"/>
+        </Style>
+
+        <!-- Buttons on the header's glass pills: IconBtn with a capsule hover that follows the pill's shape -->
+        <Style x:Key="PillGlassBtn" TargetType="Button" BasedOn="{StaticResource IconBtn}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="17" Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Window.Triggers>
@@ -65,13 +93,23 @@
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="40"/>
+                <RowDefinition Height="44"/>
                 <!-- Title bar -->
                 <RowDefinition Height="*"/>
                 <!-- Content -->
                 <RowDefinition Height="Auto"/>
                 <!-- Dev Console -->
             </Grid.RowDefinitions>
+
+            <!-- What the window's Liquid Glass (header pills, link field, Start) shows through: the window's own background,
+                 thumbnail gradient included. It is only ever seen through the glass: the empty Canvas clips it away on screen,
+                 and a VisualBrush draws it without its parent's clip. -->
+            <Canvas Grid.RowSpan="3" Width="0" Height="0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                    ClipToBounds="True" IsHitTestVisible="False">
+                <Border x:Name="GlassBackdrop"
+                        Width="{Binding ActualWidth, ElementName=RootBorder}" Height="{Binding ActualHeight, ElementName=RootBorder}"
+                        Background="{Binding Background, ElementName=RootBorder}"/>
+            </Canvas>
 
             <!-- ═══════════ FALLING SNOW OVERLAY (ROOT BACKGROUND) ═══════════ -->
             <Canvas x:Name="SnowCanvas" Grid.RowSpan="3" IsHitTestVisible="False" Visibility="Collapsed"
@@ -263,16 +301,20 @@
                             </Grid>
                         </Border>
 
-                        <!-- Right Aligned Pills -->
+                        <!-- Right Aligned Pills: Liquid Glass capsules (surface HeaderPill) over the window's background
+                             (GlassBackdrop); the Borders carry the shadows. PillMotion morphs each one in and out like a drop.
+                             Their content is centred, so a pill that is still growing uncovers it from the middle. -->
                         <StackPanel x:Name="HeaderActionStack" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <!-- Realtime Performance Overlay Bubble -->
                             <Border x:Name="BorderPerformanceOverlay"
-                                    Background="{DynamicResource InputBg}"
-                                    BorderBrush="{DynamicResource BorderSub}"
-                                    BorderThickness="0.5" CornerRadius="8"
-                                    Height="30.1" Padding="8,0" Margin="0,0,4,0"
+                                    controls:LiquidGlass.Surface="HeaderPill" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                                    BorderBrush="{DynamicResource BorderSub}" CornerRadius="17"
+                                    Height="34" Padding="10,0" Margin="0,0,5,0"
                                     VerticalAlignment="Center" Visibility="Collapsed">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                                </Border.Effect>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <TextBlock x:Name="TxtPerfCpu" Text="CPU: 0%" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" Margin="0,0,6,0"/>
                                     <TextBlock Text="|" FontSize="9" Foreground="{DynamicResource BorderSub}" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="TxtPerfRam" Text="RAM: 0 MB" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" Margin="0,0,6,0"/>
@@ -283,44 +325,43 @@
 
                             <!-- Pill 1: ! and ? -->
                             <Border x:Name="PillHelpGroup"
-                                    Background="{DynamicResource InputBg}"
-                                    BorderBrush="{DynamicResource BorderSub}"
-                                    BorderThickness="0.5" CornerRadius="8"
-                                    Padding="4.7,0" Margin="0,0,4,0"
+                                    controls:LiquidGlass.Surface="HeaderPill" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                                    BorderBrush="{DynamicResource BorderSub}" CornerRadius="17"
+                                    Padding="0" Margin="0,0,5,0"
                                     VerticalAlignment="Center">
-                                <Border.RenderTransform>
-                                    <TranslateTransform x:Name="PillHelpTranslate" X="0" Y="0"/>
-                                </Border.RenderTransform>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                                </Border.Effect>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <!-- Error Status Button + divider (collapsed as a group) -->
                                     <Button x:Name="BtnErrorStatus"
-                                            Style="{StaticResource IconBtn}"
+                                            Style="{StaticResource PillGlassBtn}"
                                             Foreground="{DynamicResource ErrorRed}"
-                                            MinWidth="30.1" MinHeight="30.1" Height="30.1" Margin="0" Padding="6,0"
+                                            MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                             ToolTip="Error Details"
                                             Visibility="Collapsed"
                                             Click="ErrorStatus_Click">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="Warning24" FontSize="14" Foreground="{DynamicResource ErrorRed}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtErrorStatusLabel" Text="Error" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <ui:SymbolIcon Symbol="Warning24" FontSize="15" Foreground="{DynamicResource ErrorRed}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtErrorStatusLabel" Text="Error" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </Button>
                                     <!-- Divider after ! (collapsed with it) -->
                                     <Border x:Name="ErrorPillDivider"
-                                            Width="1" Height="11.5"
+                                            Width="1" Height="13"
                                             Background="{DynamicResource BorderSub}"
                                             Margin="2,0" Visibility="Collapsed"
                                             VerticalAlignment="Center"/>
                                     <!-- Help / Workflow -->
                                     <Button x:Name="BtnHelp"
-                                            Style="{StaticResource IconBtn}"
+                                            Style="{StaticResource PillGlassBtn}"
                                             Foreground="{DynamicResource TextSec}"
-                                            MinWidth="30.1" MinHeight="30.1" Height="30.1" Margin="0" Padding="6,0"
+                                            MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                             ToolTip="{DynamicResource HelpTip}"
                                             Click="Help_Click">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="Info28" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtHelpLabel" Text="{DynamicResource HelpLabel}" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <ui:SymbolIcon Symbol="Info28" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtHelpLabel" Text="{DynamicResource HelpLabel}" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -328,43 +369,45 @@
 
                             <!-- Pill 2: Console & Log Group Bubble -->
                             <Border x:Name="DevPillGroup"
-                                    Background="{DynamicResource InputBg}"
-                                    BorderBrush="{DynamicResource BorderSub}"
-                                    BorderThickness="0.5" CornerRadius="8"
-                                    Padding="4.7,0" Margin="0,0,4,0"
+                                    controls:LiquidGlass.Surface="HeaderPill" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                                    BorderBrush="{DynamicResource BorderSub}" CornerRadius="17"
+                                    Padding="0" Margin="0,0,5,0"
                                     VerticalAlignment="Center"
                                     Visibility="Collapsed">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                                </Border.Effect>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <!-- Console Button -->
                                     <Button x:Name="BtnHeaderConsole"
-                                            Style="{StaticResource IconBtn}"
+                                            Style="{StaticResource PillGlassBtn}"
                                             Foreground="{DynamicResource TextSec}"
-                                            MinWidth="30.1" MinHeight="30.1" Height="30.1" Margin="0" Padding="6,0"
+                                            MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                             ToolTip="Console"
                                             Visibility="Collapsed"
                                             Click="HeaderConsole_Click">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="Code24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtHeaderConsoleLabel" Text="Console" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <ui:SymbolIcon Symbol="Code24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtHeaderConsoleLabel" Text="Console" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </Button>
                                     <!-- Divider between Console & Log -->
                                     <Border x:Name="HeaderDevDivider"
-                                            Width="1" Height="11.5"
+                                            Width="1" Height="13"
                                             Background="{DynamicResource BorderSub}"
                                             Margin="2,0" Visibility="Collapsed"
                                             VerticalAlignment="Center"/>
                                     <!-- Log Button -->
                                     <Button x:Name="BtnHeaderLog"
-                                            Style="{StaticResource IconBtn}"
+                                            Style="{StaticResource PillGlassBtn}"
                                             Foreground="{DynamicResource TextSec}"
-                                            MinWidth="30.1" MinHeight="30.1" Height="30.1" Margin="0" Padding="6,0"
+                                            MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                             ToolTip="Log Viewer"
                                             Visibility="Collapsed"
                                             Click="HeaderLog_Click">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtHeaderLogLabel" Text="Log" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtHeaderLogLabel" Text="Log" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -372,59 +415,61 @@
 
                             <!-- Pill 3: ✂, ⚙ (Collapsible into •••) -->
                             <Border x:Name="PillToolsGroup"
-                                    Background="{DynamicResource InputBg}"
-                                    BorderBrush="{DynamicResource BorderSub}"
-                                    BorderThickness="0.5" CornerRadius="8"
-                                    Padding="4.7,0" Margin="0,0,6,0"
+                                    controls:LiquidGlass.Surface="HeaderPill" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                                    BorderBrush="{DynamicResource BorderSub}" CornerRadius="17"
+                                    Padding="0" Margin="0,0,6,0"
                                     VerticalAlignment="Center">
-                                <Grid>
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                                </Border.Effect>
+                                <Grid HorizontalAlignment="Center">
                                     <!-- Expanded Mode: ✂ | ⚙ -->
                                     <StackPanel x:Name="StackToolsExpanded" Orientation="Horizontal" VerticalAlignment="Center">
                                         <!-- Video Editor -->
-                                        <Button x:Name="BtnVideoEditor" Style="{StaticResource IconBtn}"
+                                        <Button x:Name="BtnVideoEditor" Style="{StaticResource PillGlassBtn}"
                                                 Foreground="{DynamicResource TextSec}"
-                                                MinWidth="30.1" MinHeight="30.1" Height="30.1" Margin="0" Padding="6,0"
+                                                MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                                 ToolTip="{DynamicResource TipEditor}"
                                                 Click="Editor_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Cut24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                                <TextBlock x:Name="TxtToolEditor" Text="Editor" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                <ui:SymbolIcon Symbol="Cut24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="TxtToolEditor" Text="Editor" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                             </StackPanel>
                                         </Button>
-                                        <Border x:Name="VideoEditorSep" Width="1" Height="11.5" Background="{DynamicResource BorderSub}" Margin="2,0" VerticalAlignment="Center"/>
+                                        <Border x:Name="VideoEditorSep" Width="1" Height="13" Background="{DynamicResource BorderSub}" Margin="2,0" VerticalAlignment="Center"/>
                                         <!-- Batch & Playlist Queue -->
-                                        <Button x:Name="BtnBatchQueue" Style="{StaticResource IconBtn}"
+                                        <Button x:Name="BtnBatchQueue" Style="{StaticResource PillGlassBtn}"
                                                 Foreground="{DynamicResource TextSec}"
-                                                MinWidth="30.1" MinHeight="30.1" Height="30.1" Margin="0" Padding="6,0"
+                                                MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                                 ToolTip="{DynamicResource TipBatchQueue}"
                                                 Click="BatchQueue_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Collections24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                                <TextBlock x:Name="TxtToolBatchQueue" Text="Batch" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                <ui:SymbolIcon Symbol="Collections24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="TxtToolBatchQueue" Text="Batch" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                             </StackPanel>
                                         </Button>
-                                        <Border x:Name="BatchQueueSep" Width="1" Height="11.5" Background="{DynamicResource BorderSub}" Margin="2,0" VerticalAlignment="Center"/>
+                                        <Border x:Name="BatchQueueSep" Width="1" Height="13" Background="{DynamicResource BorderSub}" Margin="2,0" VerticalAlignment="Center"/>
                                         <!-- Settings -->
-                                        <Button x:Name="BtnSettings" Style="{StaticResource IconBtn}"
+                                        <Button x:Name="BtnSettings" Style="{StaticResource PillGlassBtn}"
                                                 Foreground="{DynamicResource TextSec}"
-                                                MinWidth="30.1" MinHeight="30.1" Height="30.1" Margin="0" Padding="6,0"
+                                                MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                                 ToolTip="{DynamicResource TipSettings}"
                                                 Click="Settings_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Settings24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                                <TextBlock x:Name="TxtToolSettings" Text="Settings" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                <ui:SymbolIcon Symbol="Settings24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="TxtToolSettings" Text="Settings" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                             </StackPanel>
                                         </Button>
                                     </StackPanel>
 
                                     <!-- Collapsed Mode: ••• -->
-                                    <Button x:Name="BtnToolsCollapsed" Style="{StaticResource IconBtn}"
+                                    <Button x:Name="BtnToolsCollapsed" Style="{StaticResource PillGlassBtn}"
                                              Foreground="{DynamicResource TextSec}"
-                                             Width="30.1" Height="30.1" Margin="0"
+                                             Width="34" Height="34" Margin="0"
                                              ToolTip="{DynamicResource TipToolsAndSettings}"
                                              Visibility="Collapsed"
                                              Click="ToolsCollapsed_Click">
-                                        <ui:SymbolIcon Symbol="MoreHorizontal24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                        <Grid><ui:SymbolIcon Symbol="MoreHorizontal24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
                                     </Button>
                                 </Grid>
                             </Border>
@@ -475,36 +520,55 @@
                             </Popup>
 
                             <!-- Language Toggle Pill Button -->
-                            <Button x:Name="BtnLangPill" VerticalAlignment="Center" Margin="0,0,6,0"
-                                    Click="LangPill_Click" Style="{StaticResource HeaderLangPillBtn}"
-                                    ToolTip="{DynamicResource SettingsLanguage}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock x:Name="TxtCurrentLang" Text="EN"
-                                               FontSize="11.5" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimary}"
-                                               VerticalAlignment="Center"/>
-                                    <Border Width="1" Height="11.5" Background="{DynamicResource BorderSub}" Margin="6,0" VerticalAlignment="Center"/>
-                                    <ui:SymbolIcon x:Name="IconLangArrow" Symbol="ChevronRight24" FontSize="11" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
+                            <Border x:Name="LangPillGlass"
+                                    controls:LiquidGlass.Surface="HeaderPill" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                                    BorderBrush="{DynamicResource BorderSub}" CornerRadius="17"
+                                    Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                                </Border.Effect>
+                                <Button x:Name="BtnLangPill" HorizontalAlignment="Center"
+                                        Click="LangPill_Click" Style="{StaticResource HeaderLangPillBtn}"
+                                        ToolTip="{DynamicResource SettingsLanguage}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="TxtCurrentLang" Text="EN"
+                                                   FontSize="11.5" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   VerticalAlignment="Center"/>
+                                        <Border Width="1" Height="13" Background="{DynamicResource BorderSub}" Margin="6,0" VerticalAlignment="Center"/>
+                                        <ui:SymbolIcon x:Name="IconLangArrow" Symbol="ChevronRight24" FontSize="11" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
                         </StackPanel>
                     </Grid>
 
-                    <!-- Fixed Window Controls: Minimize & Close (Column 2, Strictly fixed right position) -->
-                    <StackPanel x:Name="WindowControlsStack" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,4,0" VerticalAlignment="Center">
-                        <Button Style="{StaticResource IconBtn}"
-                                Foreground="{DynamicResource TextSec}" Width="35" Height="35"
-                                ToolTip="{DynamicResource TipMinimize}"
-                                Click="Minimize_Click">
-                            <ui:SymbolIcon Symbol="Subtract24" FontSize="13" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                        </Button>
-                        <Button Style="{StaticResource IconBtn}"
-                                Foreground="{DynamicResource AccentGrad}" Width="35" Height="35"
-                                ToolTip="{DynamicResource TipClose}"
-                                Click="Close_Click">
-                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="13" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                        </Button>
-                    </StackPanel>
+                    <!-- Fixed Window Controls: Minimize & Close (Column 2, Strictly fixed right position), on one glass
+                         capsule like the header pills; each button's hover is a circle inside it.
+                         A SymbolIcon that is a button's whole content draws black (its colour isn't applied until the
+                         theme is re-applied), so icons on their own sit in a Grid throughout this window. -->
+                    <Border x:Name="WindowControlsGlass" Grid.Column="2" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center"
+                            controls:LiquidGlass.Surface="HeaderPill" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                            controls:LiquidGlass.TextShadow="False"
+                            BorderBrush="{DynamicResource BorderSub}" CornerRadius="17">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                        </Border.Effect>
+                        <StackPanel x:Name="WindowControlsStack" Orientation="Horizontal" VerticalAlignment="Center" UseLayoutRounding="True">
+                            <Button Style="{StaticResource PillGlassBtn}"
+                                    Foreground="{DynamicResource TextSec}" Width="34" Height="34" Padding="0"
+                                    ToolTip="{DynamicResource TipMinimize}"
+                                    Click="Minimize_Click">
+                                <Grid><ui:SymbolIcon Symbol="Subtract24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
+                            </Button>
+                            <Button Style="{StaticResource PillGlassBtn}"
+                                    Foreground="{DynamicResource TextSec}" Width="34" Height="34" Padding="0"
+                                    ToolTip="{DynamicResource TipClose}"
+                                    Click="Close_Click">
+                                <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                     <Popup x:Name="HelpPopup"
                            Placement="Bottom"
                            VerticalOffset="4"
@@ -694,7 +758,7 @@
                                             Style="{StaticResource IconBtn}" Width="24" Height="24" Padding="0" Margin="6,0,0,0"
                                             VerticalAlignment="Top" Click="CloseErrorPopup_Click"
                                             ToolTip="{DynamicResource ErrPopupClose}">
-                                        <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource TextSec}"/>
+                                        <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource TextSec}"/></Grid>
                                     </Button>
                                 </Grid>
 
@@ -890,11 +954,14 @@
                 </Canvas>
 
                 <!-- ──── URL BAR (full-width) ──── -->
-                <!-- ──── UNIFIED FULL-WIDTH URL INPUT CAPSULE ──── -->
-                <Border Grid.Row="0" Height="51" Margin="0,0,0,8" CornerRadius="50"
-				        Background="{DynamicResource InputBg}"
-				        BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
+                <!-- ──── UNIFIED FULL-WIDTH URL INPUT CAPSULE: Liquid Glass (surface UrlBar), the Border carries the shadow ──── -->
+                <Border x:Name="UrlBarGlass" Grid.Row="0" Height="51" Margin="0,0,0,8" CornerRadius="50"
+				        controls:LiquidGlass.Surface="UrlBar" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+				        BorderBrush="{DynamicResource BorderSub}"
 				        Padding="2,0,2,0">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="Black" Opacity="0.2"/>
+                    </Border.Effect>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -947,7 +1014,7 @@
 						        Style="{StaticResource EmbeddedCapsuleBtn}"
 						        Padding="10,4" Margin="2,3" VerticalAlignment="Stretch"
 						        Click="Paste_Click">
-                            <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="13.5" Opacity="0.85" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <Grid><ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="13.5" Opacity="0.85" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" HorizontalAlignment="Center"/></Grid>
                         </Button>
 
                         <!-- 4. Vertical Separator Line 2 -->
@@ -966,24 +1033,29 @@
                 </Border>
 
                 <!-- ──── MODE TOGGLE (Apple iOS segmented control) ──── -->
-                <Border x:Name="SegmentTrack" Grid.Row="1" CornerRadius="50" Padding="2.5" Height="34"
-                        Background="{DynamicResource InputBg}"
-                        BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
+                <!-- The track is Liquid Glass (the link field's surface, UrlBar); the indicator slides on it -->
+                <Border x:Name="SegmentTrack" Grid.Row="1" CornerRadius="50" Padding="3" Height="38"
+                        controls:LiquidGlass.Surface="UrlBar" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                        BorderBrush="{DynamicResource BorderSub}"
                         Margin="0,0,0,10"
-                        ClipToBounds="True"
                         SizeChanged="SegmentTrack_SizeChanged"
                         PreviewMouseLeftButtonDown="Segment_PreviewMouseDown"
                         PreviewMouseMove="Segment_PreviewMouseMove"
                         PreviewMouseLeftButtonUp="Segment_PreviewMouseUp">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.16"/>
+                    </Border.Effect>
                     <Grid ClipToBounds="True">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <!-- Apple Liquid Glass Capsule Indicator -->
+                        <!-- The thumb: a raised capsule of the theme's card colour, iOS-style. The white lift brightens it
+                             in dark mode and disappears on light mode's white card; a sheen over its upper half and a rim
+                             catching light along the top make it read as a piece of glass resting on the track. -->
                         <Border x:Name="SegmentIndicator" Grid.Column="0"
                                 CornerRadius="50"
-                                Background="{DynamicResource ActiveBg}"
+                                Background="{DynamicResource BgCard}"
                                 BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
                                 RenderTransformOrigin="0.5,0.5"
                                 ClipToBounds="True">
@@ -994,9 +1066,29 @@
                                 </TransformGroup>
                             </Border.RenderTransform>
                             <Border.Effect>
-                                <DropShadowEffect x:Name="PillGlow" BlurRadius="5" ShadowDepth="1"
-                                                  Direction="270" Color="#000000" Opacity="0.22"/>
+                                <DropShadowEffect x:Name="PillGlow" BlurRadius="10" ShadowDepth="2"
+                                                  Direction="270" Color="#000000" Opacity="0.3"/>
                             </Border.Effect>
+                            <Grid IsHitTestVisible="False">
+                                <Border CornerRadius="50" Background="#16FFFFFF"/>
+                                <Border CornerRadius="50">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#1EFFFFFF" Offset="0"/>
+                                            <GradientStop Color="#00FFFFFF" Offset="0.55"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <Border CornerRadius="50" BorderThickness="1">
+                                    <Border.BorderBrush>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#48FFFFFF" Offset="0"/>
+                                            <GradientStop Color="#00FFFFFF" Offset="0.5"/>
+                                            <GradientStop Color="#10FFFFFF" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.BorderBrush>
+                                </Border>
+                            </Grid>
                         </Border>
                         <RadioButton x:Name="RbUpload" Style="{StaticResource SegmentedBtn}"
                                      GroupName="Mode" IsChecked="True"
@@ -1005,9 +1097,9 @@
                                 <ScaleTransform x:Name="UploadBtnScale" ScaleX="1" ScaleY="1"/>
                             </RadioButton.RenderTransform>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="{DynamicResource ModeUploadTitle}"
-                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                           FontWeight="SemiBold" FontSize="12.5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton Grid.Column="1" x:Name="RbDownload"
@@ -1018,9 +1110,9 @@
                                 <TranslateTransform x:Name="DownloadTranslateX"/>
                             </RadioButton.RenderTransform>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ui:SymbolIcon x:Name="IconDownloadMode" Symbol="ArrowDownload24" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon x:Name="IconDownloadMode" Symbol="ArrowDownload24" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="TxtModeDownloadTitle" Text="{DynamicResource ModeDownloadTitle}"
-                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                           FontWeight="SemiBold" FontSize="12.5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </RadioButton>
                     </Grid>
@@ -1037,10 +1129,8 @@
                     <!-- ═══ LEFT: Preview ═══ -->
                     <Grid Grid.Column="0">
                         <!-- Skeleton Loading Wireframe Card for MainWindow (Image 2 style: no text, pulsating rounded pill bars) -->
-                        <Border x:Name="BorderMetaSkeleton" Style="{StaticResource Card}"
-                                Visibility="Collapsed" Opacity="0" Padding="0"
-                                helpers:ClipHelper.CornerRadiusClip="True"
-                                ClipToBounds="True" Margin="0">
+                        <Border x:Name="BorderMetaSkeleton" Style="{StaticResource GlassCard}"
+                                Visibility="Collapsed" Opacity="0" Padding="0" Margin="0">
                             <Border.Triggers>
                                 <EventTrigger RoutedEvent="Loaded">
                                     <BeginStoryboard>
@@ -1077,16 +1167,18 @@
                             </Grid>
                         </Border>
 
-                        <Border x:Name="BorderMeta" Style="{StaticResource Card}"
-                                Visibility="Collapsed" Opacity="0" Padding="0"
-                                helpers:ClipHelper.CornerRadiusClip="True"
-                                ClipToBounds="True" Margin="0">
+                        <Border x:Name="BorderMeta" Style="{StaticResource GlassCard}"
+                                Visibility="Collapsed" Opacity="0" Padding="0" Margin="0">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
+
+                                <!-- The thumbnail's colour over the glass (ApplyThumbBackground; the card's own background is
+                                     under the glass, out of sight) -->
+                                <Border x:Name="MetaTint" Grid.RowSpan="3" IsHitTestVisible="False"/>
 
                                 <!-- Thumbnail -->
                                 <Border x:Name="ThumbBgBorder" Grid.Row="0"
@@ -1193,7 +1285,7 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Button.Style>
-                                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource TextPrimary}"/>
+                                            <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource TextPrimary}"/></Grid>
                                         </Button>
                                         <StackPanel Orientation="Horizontal">
                                             <Button Padding="4,3" Click="CopyTitle_Click" ToolTip="Copy title">
@@ -1270,7 +1362,7 @@
                     <!-- ═══ RIGHT: Settings & Actions ═══ -->
                     <Grid Grid.Column="2">
                         <!-- UPLOAD SETTINGS (Stretches full height, large description box fills middle) -->
-                        <Border x:Name="BorderUpload" Style="{StaticResource Card}"
+                        <Border x:Name="BorderUpload" Style="{StaticResource GlassCard}"
                                 VerticalAlignment="Stretch" Margin="0"
                                 Visibility="Collapsed" Opacity="0">
                             <DockPanel LastChildFill="True">
@@ -1289,7 +1381,7 @@
                                         <Button Grid.Column="1" Style="{StaticResource IconBtn}"
                                                     ToolTip="{DynamicResource TipEditDesc}"
                                                     Click="EditDescription_Click">
-                                            <ui:SymbolIcon Symbol="Edit24" FontSize="11" Foreground="{DynamicResource TextSec}"/>
+                                            <Grid><ui:SymbolIcon Symbol="Edit24" FontSize="11" Foreground="{DynamicResource TextSec}"/></Grid>
                                         </Button>
                                     </Grid>
                                 </StackPanel>
@@ -1352,7 +1444,7 @@
                             </Grid.RowDefinitions>
 
                             <!-- DOWNLOAD SETTINGS (Compact natural card aligned to top) -->
-                            <Border x:Name="BorderDownload" Grid.Row="0" Style="{StaticResource Card}"
+                            <Border x:Name="BorderDownload" Grid.Row="0" Style="{StaticResource GlassCard}"
                                         VerticalAlignment="Top" Margin="0"
                                         Padding="14,8"
                                         Visibility="Visible" Opacity="0">
@@ -1449,7 +1541,7 @@
                                                     <Button x:Name="BtnChangeCloudFolder" Grid.Column="1" Style="{StaticResource IconBtn}"
                                                              Padding="3" Click="BtnChangeCloudFolder_Click" ToolTip="{DynamicResource TipChangeCloudFolder}"
                                                              Cursor="Hand">
-                                                        <ui:SymbolIcon Symbol="FolderOpen24" FontSize="11" Foreground="{DynamicResource TextSec}"/>
+                                                        <Grid><ui:SymbolIcon Symbol="FolderOpen24" FontSize="11" Foreground="{DynamicResource TextSec}"/></Grid>
                                                     </Button>
                                                 </Grid>
                                             </StackPanel>
@@ -1486,11 +1578,14 @@
                             </Border>
 
                             <!-- COMPLETED ACTIONS CONTAINER (shown after successful job) -->
-                            <Border x:Name="BorderCompletedActions" Style="{StaticResource Card}"
+                            <Border x:Name="BorderCompletedActions" Style="{StaticResource GlassCard}"
                                     Grid.Row="1" VerticalAlignment="Stretch"
                                     Padding="10,5"
                                     Visibility="Collapsed" Opacity="0"
                                     Margin="0,8,0,0">
+                                <!-- The card's padding becomes this host's margin on the glass (set in code too); the grid's
+                                     own margin is set in code -->
+                                <Grid x:Name="CompletedActionsHost">
                                 <UniformGrid x:Name="GridCompletedActions" Columns="1">
                                     <Button x:Name="BtnOpenCloudLink"
                                         Style="{StaticResource OutlineBtn}"
@@ -1549,38 +1644,28 @@
                                         </StackPanel>
                                     </Button>
                                 </UniformGrid>
+                                </Grid>
                             </Border>
                         </Grid>
                     </Grid>
                 </Grid>
 
-                <!-- UNIFIED MORPHING START BUTTON & INTEGRATED LOG CAPSULE -->
+                <!-- UNIFIED MORPHING START BUTTON & INTEGRATED LOG CAPSULE: Liquid Glass (surface StartButton); the glass
+                     clips everything on it to its capsule, the Border carries the shadow -->
                 <Border x:Name="StartContainer" Grid.Row="3" Height="42" Margin="0,4,0,0" CornerRadius="21"
-                        Background="{DynamicResource InputBg}"
+                        controls:LiquidGlass.Surface="StartButton" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
                         BorderBrush="{DynamicResource BorderSub}"
-                        BorderThickness="0.5"
-                        ClipToBounds="True"
                         Cursor="Hand"
                         MouseLeftButtonDown="StartContainer_Click">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="Black" Opacity="0.24"/>
+                    </Border.Effect>
                     <Grid x:Name="StartGrid">
-                        <!-- 1. Idle Glass Background -->
-                        <Border x:Name="StartIdleBg" CornerRadius="22">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#36FFFFFF" Offset="0"/>
-                                    <GradientStop Color="#24FFFFFF" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <Border.BorderBrush>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#50FFFFFF" Offset="0"/>
-                                    <GradientStop Color="#20FFFFFF" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.BorderBrush>
-                        </Border>
+                        <!-- 1. Idle: a faint lift over the glass, so the button reads brighter than the link field -->
+                        <Border x:Name="StartIdleBg" Background="{DynamicResource Tint0C}"/>
 
                         <!-- 2. Inner Glass Track Groove (Visible when running) -->
-                        <Border x:Name="StartTrackGroove" CornerRadius="22" Background="#20000000" Visibility="Collapsed"/>
+                        <Border x:Name="StartTrackGroove" Background="#20000000" Visibility="Collapsed"/>
 
                         <!-- 3. Morphing Floating Color-Free Transparent Glass Progress Capsule -->
                         <Border x:Name="StartProgressFill" Height="38" Margin="3" CornerRadius="19"
@@ -1630,16 +1715,6 @@
                             </Grid>
                         </Grid>
 
-                        <!-- 5. Glass Refraction Overlay for Entire Container -->
-                        <Border CornerRadius="22" IsHitTestVisible="False">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#18FFFFFF" Offset="0"/>
-                                    <GradientStop Color="#00FFFFFF" Offset="0.5"/>
-                                    <GradientStop Color="#0CFFFFFF" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                        </Border>
                     </Grid>
                 </Border>
             </Grid>
