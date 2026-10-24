@@ -279,6 +279,25 @@
                     </StackPanel>
                 </Grid>
             </Grid>
+
+            <!-- ══════ Start: the window is a small cube with just the spinner, then grows (MainWindow.ExpandAsync) ══════ -->
+            <Grid x:Name="Splash" Grid.RowSpan="2" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Path Width="34" Height="34" Stretch="Uniform" Stroke="{DynamicResource Accent}" StrokeThickness="3" HorizontalAlignment="Center" VerticalAlignment="Center"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M 9,1 A 8,8 0 1 1 1,9" RenderTransformOrigin="0.5,0.5">
+                    <Path.RenderTransform>
+                        <RotateTransform />
+                    </Path.RenderTransform>
+                    <Path.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Path.Triggers>
+                </Path>
+            </Grid>
         </Grid>
     </Border>
 </Window>

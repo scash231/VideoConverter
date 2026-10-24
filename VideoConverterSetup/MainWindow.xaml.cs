@@ -29,18 +29,34 @@ public partial class MainWindow : Window
     private FrameworkElement? _page;
     private Func<Task>? _retry;
 
+    // the window opens as a small cube with just the spinner and grows to full size once there is a page to show
+    private const double CubeSize = 132;
+    private const double CubeRadius = 30;
+    private const double FullRadius = 14;
+    private static readonly TimeSpan MinCubeTime = TimeSpan.FromMilliseconds(700);
+    private readonly Stopwatch _cubeShown = new();
+    private Task? _expand;
+
+    private static readonly DependencyProperty ExpandProperty = DependencyProperty.Register(
+        "Expand", typeof(double), typeof(MainWindow), new PropertyMetadata(0.0, (d, _) => ((MainWindow)d).ApplyExpand()));
+
     public MainWindow()
     {
         InitializeComponent();
         TaskbarItemInfo = new TaskbarItemInfo();
+        TitleBar.Opacity = 0;
+        PageLoading.Visibility = Visibility.Collapsed;
+        ApplyExpand();
         Loaded += OnLoaded;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        _cubeShown.Start();
         AnimateWindowIn();
         if (App.UninstallMode)
         {
+            await ExpandAsync();
             ShowUninstallPage(fromWelcome: false);
             return;
         }
@@ -77,17 +93,54 @@ public partial class MainWindow : Window
     private void AnimateWindowIn()
     {
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        var scale = new ScaleTransform(0.96, 0.96);
+        var scale = new ScaleTransform(0.8, 0.8);
         Shell.RenderTransformOrigin = new Point(0.5, 0.5);
         Shell.RenderTransform = scale;
         Shell.Opacity = 0;
         Shell.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(0.96, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = ease });
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.96, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = ease });
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(0.8, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = ease });
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.8, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = ease });
     }
 
-    private void ShellGrid_SizeChanged(object sender, SizeChangedEventArgs e) =>
-        ShellGrid.Clip = new RectangleGeometry(new Rect(e.NewSize), 13, 13);
+    /// <summary>Grows the cube into the full window (once; later calls return the same task).</summary>
+    private Task ExpandAsync() => _expand ??= ExpandCoreAsync();
+
+    private async Task ExpandCoreAsync()
+    {
+        var wait = MinCubeTime - _cubeShown.Elapsed;
+        if (wait > TimeSpan.Zero) await Task.Delay(wait);
+
+        var done = new TaskCompletionSource<bool>();
+        var grow = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(520)) { EasingFunction = new BackEase { Amplitude = 0.2, EasingMode = EasingMode.EaseOut } };
+        grow.Completed += (_, _) => done.TrySetResult(true);
+        BeginAnimation(ExpandProperty, grow);
+        Splash.BeginAnimation(OpacityProperty, new DoubleAnimation(0, TimeSpan.FromMilliseconds(140)));
+        await done.Task;
+
+        // hand the size back to the layout
+        Shell.Width = double.NaN;
+        Shell.Height = double.NaN;
+        Shell.CornerRadius = new CornerRadius(FullRadius);
+        ShellGrid.Children.Remove(Splash);
+        TitleBar.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(220)));
+    }
+
+    /// <summary>Sizes the shell between the cube (Expand 0) and the full window (Expand 1).</summary>
+    private void ApplyExpand()
+    {
+        var t = (double)GetValue(ExpandProperty);
+        double fullW = Width - Shell.Margin.Left - Shell.Margin.Right;
+        double fullH = Height - Shell.Margin.Top - Shell.Margin.Bottom;
+        Shell.CornerRadius = new CornerRadius(Math.Max(4, CubeRadius + (FullRadius - CubeRadius) * t));
+        Shell.Width = CubeSize + (fullW - CubeSize) * t;
+        Shell.Height = CubeSize + (fullH - CubeSize) * t;
+    }
+
+    private void ShellGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var r = Shell.CornerRadius.TopLeft - 1;
+        ShellGrid.Clip = new RectangleGeometry(new Rect(e.NewSize), r, r);
+    }
 
     private void ShowError(string message, Func<Task>? retry, string title = "Setup couldn't finish")
     {
@@ -103,7 +156,8 @@ public partial class MainWindow : Window
 
     private async Task LoadManifestAsync()
     {
-        ShowPage(PageLoading);
+        // the first time the cube's spinner is the loading page
+        if (_expand != null) ShowPage(PageLoading);
         try
         {
             _manifest = await ReleaseManifest.LoadAsync(App.ManifestLocation, CancellationToken.None);
@@ -115,9 +169,11 @@ public partial class MainWindow : Window
             var msg = ex is SetupException ? ex.Message
                 : ex is System.Net.Http.HttpRequestException ? "Setup couldn't reach the download server. Check your internet connection and try again."
                 : ex.Message;
+            await ExpandAsync();
             ShowError(msg, LoadManifestAsync, "Can't reach the download server");
             return;
         }
+        await ExpandAsync();
         PrepareWelcome();
         ShowPage(PageWelcome);
     }
