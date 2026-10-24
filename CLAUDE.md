@@ -226,7 +226,10 @@ A small custom WPF installer on **.NET Framework 4.8** (preinstalled on Windows 
   HKCU uninstall entry (`Files` lists installed names).
 - Running it again = update/reinstall (same folder). `VideoConverterSetup.exe /uninstall` (the Apps entry) removes files, shortcuts and the
   entry, optionally settings + tools; the exe deletes itself afterwards (`ScheduleSelfDelete`).
-- Switches: `/manifest=<url|local path>` (test against `distc\manifest.json`), `/dir=<path>`, `/keepmsi`. Log: `%TEMP%\VideoConverterSetup.log`.
+- Switches: `/manifest=<url|local path>` (test against `distc\manifest.json`), `/dir=<path>`, `/keepmsi`, `/noupdate`. Log: `%TEMP%\VideoConverterSetup.log`.
+- Self-update (`SelfUpdate.cs`): the manifest's `setup` entry is the current setup exe; a Release setup whose own SHA-256 differs downloads
+  it to `%TEMP%\VideoConverterSetup-update\` and starts it with the same arguments + `/updated`, then closes (still in the cube). Debug builds,
+  `/updated` and `/noupdate` skip it; any failure just carries on with the running setup. Setups built before this feature don't have it.
 - Run test commands from PowerShell, not Git Bash: MSYS rewrites `/keepmsi`-style arguments into paths.
 - The setup exe is unsigned, so SmartScreen warns on first download ("More info → Run anyway").
 
