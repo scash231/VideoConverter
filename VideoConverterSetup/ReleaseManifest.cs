@@ -19,8 +19,9 @@ public sealed class ReleaseManifest
     public const string DefaultUrl = "https://scash.uk/vc/manifest.json";
 
     /// <summary>Bump when a manifest needs features an older setup does not understand.</summary>
-    /// 2: setups that can update themselves (<see cref="SelfUpdate"/>); 1-only setups are told to download the newest one.
-    public const int SetupProtocol = 2;
+    /// 1: the first web setup. 2: black cube, updates itself (<see cref="SelfUpdate"/>). 3: the redesign.
+    /// Setups below the manifest's minSetup update themselves (2+) or are told to download the newest one (1).
+    public const int SetupProtocol = 3;
 
     [DataMember(Name = "name")] public string Name { get; set; } = "VideoConverter";
     [DataMember(Name = "version")] public string Version { get; set; } = "";

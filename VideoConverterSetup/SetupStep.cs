@@ -20,6 +20,9 @@ public sealed class SetupStep : INotifyPropertyChanged
 
     public string Title { get; }
 
+    /// <summary>1-based position in the list, shown until the step has a state mark.</summary>
+    public int Number { get; set; }
+
     /// <summary>Share of the overall progress bar (roughly the download size in MB).</summary>
     public double Weight { get; set; }
 

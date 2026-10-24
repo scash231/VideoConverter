@@ -32,7 +32,7 @@ public partial class MainWindow : Window
     // the window opens as a small cube with just the spinner and grows to full size once there is a page to show
     private const double CubeSize = 132;
     private const double CubeRadius = 18;
-    private const double FullRadius = 14;
+    private const double FullRadius = 10;
     private static readonly TimeSpan MinCubeTime = TimeSpan.FromMilliseconds(1200);
     private readonly Stopwatch _cubeShown = new();
     private Task? _expand;
@@ -182,7 +182,7 @@ public partial class MainWindow : Window
         await ExpandAsync();
         if (_manifest.NeedsNewerSetup)
         {
-            ShowError("This setup is too old for the current release. Update it to continue, it only takes a moment.",
+            ShowError("This setup is too old for the current release. Update it to continue.",
                 UpdateSetupAsync, "Setup needs an update", "Update installer");
             return;
         }
@@ -236,22 +236,15 @@ public partial class MainWindow : Window
                      + (needsRuntime ? runtime.Size : 0)
                      + (needsFfmpeg ? 100L * 1024 * 1024 : 0);
 
-        Chips.Children.Clear();
-        AddChip("Version " + m.Version);
-        AddChip($"About {Math.Ceiling(bytes / 1048576.0 / 5) * 5:0} MB to download");
-        if (needsRuntime) AddChip($"Includes .NET {runtime.Major} Runtime");
-        if (needsFfmpeg) AddChip("Includes FFmpeg");
+        TxtSpecVersion.Text = m.Version;
+        TxtSpecDownload.Text = $"about {Math.Ceiling(bytes / 1048576.0 / 5) * 5:0} MB";
+        var extras = new System.Collections.Generic.List<string>();
+        if (needsRuntime) extras.Add($".NET {runtime.Major} Runtime");
+        if (needsFfmpeg) extras.Add("FFmpeg");
+        TxtSpecIncludes.Text = string.Join(", ", extras);
+        RowIncludes.Visibility = extras.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         UpdateRunningNote();
-    }
-
-    private void AddChip(string text)
-    {
-        Chips.Children.Add(new Border
-        {
-            Style = (Style)FindResource("Chip"),
-            Child = new TextBlock { Text = text, FontSize = 12, Foreground = (Brush)FindResource("TextSec") },
-        });
     }
 
     private bool UpdateRunningNote()
