@@ -173,7 +173,18 @@ public partial class MainWindow : Window
             ShowError(msg, LoadManifestAsync, "Can't reach the download server");
             return;
         }
+        if (await SelfUpdate.TryStartNewerAsync(_manifest, CancellationToken.None))
+        {
+            Close();
+            return;
+        }
         await ExpandAsync();
+        if (_manifest.NeedsNewerSetup)
+        {
+            ShowError("This setup is too old for the current release. Download the newest VideoConverterSetup.exe from scash.uk/vc and run it again.",
+                LoadManifestAsync, "Setup needs an update");
+            return;
+        }
         PrepareWelcome();
         ShowPage(PageWelcome);
     }

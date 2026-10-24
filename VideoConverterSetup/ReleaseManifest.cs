@@ -19,13 +19,16 @@ public sealed class ReleaseManifest
     public const string DefaultUrl = "https://scash.uk/vc/manifest.json";
 
     /// <summary>Bump when a manifest needs features an older setup does not understand.</summary>
-    public const int SetupProtocol = 1;
+    /// 2: setups that can update themselves (<see cref="SelfUpdate"/>); 1-only setups are told to download the newest one.
+    public const int SetupProtocol = 2;
 
     [DataMember(Name = "name")] public string Name { get; set; } = "VideoConverter";
     [DataMember(Name = "version")] public string Version { get; set; } = "";
     [DataMember(Name = "published")] public string? Published { get; set; }
     [DataMember(Name = "minSetup")] public int MinSetup { get; set; }
     [DataMember(Name = "files")] public ReleaseFile[] Files { get; set; } = new ReleaseFile[0];
+    /// <summary>The current VideoConverterSetup.exe; a setup that differs from it starts this one instead (<see cref="SelfUpdate"/>).</summary>
+    [DataMember(Name = "setup")] public ReleaseFile? Setup { get; set; }
     [DataMember(Name = "runtime")] public RuntimeInfo? Runtime { get; set; }
     [DataMember(Name = "ffmpeg")] public string[]? FfmpegUrls { get; set; }
     [DataMember(Name = "ytdlp")] public string[]? YtDlpUrls { get; set; }
@@ -33,6 +36,9 @@ public sealed class ReleaseManifest
     [IgnoreDataMember] public Uri BaseUri { get; private set; } = new(DefaultUrl);
 
     public RuntimeInfo EffectiveRuntime => Runtime ?? new RuntimeInfo();
+
+    /// <summary>Checked only after <see cref="SelfUpdate"/> had its chance, so a too-old setup that can update itself does.</summary>
+    public bool NeedsNewerSetup => MinSetup > SetupProtocol;
 
     // DataContractJsonSerializer skips constructors and initializers: set the defaults for missing members here.
     [OnDeserializing]
@@ -94,8 +100,6 @@ public sealed class ReleaseManifest
         }
         if (m == null || string.IsNullOrWhiteSpace(m.Version) || m.Files == null || m.Files.Length == 0)
             throw new SetupException("The release information is incomplete (no version or no files).");
-        if (m.MinSetup > SetupProtocol)
-            throw new SetupException("This setup is too old for the current release. Download the newest VideoConverterSetup.exe and run it again.");
         foreach (var f in m.Files)
         {
             if (string.IsNullOrWhiteSpace(f.Name) || f.Name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
@@ -105,6 +109,8 @@ public sealed class ReleaseManifest
             if (string.IsNullOrWhiteSpace(f.Sha256) || f.Sha256.Length != 64)
                 throw new SetupException($"The release information has no checksum for {f.Name}.");
         }
+        // a broken setup entry only means no self-update, never a failed install
+        if (m.Setup != null && (string.IsNullOrWhiteSpace(m.Setup.Path) || m.Setup.Sha256?.Length != 64)) m.Setup = null;
         m.BaseUri = uri;
         return m;
     }

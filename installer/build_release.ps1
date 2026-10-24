@@ -76,6 +76,13 @@ foreach ($name in @("VideoConverterUI.exe", "ferrite.exe")) {
 
 if (-not (Test-Path $setupExe)) { throw "$setupExe is missing" }
 Copy-Item $setupExe (Join-Path $dist "VideoConverterSetup.exe")
+# setups that differ from this one (older downloads, the copy in the install folder) download and start it instead
+$setup = [ordered]@{
+    name   = "VideoConverterSetup.exe"
+    path   = "VideoConverterSetup.exe"
+    size   = (Get-Item $setupExe).Length
+    sha256 = (Get-FileHash $setupExe -Algorithm SHA256).Hash.ToLowerInvariant()
+}
 
 # -- Legacy (Python) engine: no longer supported, only as a manual download --
 $stage = Join-Path ([IO.Path]::GetTempPath()) ("vc-legacy-" + [guid]::NewGuid().ToString("N"))
@@ -122,8 +129,9 @@ $manifest = [ordered]@{
     name      = "VideoConverter"
     version   = $version
     published = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-    minSetup  = 1
+    minSetup  = 2
     files     = $files
+    setup     = $setup
     runtime   = [ordered]@{
         framework = "Microsoft.WindowsDesktop.App"
         major     = $runtimeMajor
