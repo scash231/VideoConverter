@@ -1050,12 +1050,13 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <!-- The thumb: a raised capsule of the theme's card colour, iOS-style. The white lift brightens it
-                             in dark mode and disappears on light mode's white card; a sheen over its upper half and a rim
-                             catching light along the top make it read as a piece of glass resting on the track. -->
+                        <!-- The thumb: a raised, translucent white lift, iOS-style. Being translucent it brightens whatever
+                             colour the glass under it has (the thumbnail's tint included) instead of sitting on it as a
+                             grey slab, and reads as white in light mode; a sheen over its upper half and a rim catching
+                             light along the top make it read as a piece of glass resting on the track. -->
                         <Border x:Name="SegmentIndicator" Grid.Column="0"
                                 CornerRadius="50"
-                                Background="{DynamicResource BgCard}"
+                                Background="#22FFFFFF"
                                 BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
                                 RenderTransformOrigin="0.5,0.5"
                                 ClipToBounds="True">
@@ -1070,7 +1071,6 @@
                                                   Direction="270" Color="#000000" Opacity="0.3"/>
                             </Border.Effect>
                             <Grid IsHitTestVisible="False">
-                                <Border CornerRadius="50" Background="#16FFFFFF"/>
                                 <Border CornerRadius="50">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
