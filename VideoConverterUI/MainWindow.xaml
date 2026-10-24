@@ -1148,8 +1148,8 @@
                                 </Grid.RowDefinitions>
 
                                 <!-- Skeleton Thumbnail Container -->
-                                <Border x:Name="ThumbSkeletonBorder" Grid.Row="0" CornerRadius="16,16,0,0"
-                                        helpers:ClipHelper.CornerRadiusClip="True"
+                                <!-- No corners of its own: the card's glass clips it to its squircle -->
+                                <Border x:Name="ThumbSkeletonBorder" Grid.Row="0"
                                         Background="{DynamicResource ThumbGrad}"
                                         ClipToBounds="True" Height="185" Opacity="0.5">
                                     <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -1181,9 +1181,8 @@
                                 <Border x:Name="MetaTint" Grid.RowSpan="3" IsHitTestVisible="False"/>
 
                                 <!-- Thumbnail -->
+                                <!-- No corners of its own: the card's glass clips it to its squircle -->
                                 <Border x:Name="ThumbBgBorder" Grid.Row="0"
-                                        CornerRadius="16,16,0,0"
-                                        helpers:ClipHelper.CornerRadiusClip="True"
                                         Background="{DynamicResource ThumbGrad}"
                                         ClipToBounds="True" Height="185">
                                     <Grid>
