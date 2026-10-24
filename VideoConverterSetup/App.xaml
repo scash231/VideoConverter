@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
-        <!-- ══════ Palette (VideoConverter dark mode; App.ApplyLightPalette swaps these) ══════ -->
-        <SolidColorBrush x:Key="BgDeep" Color="#1C1C1E" />
+        <!-- ══════ Palette (always black, whatever the Windows theme) ══════ -->
+        <SolidColorBrush x:Key="BgDeep" Color="#000000" />
         <SolidColorBrush x:Key="BgCard" Color="#2C2C2E" />
         <SolidColorBrush x:Key="BgElevated" Color="#3A3A3C" />
         <SolidColorBrush x:Key="BorderSub" Color="#38383A" />
