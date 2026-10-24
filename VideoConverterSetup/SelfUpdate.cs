@@ -19,11 +19,14 @@ public static class SelfUpdate
 
     private static string TargetExe => Path.Combine(Path.GetTempPath(), "VideoConverterSetup-update", SetupPaths.SetupExe);
 
-    /// <summary>True when the newer setup was started and this one should close. Never throws: on any problem this setup simply carries on.</summary>
-    public static async Task<bool> TryStartNewerAsync(ReleaseManifest manifest, CancellationToken ct)
+    /// <summary>
+    /// True when the newer setup was started and this one should close. Never throws: on any problem this setup simply carries on.
+    /// <paramref name="force"/> (the "Update installer" button) runs even when <see cref="App.SkipSelfUpdate"/> is set.
+    /// </summary>
+    public static async Task<bool> TryStartNewerAsync(ReleaseManifest manifest, CancellationToken ct, bool force = false)
     {
         var setup = manifest.Setup;
-        if (App.SkipSelfUpdate || setup == null) return false;
+        if ((App.SkipSelfUpdate && !force) || setup == null) return false;
         try
         {
             var self = SetupPaths.CurrentExe;

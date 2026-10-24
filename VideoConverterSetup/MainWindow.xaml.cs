@@ -142,11 +142,12 @@ public partial class MainWindow : Window
         ShellGrid.Clip = new RectangleGeometry(new Rect(e.NewSize), r, r);
     }
 
-    private void ShowError(string message, Func<Task>? retry, string title = "Setup couldn't finish")
+    private void ShowError(string message, Func<Task>? retry, string title = "Setup couldn't finish", string retryText = "Try again")
     {
         _retry = retry;
         TxtErrorTitle.Text = title;
         TxtError.Text = message;
+        BtnRetry.Content = retryText;
         BtnRetry.Visibility = retry != null ? Visibility.Visible : Visibility.Collapsed;
         TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Error;
         ShowPage(PageError);
@@ -181,12 +182,27 @@ public partial class MainWindow : Window
         await ExpandAsync();
         if (_manifest.NeedsNewerSetup)
         {
-            ShowError("This setup is too old for the current release. Download the newest VideoConverterSetup.exe from scash.uk/vc and run it again.",
-                LoadManifestAsync, "Setup needs an update");
+            ShowError("This setup is too old for the current release. Update it to continue, it only takes a moment.",
+                UpdateSetupAsync, "Setup needs an update", "Update installer");
             return;
         }
         PrepareWelcome();
         ShowPage(PageWelcome);
+    }
+
+    /// <summary>"Update installer": starts the newest setup from the manifest, or opens the download page when there is none to fetch.</summary>
+    private async Task UpdateSetupAsync()
+    {
+        BtnRetry.IsEnabled = false;
+        BtnRetry.Content = "Updating…";
+        if (await SelfUpdate.TryStartNewerAsync(_manifest!, CancellationToken.None, force: true))
+        {
+            Close();
+            return;
+        }
+        try { Process.Start(new ProcessStartInfo(SetupPaths.AboutUrl) { UseShellExecute = true }); } catch { }
+        BtnRetry.IsEnabled = true;
+        BtnRetry.Content = "Update installer";
     }
 
     private void PrepareWelcome()
