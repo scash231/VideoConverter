@@ -9,53 +9,48 @@
         UseLayoutRounding="True" SnapsToDevicePixels="True">
 
     <Window.Resources>
-        <!-- one row of the progress list -->
+        <!-- one row of the progress list: number, then a mark for how it went -->
         <DataTemplate x:Key="StepRow" DataType="{x:Type local:SetupStep}">
-            <Grid Height="30">
+            <Grid Height="32">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="30" />
+                    <ColumnDefinition Width="34" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Width="18" Height="18" HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <Ellipse x:Name="Pending" Stroke="{DynamicResource BorderSub}" StrokeThickness="1.5" />
-                    <Path x:Name="Spinner" Visibility="Collapsed" Stroke="{DynamicResource Accent}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                          Data="M 9,1 A 8,8 0 1 1 1,9" RenderTransformOrigin="0.5,0.5">
-                        <Path.RenderTransform>
-                            <RotateTransform />
-                        </Path.RenderTransform>
-                    </Path>
-                    <Grid x:Name="Done" Visibility="Collapsed">
-                        <Ellipse Fill="{DynamicResource SuccessGreen}" />
-                        <Path Data="M 5,9.2 L 7.8,12 L 13,6.4" Stroke="White" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                <Grid Width="16" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock x:Name="Num" Text="{Binding Number, StringFormat={}{0:00}}" FontFamily="{StaticResource MonoFont}" FontSize="11.5"
+                               Foreground="{DynamicResource TextTer}" VerticalAlignment="Center" />
+                    <Grid x:Name="Spinner" Visibility="Collapsed" Width="13" Height="13" HorizontalAlignment="Left">
+                        <Ellipse Stroke="{DynamicResource Track}" StrokeThickness="1.6" />
+                        <Path x:Name="SpinArc" Width="13" Height="13" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M 6.5,0.8 A 5.7,5.7 0 0 1 12.2,6.5" RenderTransformOrigin="0.5,0.5">
+                            <Path.RenderTransform>
+                                <RotateTransform />
+                            </Path.RenderTransform>
+                        </Path>
                     </Grid>
-                    <Grid x:Name="Skipped" Visibility="Collapsed">
-                        <Ellipse Fill="{DynamicResource WarnAmber}" />
-                        <Path Data="M 5.5,9 L 12.5,9" Stroke="White" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                    </Grid>
-                    <Grid x:Name="Failed" Visibility="Collapsed">
-                        <Ellipse Fill="{DynamicResource ErrorRed}" />
-                        <Path Data="M 6,6 L 12,12 M 12,6 L 6,12" Stroke="White" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                    </Grid>
+                    <Path x:Name="Done" Visibility="Collapsed" Data="M 1.5,8.5 L 5.5,12.5 L 14,3.5" Stroke="{DynamicResource SuccessGreen}" StrokeThickness="1.8"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    <Path x:Name="Skipped" Visibility="Collapsed" Data="M 2,8 L 12,8" Stroke="{DynamicResource WarnAmber}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    <Path x:Name="Failed" Visibility="Collapsed" Data="M 2.5,3 L 11.5,12 M 11.5,3 L 2.5,12" Stroke="{DynamicResource ErrorRed}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                 </Grid>
 
                 <TextBlock x:Name="Name" Grid.Column="1" Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center"
                            Foreground="{DynamicResource TextSec}" TextTrimming="CharacterEllipsis" />
-                <TextBlock Grid.Column="2" Text="{Binding Detail}" FontSize="12.5" VerticalAlignment="Center" Margin="12,0,0,0"
+                <TextBlock Grid.Column="2" Text="{Binding Detail}" FontFamily="{StaticResource MonoFont}" FontSize="11.5" VerticalAlignment="Center" Margin="12,0,0,0"
                            Foreground="{DynamicResource TextSec}" />
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding State}" Value="Active">
-                    <Setter TargetName="Pending" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Num" Property="Visibility" Value="Collapsed" />
                     <Setter TargetName="Spinner" Property="Visibility" Value="Visible" />
                     <Setter TargetName="Name" Property="Foreground" Value="{DynamicResource TextPrimary}" />
-                    <Setter TargetName="Name" Property="FontWeight" Value="SemiBold" />
                     <DataTrigger.EnterActions>
                         <BeginStoryboard x:Name="Spin">
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetName="Spinner" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                                                 From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
+                                <DoubleAnimation Storyboard.TargetName="SpinArc" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                 From="0" To="360" Duration="0:0:0.8" RepeatBehavior="Forever" />
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.EnterActions>
@@ -64,17 +59,17 @@
                     </DataTrigger.ExitActions>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding State}" Value="Done">
-                    <Setter TargetName="Pending" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Num" Property="Visibility" Value="Collapsed" />
                     <Setter TargetName="Done" Property="Visibility" Value="Visible" />
                     <Setter TargetName="Name" Property="Foreground" Value="{DynamicResource TextPrimary}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding State}" Value="Skipped">
-                    <Setter TargetName="Pending" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Num" Property="Visibility" Value="Collapsed" />
                     <Setter TargetName="Skipped" Property="Visibility" Value="Visible" />
                     <Setter TargetName="Name" Property="Foreground" Value="{DynamicResource TextPrimary}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding State}" Value="Failed">
-                    <Setter TargetName="Pending" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Num" Property="Visibility" Value="Collapsed" />
                     <Setter TargetName="Failed" Property="Visibility" Value="Visible" />
                     <Setter TargetName="Name" Property="Foreground" Value="{DynamicResource ErrorRed}" />
                 </DataTrigger>
@@ -82,63 +77,41 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border x:Name="Shell" Margin="18" CornerRadius="14" Background="{DynamicResource BgDeep}"
+    <Border x:Name="Shell" Margin="18" CornerRadius="10" Background="{DynamicResource BgDeep}"
             BorderBrush="{DynamicResource WindowBorder}" BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="26" ShadowDepth="5" Direction="270" Opacity="0.45" />
+            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Opacity="0.55" />
         </Border.Effect>
 
         <Grid x:Name="ShellGrid" SizeChanged="ShellGrid_SizeChanged">
             <Grid.RowDefinitions>
-                <RowDefinition Height="52" />
+                <RowDefinition Height="48" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- soft accent glow in the top right corner -->
-            <Ellipse Grid.RowSpan="2" Width="520" Height="360" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-210,-200,0" IsHitTestVisible="False">
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
-                        <GradientStop Color="{DynamicResource GlowColor}" Offset="0" />
-                        <GradientStop Color="{DynamicResource GlowColor2}" Offset="0.45" />
-                        <GradientStop Color="Transparent" Offset="1" />
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-            </Ellipse>
+            <!-- the gradient: a wash down from the top edge -->
+            <Rectangle Grid.RowSpan="2" Height="230" VerticalAlignment="Top" Fill="{DynamicResource HeaderWash}" IsHitTestVisible="False" />
 
             <!-- ══════ Title bar ══════ -->
             <Grid x:Name="TitleBar" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                    <Image Source="app.ico" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality" />
-                    <TextBlock Text="VideoConverter" Margin="10,0,0,0" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-                    <TextBlock x:Name="TxtTitleMode" Text="Setup" Margin="6,0,0,0" FontSize="13" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" Margin="18,0,0,0" VerticalAlignment="Center">
+                    <Image Source="app.ico" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <TextBlock Text="VideoConverter" Margin="9,0,0,0" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="TxtTitleMode" Text="Setup" Margin="5,0,0,0" FontSize="12.5" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,12,0" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center">
                     <Button Style="{StaticResource TitleBarButton}" Content="&#xE921;" ToolTip="Minimize" Click="Minimize_Click" />
-                    <Button x:Name="BtnClose" Style="{StaticResource TitleBarButton}" Content="&#xE8BB;" ToolTip="Close" Margin="4,0,0,0" Click="Close_Click" />
+                    <Button x:Name="BtnClose" Style="{StaticResource TitleBarButton}" Content="&#xE8BB;" ToolTip="Close" Margin="2,0,0,0" Click="Close_Click" />
                 </StackPanel>
             </Grid>
 
             <!-- ══════ Pages ══════ -->
-            <Grid x:Name="Pages" Grid.Row="1" Margin="36,6,36,28">
+            <Grid x:Name="Pages" Grid.Row="1" Margin="40,10,40,30">
 
-                <!-- loading the manifest -->
+                <!-- loading the manifest (again, after an error; the first time the cube shows it) -->
                 <StackPanel x:Name="PageLoading" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <Path x:Name="LoadingSpinner" Width="34" Height="34" Stretch="Uniform" Stroke="{DynamicResource Accent}" StrokeThickness="3"
-                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M 9,1 A 8,8 0 1 1 1,9" RenderTransformOrigin="0.5,0.5">
-                        <Path.RenderTransform>
-                            <RotateTransform />
-                        </Path.RenderTransform>
-                        <Path.Triggers>
-                            <EventTrigger RoutedEvent="Loaded">
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </EventTrigger>
-                        </Path.Triggers>
-                    </Path>
-                    <TextBlock Text="Getting the latest version…" Style="{StaticResource Sub}" Margin="0,16,0,0" HorizontalAlignment="Center" />
+                    <Control Style="{StaticResource Spinner}" Width="22" Height="22" />
+                    <TextBlock Text="Getting the latest version" Style="{StaticResource Sub}" Margin="0,14,0,0" HorizontalAlignment="Center" />
                 </StackPanel>
 
                 <!-- welcome / options -->
@@ -149,24 +122,60 @@
                     </Grid.RowDefinitions>
                     <StackPanel>
                         <TextBlock x:Name="TxtWelcomeTitle" Text="Install VideoConverter" Style="{StaticResource Title}" />
-                        <TextBlock x:Name="TxtWelcomeSub" Style="{StaticResource Sub}" Margin="0,6,0,0"
+                        <TextBlock x:Name="TxtWelcomeSub" Style="{StaticResource Sub}" Margin="0,8,0,0" MaxWidth="520" HorizontalAlignment="Left"
                                    Text="Download videos and audio from Instagram, TikTok, YouTube and YouTube Music. Setup gets everything the app needs." />
-                        <WrapPanel x:Name="Chips" Margin="0,16,0,0" />
 
-                        <TextBlock Text="Install location" Style="{StaticResource Label}" Margin="0,14,0,8" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border Height="36" CornerRadius="10" Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="1" Padding="12,0">
-                                <TextBlock x:Name="TxtDir" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-                            </Border>
-                            <Button x:Name="BtnChangeDir" Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Change…" Margin="10,0,0,0" Click="ChangeDir_Click" />
-                        </Grid>
+                        <!-- summary -->
+                        <Border Margin="0,24,0,0" BorderBrush="{DynamicResource Hairline}" BorderThickness="0,0,0,1">
+                            <StackPanel>
+                                <Border Style="{StaticResource SpecRow}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Version" Style="{StaticResource SpecKey}" />
+                                        <TextBlock x:Name="TxtSpecVersion" Grid.Column="1" Style="{StaticResource SpecValue}" />
+                                    </Grid>
+                                </Border>
+                                <Border Style="{StaticResource SpecRow}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Download" Style="{StaticResource SpecKey}" />
+                                        <TextBlock x:Name="TxtSpecDownload" Grid.Column="1" Style="{StaticResource SpecValue}" />
+                                    </Grid>
+                                </Border>
+                                <Border x:Name="RowIncludes" Style="{StaticResource SpecRow}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Also installs" Style="{StaticResource SpecKey}" />
+                                        <TextBlock x:Name="TxtSpecIncludes" Grid.Column="1" Style="{StaticResource SpecValue}" />
+                                    </Grid>
+                                </Border>
+                                <Border Style="{StaticResource SpecRow}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Location" Style="{StaticResource SpecKey}" />
+                                        <TextBlock x:Name="TxtDir" Grid.Column="1" Style="{StaticResource SpecValue}" />
+                                        <Button x:Name="BtnChangeDir" Grid.Column="2" Style="{StaticResource LinkButton}" Content="Change" Margin="16,0,0,0"
+                                                VerticalAlignment="Center" Click="ChangeDir_Click" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                         <TextBlock x:Name="TxtDirError" Visibility="Collapsed" Margin="0,8,0,0" FontSize="12.5" Foreground="{DynamicResource ErrorRed}" TextWrapping="Wrap" />
 
-                        <CheckBox x:Name="ChkDesktop" Style="{StaticResource Switch}" Content="Create a desktop shortcut" IsChecked="True" Margin="0,20,0,0" HorizontalAlignment="Left" />
+                        <CheckBox x:Name="ChkDesktop" Style="{StaticResource Check}" Content="Create a desktop shortcut" IsChecked="True" Margin="0,20,0,0" HorizontalAlignment="Left" />
                     </StackPanel>
 
                     <Grid Grid.Row="1">
@@ -187,10 +196,10 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <StackPanel>
-                        <TextBlock x:Name="TxtProgressTitle" Text="Installing VideoConverter" Style="{StaticResource Title}" FontSize="24" />
-                        <TextBlock x:Name="TxtProgressSub" Text="This takes a minute or two, depending on your connection." Style="{StaticResource Sub}" Margin="0,6,0,0" />
+                        <TextBlock x:Name="TxtProgressTitle" Text="Installing VideoConverter" Style="{StaticResource Title}" />
+                        <TextBlock x:Name="TxtProgressSub" Text="This takes a minute or two, depending on your connection." Style="{StaticResource Sub}" Margin="0,8,0,0" />
                     </StackPanel>
-                    <ScrollViewer Grid.Row="1" Margin="0,14,0,10" VerticalScrollBarVisibility="Auto" Focusable="False">
+                    <ScrollViewer Grid.Row="1" Margin="0,20,0,12" VerticalScrollBarVisibility="Auto" Focusable="False">
                         <ItemsControl x:Name="StepList" ItemTemplate="{StaticResource StepRow}" />
                     </ScrollViewer>
                     <Grid Grid.Row="2">
@@ -200,8 +209,9 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <ProgressBar x:Name="Bar" Style="{StaticResource Bar}" VerticalAlignment="Center" />
-                        <TextBlock x:Name="TxtPercent" Grid.Column="1" Text="0 %" Width="46" TextAlignment="Right" FontSize="12.5" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" />
-                        <Button x:Name="BtnCancel" Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="18,0,0,0" MinWidth="110" Click="Cancel_Click" />
+                        <TextBlock x:Name="TxtPercent" Grid.Column="1" Text="0 %" Width="50" TextAlignment="Right" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                   Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" />
+                        <Button x:Name="BtnCancel" Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="20,0,0,0" MinWidth="104" Click="Cancel_Click" />
                     </Grid>
                 </Grid>
 
@@ -211,49 +221,45 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480">
-                        <Grid x:Name="DoneBadge" Width="68" Height="68" RenderTransformOrigin="0.5,0.5">
-                            <Grid.RenderTransform>
+                    <StackPanel VerticalAlignment="Center" MaxWidth="520" HorizontalAlignment="Left">
+                        <Path x:Name="DoneBadge" Data="M 2,15 L 11,24 L 30,4" Stroke="{DynamicResource SuccessGreen}" StrokeThickness="3"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Left" RenderTransformOrigin="0.3,0.6">
+                            <Path.RenderTransform>
                                 <ScaleTransform ScaleX="0.4" ScaleY="0.4" />
-                            </Grid.RenderTransform>
-                            <Ellipse x:Name="DoneCircle" Fill="{DynamicResource SuccessGreen}" />
-                            <Path x:Name="DoneGlyph" Data="M 21,35 L 30,44 L 48,25" Stroke="White" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
-                        </Grid>
-                        <TextBlock x:Name="TxtDoneTitle" Text="VideoConverter is ready" Style="{StaticResource Title}" FontSize="24" Margin="0,20,0,0" HorizontalAlignment="Center" TextAlignment="Center" />
-                        <TextBlock x:Name="TxtDoneSub" Style="{StaticResource Sub}" Margin="0,6,0,0" HorizontalAlignment="Center" TextAlignment="Center"
-                                   Text="You'll find it in the Start menu." />
-                        <ItemsControl x:Name="WarningList" Margin="0,14,0,0">
+                            </Path.RenderTransform>
+                        </Path>
+                        <TextBlock x:Name="TxtDoneTitle" Text="VideoConverter is ready" Style="{StaticResource Title}" Margin="0,20,0,0" />
+                        <TextBlock x:Name="TxtDoneSub" Style="{StaticResource Sub}" Margin="0,8,0,0" Text="You'll find it in the Start menu." />
+                        <ItemsControl x:Name="WarningList" Margin="0,16,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding}" FontSize="12.5" Foreground="{DynamicResource WarnAmber}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,6" />
+                                    <TextBlock Text="{Binding}" FontSize="12.5" Foreground="{DynamicResource WarnAmber}" TextWrapping="Wrap" Margin="0,0,0,6" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
                     <Grid Grid.Row="1">
-                        <CheckBox x:Name="ChkLaunch" Style="{StaticResource Switch}" Content="Open VideoConverter now" IsChecked="True" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        <CheckBox x:Name="ChkLaunch" Style="{StaticResource Check}" Content="Open VideoConverter now" IsChecked="True" HorizontalAlignment="Left" VerticalAlignment="Center" />
                         <Button x:Name="BtnFinish" Style="{StaticResource PrimaryButton}" Content="Finish" HorizontalAlignment="Right" IsDefault="True" Click="Finish_Click" />
                     </Grid>
                 </Grid>
 
-                <!-- error -->
+                <!-- error: a red rule beside the message, no badge -->
                 <Grid x:Name="PageError" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <StackPanel VerticalAlignment="Center">
-                        <Grid Width="56" Height="56" HorizontalAlignment="Left">
-                            <Ellipse Fill="{DynamicResource ErrorRed}" />
-                            <Path Data="M 28,15 L 28,31 M 28,39.5 L 28,40" Stroke="White" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                        </Grid>
-                        <TextBlock x:Name="TxtErrorTitle" Text="Setup couldn't finish" Style="{StaticResource Title}" FontSize="24" Margin="0,18,0,0" />
-                        <TextBox x:Name="TxtError" Margin="-2,8,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
-                                 Foreground="{DynamicResource TextSec}" FontSize="13.5" TextWrapping="Wrap" MaxHeight="150" VerticalScrollBarVisibility="Auto" />
-                        <Button Style="{StaticResource LinkButton}" Content="Open the setup log" Margin="0,12,0,0" HorizontalAlignment="Left" Click="OpenLog_Click" />
-                    </StackPanel>
+                    <Border VerticalAlignment="Center" BorderBrush="{DynamicResource ErrorRed}" BorderThickness="2,0,0,0" Padding="20,2,0,2">
+                        <StackPanel>
+                            <TextBlock x:Name="TxtErrorTitle" Text="Setup couldn't finish" Style="{StaticResource Title}" FontSize="24" />
+                            <TextBox x:Name="TxtError" Margin="-2,8,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
+                                     Foreground="{DynamicResource TextSec}" FontSize="13.5" TextWrapping="Wrap" MaxHeight="150" VerticalScrollBarVisibility="Auto" />
+                            <Button Style="{StaticResource LinkButton}" Content="Open the setup log" Margin="0,14,0,0" HorizontalAlignment="Left" Click="OpenLog_Click" />
+                        </StackPanel>
+                    </Border>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Style="{StaticResource SecondaryButton}" Content="Close" MinWidth="110" Click="Close_Click" />
+                        <Button Style="{StaticResource SecondaryButton}" Content="Close" Click="Close_Click" />
                         <Button x:Name="BtnRetry" Style="{StaticResource PrimaryButton}" Content="Try again" Margin="10,0,0,0" IsDefault="True" Click="Retry_Click" />
                     </StackPanel>
                 </Grid>
@@ -266,15 +272,25 @@
                     </Grid.RowDefinitions>
                     <StackPanel>
                         <TextBlock Text="Uninstall VideoConverter?" Style="{StaticResource Title}" />
-                        <TextBlock Style="{StaticResource Sub}" Margin="0,6,0,0"
+                        <TextBlock Style="{StaticResource Sub}" Margin="0,8,0,0" MaxWidth="520" HorizontalAlignment="Left"
                                    Text="This removes the app, the Ferrite engine and the shortcuts. Videos you downloaded stay where they are." />
-                        <TextBlock Text="Installed in" Style="{StaticResource Label}" Margin="0,22,0,6" />
-                        <TextBlock x:Name="TxtUninstallDir" FontSize="13" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-                        <CheckBox x:Name="ChkRemoveData" Style="{StaticResource Switch}" Margin="0,24,0,0" HorizontalAlignment="Left"
+                        <Border Margin="0,24,0,0" BorderBrush="{DynamicResource Hairline}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource SpecRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Installed in" Style="{StaticResource SpecKey}" />
+                                    <TextBlock x:Name="TxtUninstallDir" Grid.Column="1" Style="{StaticResource SpecValue}" />
+                                </Grid>
+                            </Border>
+                        </Border>
+                        <CheckBox x:Name="ChkRemoveData" Style="{StaticResource Check}" Margin="0,20,0,0" HorizontalAlignment="Left"
                                   Content="Also delete settings and downloaded tools (FFmpeg, yt-dlp)" />
                     </StackPanel>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button x:Name="BtnUninstallCancel" Style="{StaticResource SecondaryButton}" Content="Cancel" MinWidth="110" IsCancel="True" Click="UninstallCancel_Click" />
+                        <Button x:Name="BtnUninstallCancel" Style="{StaticResource SecondaryButton}" Content="Cancel" IsCancel="True" Click="UninstallCancel_Click" />
                         <Button Style="{StaticResource DangerButton}" Content="Uninstall" Margin="10,0,0,0" Click="Uninstall_Click" />
                     </StackPanel>
                 </Grid>
@@ -282,21 +298,7 @@
 
             <!-- ══════ Start: the window is a small cube with just the spinner, then grows (MainWindow.ExpandAsync) ══════ -->
             <Grid x:Name="Splash" Grid.RowSpan="2" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Path Width="34" Height="34" Stretch="Uniform" Stroke="{DynamicResource Accent}" StrokeThickness="3" HorizontalAlignment="Center" VerticalAlignment="Center"
-                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M 9,1 A 8,8 0 1 1 1,9" RenderTransformOrigin="0.5,0.5">
-                    <Path.RenderTransform>
-                        <RotateTransform />
-                    </Path.RenderTransform>
-                    <Path.Triggers>
-                        <EventTrigger RoutedEvent="Loaded">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </Path.Triggers>
-                </Path>
+                <Control Style="{StaticResource Spinner}" Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Grid>
         </Grid>
     </Border>

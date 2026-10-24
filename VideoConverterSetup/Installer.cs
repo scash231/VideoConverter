@@ -527,6 +527,7 @@ public sealed class InstallerEngine
 
     private void Add(SetupStep step, Func<CancellationToken, Task> action)
     {
+        step.Number = Steps.Count + 1;
         Steps.Add(step);
         _actions.Add(action);
     }
