@@ -492,7 +492,7 @@ public static class Liquid
         panel.RenderTransformOrigin = new Point(0.5, 0);
         var (scale, move) = Rig(panel);
         Arrive(panel, scale, move, 0.95, 0.92, 14, Spring.Bouncy, fromX: slideFromX, resume: resume);
-        if (!resume && panel.Child is StackPanel sp) StaggerIn(sp, 40, 35);
+        if (!resume && FluidMotion.ContentRows(panel) is StackPanel sp) StaggerIn(sp, 40, 35);
     }
 
     public static void HidePanel(Border panel, double slideX, Action? onCompleted)
@@ -531,7 +531,7 @@ public static class Liquid
         var (ss, sm) = Rig(showPanel);
         Arrive(showPanel, ss, sm, 0.96, 0.95, 6, Spring.Bouncy, delayMs: resume ? 0 : 60, fromX: direction * 40, resume: resume);
 
-        if (resume || showPanel.Child is not Panel rows) return;
+        if (resume || FluidMotion.ContentRows(showPanel) is not Panel rows) return;
         int i = 0;
         foreach (UIElement child in rows.Children)
         {

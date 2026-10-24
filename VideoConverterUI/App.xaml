@@ -1572,7 +1572,7 @@
                 </Setter>
             </Style>
 
-            <!-- ══════ Header Language Pill Button ══════ -->
+            <!-- ══════ Header Language Pill Button (sits on the main window's glass capsule LangPillGlass) ══════ -->
             <Style x:Key="HeaderLangPillBtn" TargetType="Button">
                 <Setter Property="anim:MicroAnimationBehavior.IsEnabled" Value="True"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
@@ -1580,9 +1580,8 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Border x:Name="Bd" CornerRadius="8" Padding="9.2,0" Height="30.1"
-                                    Background="{DynamicResource InputBg}"
-                                    BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5">
+                            <Border x:Name="Bd" CornerRadius="17" Padding="12,0" Height="34"
+                                    Background="Transparent">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
