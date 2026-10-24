@@ -31,9 +31,9 @@ public partial class MainWindow : Window
 
     // the window opens as a small cube with just the spinner and grows to full size once there is a page to show
     private const double CubeSize = 132;
-    private const double CubeRadius = 30;
+    private const double CubeRadius = 18;
     private const double FullRadius = 14;
-    private static readonly TimeSpan MinCubeTime = TimeSpan.FromMilliseconds(700);
+    private static readonly TimeSpan MinCubeTime = TimeSpan.FromMilliseconds(1200);
     private readonly Stopwatch _cubeShown = new();
     private Task? _expand;
 
