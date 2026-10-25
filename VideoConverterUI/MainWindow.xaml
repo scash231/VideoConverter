@@ -20,6 +20,7 @@
 
     <!-- ═══════════════════ WINDOW RESOURCES ═══════════════════ -->
     <Window.Resources>
+        <!-- The opening without Liquid; OnLoaded starts it once the first frames are drawn (OpenOnceRendering) -->
         <Storyboard x:Key="FadeInWindow">
             <DoubleAnimation Storyboard.TargetName="RootBorder"
                              Storyboard.TargetProperty="Opacity"
@@ -53,6 +54,21 @@
             <Setter Property="controls:LiquidGlass.TextShadow" Value="False"/>
         </Style>
 
+        <!-- The preview card's quick actions (copy title / URL, open in browser, save thumbnail, clear): secondary text
+             that brightens to TextPrimary on hover; icons and labels both follow the button's Foreground -->
+        <Style x:Key="QuickActionBtn" TargetType="Button" BasedOn="{StaticResource IconBtn}">
+            <Style.Resources>
+                <Style TargetType="ui:SymbolIcon">
+                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                </Style>
+            </Style.Resources>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Buttons on the header's glass pills: IconBtn with a capsule hover that follows the pill's shape -->
         <Style x:Key="PillGlassBtn" TargetType="Button" BasedOn="{StaticResource IconBtn}">
             <Setter Property="Template">
@@ -75,12 +91,6 @@
             </Setter>
         </Style>
     </Window.Resources>
-
-    <Window.Triggers>
-        <EventTrigger RoutedEvent="Window.Loaded">
-            <BeginStoryboard Storyboard="{StaticResource FadeInWindow}"/>
-        </EventTrigger>
-    </Window.Triggers>
 
     <!-- ═══════════════════ ROOT BORDER ═══════════════════ -->
     <helpers:SquircleBorder x:Name="RootBorder" CornerRadius="20"
@@ -1169,6 +1179,7 @@
 
                         <Border x:Name="BorderMeta" Style="{StaticResource GlassCard}"
                                 Visibility="Collapsed" Opacity="0" Padding="0" Margin="0">
+                            <!-- Behind its glass, the thumbnail mirrored below itself (SetupThumbReflection) -->
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -1264,90 +1275,39 @@
                                     </ItemsControl>
                                 </StackPanel>
 
-                                <!-- Quick actions (integrated card footer inheriting liquid glass material) -->
+                                <!-- Quick actions: a footer on the card's glass, set off by a hairline only (the glass rounds
+                                     and clips its corners) -->
                                 <Border Grid.Row="2"
-                                        CornerRadius="0,0,16,16"
-                                        Background="#12000000"
                                         BorderBrush="{DynamicResource BorderSub}"
                                         BorderThickness="0,0.5,0,0" Padding="12,8">
                                     <DockPanel>
-                                        <Button DockPanel.Dock="Right"
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource QuickActionBtn}"
                                                 Click="ClearForm_Click" Padding="4,3"
                                                 ToolTip="{DynamicResource TipClearForm}">
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource IconBtn}">
-                                                    <Setter Property="Opacity" Value="0.45"/>
-                                                    <Style.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Opacity" Value="1.0"/>
-                                                        </Trigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                            <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource TextPrimary}"/></Grid>
+                                            <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="11"/></Grid>
                                         </Button>
                                         <StackPanel Orientation="Horizontal">
-                                            <Button Padding="4,3" Click="CopyTitle_Click" ToolTip="Copy title">
-                                                <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource IconBtn}">
-                                                        <Setter Property="Opacity" Value="0.45"/>
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Opacity" Value="1.0"/>
-                                                            </Trigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
+                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Click="CopyTitle_Click" ToolTip="Copy title">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <ui:SymbolIcon Symbol="Document24" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                                    <ui:SymbolIcon Symbol="Document24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickCopyTitle" Text="Title" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                 </StackPanel>
                                             </Button>
-                                            <Button Padding="4,3" Margin="8,0,0,0" Click="CopyUrl_Click" ToolTip="Copy URL">
-                                                <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource IconBtn}">
-                                                        <Setter Property="Opacity" Value="0.45"/>
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Opacity" Value="1.0"/>
-                                                            </Trigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
+                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Margin="8,0,0,0" Click="CopyUrl_Click" ToolTip="Copy URL">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <ui:SymbolIcon Symbol="Link24" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                                    <ui:SymbolIcon Symbol="Link24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickCopyUrl" Text="URL" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                 </StackPanel>
                                             </Button>
-                                            <Button Padding="4,3" Margin="8,0,0,0" Click="OpenInBrowser_Click" ToolTip="Open in browser">
-                                                <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource IconBtn}">
-                                                        <Setter Property="Opacity" Value="0.45"/>
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Opacity" Value="1.0"/>
-                                                            </Trigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
+                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Margin="8,0,0,0" Click="OpenInBrowser_Click" ToolTip="Open in browser">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <ui:SymbolIcon Symbol="Globe24" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                                    <ui:SymbolIcon Symbol="Globe24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickOpenBrowser" Text="Browser" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                 </StackPanel>
                                             </Button>
-                                            <Button Padding="4,3" Margin="8,0,0,0" Click="SaveThumbnail_Click" ToolTip="Save thumbnail">
-                                                <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource IconBtn}">
-                                                        <Setter Property="Opacity" Value="0.45"/>
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Opacity" Value="1.0"/>
-                                                            </Trigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
+                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Margin="8,0,0,0" Click="SaveThumbnail_Click" ToolTip="Save thumbnail">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <ui:SymbolIcon Symbol="Save24" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                                    <ui:SymbolIcon Symbol="Save24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickSaveThumb" Text="Save" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                 </StackPanel>
                                             </Button>

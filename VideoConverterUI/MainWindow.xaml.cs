@@ -2,12 +2,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using VideoConverterUI.Animations;
+using VideoConverterUI.Controls;
 using VideoConverterUI.Models;
 using VideoConverterUI.Services;
 
@@ -50,6 +53,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        SetupThumbReflection();
         Loaded += OnLoaded;
         Closing += MainWindow_Closing;
         ThemeService.ThemeApplied += OnThemeApplied;
@@ -175,9 +179,7 @@ public partial class MainWindow : Window
     // ════════════════════════════════════════════════════════════
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Liquid takes over from the FadeInWindow storyboard: the window spreads open and settles with a soft wobble.
-        if (Liquid.IsActive)
-            Liquid.Arrive(RootBorder, WindowScale, null, 0.9, 0.86, 0, Spring.Bouncy.Slower(1.1));
+        OpenOnceRendering();
 
         _easterEggOrchestrator = new Helpers.EasterEggs.EasterEggOrchestrator(
             ChristmasTreeContainer,
@@ -237,6 +239,40 @@ public partial class MainWindow : Window
         }
 
 
+    }
+
+    /// <summary>
+    /// The window's first frames are slow (60–120 ms each while every glass surface sets up its shader and backdrop),
+    /// so an opening started at Loaded showed its first pose frozen and then jumped ahead. The window waits in that pose,
+    /// all but invisible, until frames come at a steady pace (at most <paramref name="maxWaitMs"/>), and only then opens:
+    /// under Liquid it spreads open and settles with a soft wobble, otherwise it plays the FadeInWindow storyboard.
+    /// Not quite invisible: at opacity 0 WPF skips drawing it, and the slow frames would come with the first visible one.
+    /// </summary>
+    private void OpenOnceRendering(double maxWaitMs = 400)
+    {
+        RootBorder.Opacity = 0.004;
+        WindowScale.ScaleX = 0.9;
+        WindowScale.ScaleY = 0.86;
+
+        TimeSpan first = TimeSpan.Zero, last = TimeSpan.Zero;
+        int steadyFrames = 0;
+        EventHandler? tick = null;
+        tick = (_, e) =>
+        {
+            var now = ((RenderingEventArgs)e).RenderingTime;
+            if (now == last) return;  // Rendering can fire more than once per frame
+            if (first == TimeSpan.Zero) first = now;
+            steadyFrames = last != TimeSpan.Zero && (now - last).TotalMilliseconds < 25 ? steadyFrames + 1 : 0;
+            last = now;
+            if (steadyFrames < 2 && (now - first).TotalMilliseconds < maxWaitMs) return;
+
+            CompositionTarget.Rendering -= tick;
+            if (Liquid.IsActive)
+                Liquid.Arrive(RootBorder, WindowScale, null, 0.9, 0.86, 0, Spring.Bouncy.Slower(1.1));
+            else
+                ((Storyboard)FindResource("FadeInWindow")).Begin(this);
+        };
+        CompositionTarget.Rendering += tick;
     }
 
     // ════════════════════════════════════════════════════════════
@@ -1187,6 +1223,43 @@ public partial class MainWindow : Window
             TxtMetaThumbFallback.Visibility = Visibility.Visible;
             ResetThumbBackground();
         }
+    }
+
+    /// <summary>
+    /// The preview card's glass reflects the thumbnail, the way the Editor's glass reflects the video beside it: behind
+    /// the glass lies the same picture mirrored right below the thumbnail (as tall as it, which grows with the window),
+    /// softened and fading out, so the glass under the thumbnail picks up its colours and its edges bend them.
+    /// </summary>
+    private void SetupThumbReflection()
+    {
+        var mirror = new Image
+        {
+            Stretch = Stretch.UniformToFill,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = new ScaleTransform(1, -1),
+        };
+        mirror.SetBinding(Image.SourceProperty, new Binding(nameof(Image.Source)) { Source = ImgThumbnail });
+        var reflection = new Border
+        {
+            VerticalAlignment = VerticalAlignment.Top,
+            ClipToBounds = true,
+            Child = mirror,
+            Effect = new BlurEffect { Radius = 8, RenderingBias = RenderingBias.Performance },
+            OpacityMask = new LinearGradientBrush(new GradientStopCollection
+            {
+                new(Color.FromArgb(0xD0, 0, 0, 0), 0),
+                new(Color.FromArgb(0x60, 0, 0, 0), 0.3),
+                new(Color.FromArgb(0x00, 0, 0, 0), 0.65),
+            }, new Point(0.5, 0), new Point(0.5, 1)),
+        };
+        ThumbBgBorder.SizeChanged += (_, e) =>
+        {
+            reflection.Height = e.NewSize.Height;
+            reflection.Margin = new Thickness(0, e.NewSize.Height, 0, 0);
+        };
+        LiquidGlass.SetBackdropOverlay(BorderMeta, reflection);
     }
 
     private void RefreshDominantColorVisuals()
