@@ -531,6 +531,8 @@
     <sys:String x:Key="PrefShowErrors">Show error details automatically</sys:String>
     <sys:String x:Key="PrefShowErrorsFooter">When this is off, a notification appears instead. Click it to see what went wrong.</sys:String>
     <sys:String x:Key="PrefFinishedAlert">When a download finishes</sys:String>
+    <sys:String x:Key="PrefPlaylistAlert">Playlist detected</sys:String>
+    <sys:String x:Key="PrefPlaylistAlertSub">Offer to open a playlist link in the Multi Downloader</sys:String>
     <sys:String x:Key="PrefAlertOff">Off</sys:String>
     <sys:String x:Key="PrefAlertBanner">Banner</sys:String>
     <sys:String x:Key="PrefAlertBannerSound">Banner and sound</sys:String>

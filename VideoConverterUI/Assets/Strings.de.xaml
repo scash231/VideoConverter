@@ -525,6 +525,8 @@
     <sys:String x:Key="PrefShowErrors">Fehlerdetails automatisch anzeigen</sys:String>
     <sys:String x:Key="PrefShowErrorsFooter">Wenn das aus ist, erscheint stattdessen eine Mitteilung. Klicke darauf, um zu sehen, was schiefging.</sys:String>
     <sys:String x:Key="PrefFinishedAlert">Wenn ein Download fertig ist</sys:String>
+    <sys:String x:Key="PrefPlaylistAlert">Playlist erkannt</sys:String>
+    <sys:String x:Key="PrefPlaylistAlertSub">Anbieten, einen Playlist-Link im Multi Downloader zu öffnen</sys:String>
     <sys:String x:Key="PrefAlertOff">Aus</sys:String>
     <sys:String x:Key="PrefAlertBanner">Banner</sys:String>
     <sys:String x:Key="PrefAlertBannerSound">Banner und Ton</sys:String>

@@ -697,7 +697,7 @@ public partial class MainWindow : Window
 
     private void CheckAndPromptPlaylist(string url)
     {
-        if (string.IsNullOrWhiteSpace(url)) return;
+        if (string.IsNullOrWhiteSpace(url) || !SettingsService.Current.PlaylistDetectedNotification) return;
         var trimmed = url.Trim();
         var lower = trimmed.ToLowerInvariant();
         bool isPlaylist = lower.Contains("list=") || lower.Contains("/playlist?") || trimmed.Contains('\n') || trimmed.Contains('\r');
@@ -1225,41 +1225,84 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>How much longer than the thumbnail its reflection on the preview card's glass is drawn out.</summary>
+    private const double ThumbReflectionStretch = 1.6;
+
     /// <summary>
-    /// The preview card's glass reflects the thumbnail, the way the Editor's glass reflects the video beside it: behind
-    /// the glass lies the same picture mirrored right below the thumbnail (as tall as it, which grows with the window),
-    /// softened and fading out, so the glass under the thumbnail picks up its colours and its edges bend them.
+    /// The thumbnail's surroundings reflect it, the way glass beside a video does in the Editor (and beside the
+    /// colourful preview in Settings):
+    /// <list type="bullet">
+    /// <item>Behind the preview card's glass, the picture continues into its own mirror image right at the
+    /// thumbnail's bottom edge, drawn out, blurred and washed out towards the window colour, fading away down the
+    /// card. The unmirrored copy above the seam lies hidden under the thumbnail; it keeps the blur from fading
+    /// the seam, so the reflection starts exactly where the thumbnail ends.</item>
+    /// <item>The window's glass backdrop (GlassBackdrop) gets a copy of the thumbnail where it is on screen, so the
+    /// rims of the glass around it (the mode toggle above, the settings card beside it) lens and reflect its colours.</item>
+    /// </list>
     /// </summary>
     private void SetupThumbReflection()
     {
-        var mirror = new Image
-        {
-            Stretch = Stretch.UniformToFill,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            RenderTransformOrigin = new Point(0.5, 0.5),
-            RenderTransform = new ScaleTransform(1, -1),
-        };
-        mirror.SetBinding(Image.SourceProperty, new Binding(nameof(Image.Source)) { Source = ImgThumbnail });
-        var reflection = new Border
+        var mirrored = ThumbCopy();
+        mirrored.SetBinding(HeightProperty, new Binding(nameof(ActualHeight)) { Source = ThumbBgBorder });
+        mirrored.LayoutTransform = new ScaleTransform(1, -ThumbReflectionStretch);
+        var wash = new Border { Opacity = 0.35 };
+        wash.SetResourceReference(Border.BackgroundProperty, "BgDeep");
+        var above = ThumbCopy();
+        above.SetBinding(HeightProperty, new Binding(nameof(ActualHeight)) { Source = ThumbBgBorder });
+
+        double seam = 1 / (1 + ThumbReflectionStretch);  // where the thumbnail ends, as a share of the whole
+        var reflection = new StackPanel
         {
             VerticalAlignment = VerticalAlignment.Top,
-            ClipToBounds = true,
-            Child = mirror,
-            Effect = new BlurEffect { Radius = 8, RenderingBias = RenderingBias.Performance },
+            // Wider than the card: the blur would fade the sides and the card's rims would lens the window instead,
+            // so the glass under the thumbnail looked narrower than it. Beyond the card the rims bend this in.
+            Margin = new Thickness(-40, 0, -40, 0),
+            Children = { above, new Grid { Children = { mirrored, wash } } },
+            Effect = new BlurEffect { Radius = 22, RenderingBias = RenderingBias.Performance },
             OpacityMask = new LinearGradientBrush(new GradientStopCollection
             {
-                new(Color.FromArgb(0xD0, 0, 0, 0), 0),
-                new(Color.FromArgb(0x60, 0, 0, 0), 0.3),
-                new(Color.FromArgb(0x00, 0, 0, 0), 0.65),
+                new(Color.FromArgb(0xFF, 0, 0, 0), 0),
+                new(Color.FromArgb(0xB0, 0, 0, 0), seam),
+                new(Color.FromArgb(0x48, 0, 0, 0), seam + (1 - seam) * 0.3),
+                new(Color.FromArgb(0x00, 0, 0, 0), seam + (1 - seam) * 0.65),
             }, new Point(0.5, 0), new Point(0.5, 1)),
         };
-        ThumbBgBorder.SizeChanged += (_, e) =>
-        {
-            reflection.Height = e.NewSize.Height;
-            reflection.Margin = new Thickness(0, e.NewSize.Height, 0, 0);
-        };
         LiquidGlass.SetBackdropOverlay(BorderMeta, reflection);
+
+        // The copy in the window's backdrop follows the thumbnail (layout passes, and every frame of the card's
+        // fade in or out, which also moves it) and is only there while the card is.
+        var onBackdrop = ThumbCopy();
+        GlassBackdrop.Child = new Canvas { Children = { onBackdrop } };
+        void Place()
+        {
+            if (!BorderMeta.IsVisible || ThumbBgBorder.ActualWidth <= 0)
+            {
+                onBackdrop.Visibility = Visibility.Collapsed;
+                return;
+            }
+            var at = ThumbBgBorder.TransformToVisual(GlassBackdrop).TransformBounds(new Rect(ThumbBgBorder.RenderSize));
+            Canvas.SetLeft(onBackdrop, at.X);
+            Canvas.SetTop(onBackdrop, at.Y);
+            onBackdrop.Width = at.Width;
+            onBackdrop.Height = at.Height;
+            onBackdrop.Opacity = BorderMeta.Opacity;
+            onBackdrop.Visibility = Visibility.Visible;
+        }
+        ThumbBgBorder.LayoutUpdated += (_, _) => Place();
+        BorderMeta.IsVisibleChanged += (_, _) => Place();
+        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(OpacityProperty, typeof(Border))
+            ?.AddValueChanged(BorderMeta, (_, _) => Place());
+    }
+
+    /// <summary>A live copy of what the thumbnail shows: its letterbox colour and the picture, fitted the same way.</summary>
+    private Border ThumbCopy()
+    {
+        var image = new Image { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        image.SetBinding(Image.SourceProperty, new Binding(nameof(Image.Source)) { Source = ImgThumbnail });
+        image.SetBinding(Image.StretchProperty, new Binding(nameof(Image.Stretch)) { Source = ImgThumbnail });
+        var copy = new Border { ClipToBounds = true, Child = image };
+        copy.SetBinding(Border.BackgroundProperty, new Binding(nameof(Border.Background)) { Source = ThumbBgBorder });
+        return copy;
     }
 
     private void RefreshDominantColorVisuals()
@@ -1318,7 +1361,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                RootBorder.SetResourceReference(Border.BackgroundProperty, "BgDeep");
+                ResetWindowBackground();
             }
 
             // Subtle tint for the thumbnail container (visible in letterbox gaps)
@@ -1428,9 +1471,13 @@ public partial class MainWindow : Window
         }
         else
         {
-            RootBorder.SetResourceReference(Border.BackgroundProperty, "BgDeep");
+            ResetWindowBackground();
         }
     }
+
+    /// <summary>Back to the theme's own window background, as in the XAML. RootBorder is a SquircleBorder: its
+    /// Background is SquircleBorder's own property, so Border.BackgroundProperty would set nothing.</summary>
+    private void ResetWindowBackground() => RootBorder.SetResourceReference(SquircleBorder.BackgroundProperty, "BgGrad");
 
     private static Color Tint(Color baseColor, Color tintColor, double ratio)
     {

@@ -1125,14 +1125,24 @@
                         <!-- ── Notifications ── -->
                         <StackPanel x:Name="PaneNotifications" Visibility="Collapsed">
                             <Border Style="{StaticResource Group}">
-                                <DockPanel Style="{StaticResource Row}">
-                                    <ComboBox x:Name="CmbCompletionNotificationMode">
-                                        <ComboBoxItem Content="{DynamicResource PrefAlertOff}" Tag="off"/>
-                                        <ComboBoxItem Content="{DynamicResource PrefAlertBanner}" Tag="notification_only"/>
-                                        <ComboBoxItem Content="{DynamicResource PrefAlertBannerSound}" Tag="sound_and_notification"/>
-                                    </ComboBox>
-                                    <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefFinishedAlert}"/>
-                                </DockPanel>
+                                <StackPanel>
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <ComboBox x:Name="CmbCompletionNotificationMode">
+                                            <ComboBoxItem Content="{DynamicResource PrefAlertOff}" Tag="off"/>
+                                            <ComboBoxItem Content="{DynamicResource PrefAlertBanner}" Tag="notification_only"/>
+                                            <ComboBoxItem Content="{DynamicResource PrefAlertBannerSound}" Tag="sound_and_notification"/>
+                                        </ComboBox>
+                                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefFinishedAlert}"/>
+                                    </DockPanel>
+                                    <Border Style="{StaticResource Sep}"/>
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <CheckBox x:Name="ChkPlaylistDetectedNotification" Style="{StaticResource Switch}"/>
+                                        <StackPanel Style="{StaticResource LabelStack}">
+                                            <TextBlock Style="{StaticResource LabelInStack}" Text="{DynamicResource PrefPlaylistAlert}"/>
+                                            <TextBlock Style="{StaticResource Sub}" Text="{DynamicResource PrefPlaylistAlertSub}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </StackPanel>
                             </Border>
 
                             <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefBannerHeader}"/>
