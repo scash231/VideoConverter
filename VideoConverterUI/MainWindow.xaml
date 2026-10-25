@@ -112,7 +112,8 @@
             </Grid.RowDefinitions>
 
             <!-- What the window's Liquid Glass (header pills, link field, Start) shows through: the window's own background,
-                 thumbnail gradient included. It is only ever seen through the glass: the empty Canvas clips it away on screen,
+                 thumbnail gradient included, plus a copy of the thumbnail where it is (SetupThumbReflection), so the glass
+                 around it reflects it. It is only ever seen through the glass: the empty Canvas clips it away on screen,
                  and a VisualBrush draws it without its parent's clip. -->
             <Canvas Grid.RowSpan="3" Width="0" Height="0" HorizontalAlignment="Left" VerticalAlignment="Top"
                     ClipToBounds="True" IsHitTestVisible="False">

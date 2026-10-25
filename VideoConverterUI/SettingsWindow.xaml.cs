@@ -406,6 +406,7 @@ public partial class SettingsWindow : Window
 
         // Notifications
         BindCombo(CmbCompletionNotificationMode, s => s.CompletionNotificationMode, (s, v) => s.CompletionNotificationMode = v);
+        BindSwitch(ChkPlaylistDetectedNotification, s => s.PlaylistDetectedNotification, (s, v) => s.PlaylistDetectedNotification = v);
         BindDurationCombo(CmbNotifyDurationInfo, s => s.NotificationDurationInfo, (s, v) => s.NotificationDurationInfo = v);
         BindDurationCombo(CmbNotifyDurationError, s => s.NotificationDurationError, (s, v) => s.NotificationDurationError = v);
         BindDurationCombo(CmbNotifyDurationComplete, s => s.NotificationDurationComplete, (s, v) => s.NotificationDurationComplete = v);

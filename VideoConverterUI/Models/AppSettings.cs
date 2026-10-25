@@ -24,6 +24,10 @@ public sealed class AppSettings
     [JsonPropertyName("completion_notification_mode")]
     public string CompletionNotificationMode { get; set; } = "notification_only";
 
+    /// <summary>The "Playlist detected" banner that offers to open a playlist link in the Multi Downloader.</summary>
+    [JsonPropertyName("playlist_detected_notification")]
+    public bool PlaylistDetectedNotification { get; set; } = true;
+
     [JsonIgnore]
     public bool NotifyOnComplete => CompletionNotificationMode != "off";
 

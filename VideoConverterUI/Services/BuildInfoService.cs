@@ -20,7 +20,7 @@ public static class BuildInfoService
 {
     public static string BuildName => "27H1 Canary";
 
-    public static string BuildVersion => "27H1.26";
+    public static string BuildVersion => "27H1.26.1";
 
     /// <summary>Source hash this build was stamped with.</summary>
     public static string CommitSha => "108cf6ad03b3fb6052047d908d55f310a8f60dbd";
@@ -48,6 +48,26 @@ public static class BuildInfoService
     [
         new("27H1", "Canary",
         [
+            new("27H1.26.1", "2026-10-25",
+            [
+                new("New",
+                [
+                    "The main window is Liquid Glass throughout: header pills, the link field, the Upload / Download switch, the cards and Start. Header pills come and go like drops.",
+                    "The preview card reflects the thumbnail: its glass shows a soft, drawn-out mirror image right below it, and the glass around it (the switch above, the settings card beside it) picks up its colours at the edges.",
+                    "Settings → Notifications: a switch for the \"Playlist detected\" banner.",
+                ]),
+                new("Changed",
+                [
+                    "The Upload / Download switch's thumb takes on the window's tint.",
+                    "The main window waits until it can draw smoothly before it opens, instead of starting frozen and then jumping.",
+                    "Liquid Glass edges bend what lies beyond them smoothly to the very edge, instead of ending in streaks and a hard line.",
+                ]),
+                new("Fixed",
+                [
+                    "The thumbnail fills the preview card's corners.",
+                    "The quick actions under the preview (Title, URL, Browser, Save) are readable again.",
+                ]),
+            ]),
             new("27H1.26", "2026-10-23",
             [
                 new("New",

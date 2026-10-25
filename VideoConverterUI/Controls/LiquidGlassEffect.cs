@@ -93,24 +93,35 @@ public sealed class LiquidGlassEffect : ShaderEffect
 
             // Convex bevel (quarter circle): flat in the middle, steepest at the edge. Sampling outward squeezes the
             // backdrop from just beyond the edge into the rim, the way a glass lens wraps its surroundings.
-            float t = saturate(1 + d / max(bevel, 1));
+            float b = max(bevel, 1);
+            float t = saturate(1 + d / b);
             float bend = 1 - sqrt(saturate(1 - t * t));
             float2 shift = n * refraction * bend / s;
-            float2 split = shift * dispersion;
             float2 at = uv + shift;
 
             // The rim stays sharp (and splits colour) so the lensing reads; the flat middle is frosted for legibility.
-            float4 rim;
-            rim.r  = tex2D(input, at + split).r;
-            rim.ga = tex2D(input, at).ga;
-            rim.b  = tex2D(input, at - split).b;
+            // Towards the edge the bevel squeezes many pixels of backdrop into each one, and a single sample per pixel
+            // turned that into streaks and a hard stop. Five samples across the pixel's width (±1 px of bevel) average
+            // what it covers, so the bend runs out smoothly.
+            float4 rim = 0;
+            for (int k = -2; k <= 2; k++)
+            {
+                float tk = saturate(t + k * 0.5 / b);
+                float2 sk = n * refraction * (1 - sqrt(saturate(1 - tk * tk))) / s;
+                float2 split = sk * dispersion;
+                rim.r  += tex2D(input, uv + sk + split).r;
+                rim.ga += tex2D(input, uv + sk).ga;
+                rim.b  += tex2D(input, uv + sk - split).b;
+            }
+            rim /= 5;
 
             float4 frosted = 0;
             for (int i = 0; i < 12; i++)
                 frosted += tex2D(input, at + taps[i] * frost / s);
             frosted /= 12;
 
-            float4 c = lerp(frosted, rim, smoothstep(0.0, 0.7, t));
+            // Frosted to clear across the whole bevel, so where the bend begins doesn't show as a line.
+            float4 c = lerp(frosted, rim, smoothstep(0.0, 1.0, t));
 
             // Reflection: the colour of what lies beyond the edge (from 40 % to 100 % of reflectReach out) spills into
             // a soft band inside it, like bright surroundings mirrored in thick glass. It reaches across gaps the lens

@@ -528,6 +528,8 @@
     <sys:String x:Key="PrefShowErrors">Показывать подробности ошибок автоматически</sys:String>
     <sys:String x:Key="PrefShowErrorsFooter">Если выключено, вместо этого появляется уведомление. Нажмите на него, чтобы узнать, что пошло не так.</sys:String>
     <sys:String x:Key="PrefFinishedAlert">Когда загрузка завершена</sys:String>
+    <sys:String x:Key="PrefPlaylistAlert">Обнаружен плейлист</sys:String>
+    <sys:String x:Key="PrefPlaylistAlertSub">Предлагать открыть ссылку на плейлист в Multi Downloader</sys:String>
     <sys:String x:Key="PrefAlertOff">Выкл.</sys:String>
     <sys:String x:Key="PrefAlertBanner">Баннер</sys:String>
     <sys:String x:Key="PrefAlertBannerSound">Баннер и звук</sys:String>
