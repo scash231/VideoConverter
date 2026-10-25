@@ -20,7 +20,7 @@ public static class BuildInfoService
 {
     public static string BuildName => "27H1 Canary";
 
-    public static string BuildVersion => "27H1.26.1";
+    public static string BuildVersion => "27H1.26.2";
 
     /// <summary>Source hash this build was stamped with.</summary>
     public static string CommitSha => "108cf6ad03b3fb6052047d908d55f310a8f60dbd";
@@ -48,6 +48,14 @@ public static class BuildInfoService
     [
         new("27H1", "Canary",
         [
+            new("27H1.26.2", "2026-10-25",
+            [
+                new("Performance",
+                [
+                    "Menus, pop-ups, dialogs and notifications no longer draw the window behind them again on every frame: their glass keeps a picture of it and only redraws it when something back there changes. They open more smoothly, and a notification's countdown line costs a fraction of what it did.",
+                    "When a new notification arrives, the ones below slide down inside their own windows instead of moving the windows, which made the whole app stutter for a moment.",
+                ]),
+            ]),
             new("27H1.26.1", "2026-10-25",
             [
                 new("New",

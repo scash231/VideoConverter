@@ -17,7 +17,8 @@ namespace VideoConverterUI.Controls;
 /// Its look comes from <see cref="GlassTuning"/> under the name in <see cref="Surface"/> (per theme mode) and updates
 /// live while the Glass Tuner edits it.
 ///
-/// Layers, bottom to top: a live copy (VisualBrush) of what lies behind on an opaque window-coloured base, through
+/// Layers, bottom to top: a live copy (VisualBrush; cached when it comes from another window, see _picture) of what
+/// lies behind on an opaque window-coloured base, through
 /// <see cref="LiquidGlassEffect"/> (vibrancy, frosted middle, lensing and light-catching rim), then a thin material
 /// tint and a top sheen, the children, and an outline. Without the shader (software rendering, or Liquid off in the
 /// tuner) it is classic frosted glass: heavy blur, denser tint and a specular rim.
@@ -33,9 +34,21 @@ namespace VideoConverterUI.Controls;
 public class LiquidGlassPanel : Grid
 {
     private readonly Border _host = new() { IsHitTestVisible = false };
+    private readonly Grid _backdrop = new();
     private readonly Border _base = new();
-    private readonly Rectangle _blur = new() { Margin = new Thickness(-40) };  // overscan follows the blur radius (SetBackdropBlur)
+    private readonly Rectangle _blur = new();  // the backdrop (brush), softened by _blurEffect
     private readonly BlurEffect _blurEffect = new() { KernelType = KernelType.Gaussian, RenderingBias = RenderingBias.Performance };
+    // Holds _blur. With a backdrop in another window (a popup's, a banner's or a dialog's owner, with all its glass and
+    // shadows) rendering that backdrop is the expensive part, so the picture is rendered into a bitmap (BitmapCache)
+    // reaching PictureMargin past the blur's overscan, and only again when the backdrop changes: while the panel
+    // opens, moves or grows the bitmap is shifted along (AimBrush), and anything else redrawing on the glass reuses it.
+    // A backdrop in the panel's own window (the main window's gradient, a page under a sidebar) is cheap to render
+    // and isn't cached: off-screen renders of that window (another panel's AdaptiveContrast samples) would have to
+    // draw every cached bitmap in software at full size.
+    private readonly Border _picture = new();
+    private readonly BitmapCache _pictureCache = new();
+    private bool _cachePicture;
+    private const double PictureMargin = 32;
     private readonly Border _overlayHost = new() { IsHitTestVisible = false };  // BackdropOverlay, at the panel's own bounds
     private readonly Border _tint = new() { IsHitTestVisible = false };
     // Adaptive contrast: a window-coloured wash that fades in only where what lies behind would wash out the content
@@ -81,6 +94,12 @@ public class LiquidGlassPanel : Grid
     private VisualBrush? _brush;
     private Visual? _source;
     private bool _attached;
+    // The brush is only re-aimed (Viewbox) when the panel has moved or grown past the picture's margin; smaller moves
+    // and scaling shift the cached picture instead (_pictureShift, see AimBrush).
+    private readonly MatrixTransform _pictureShift = new();
+    private Rect _brushBase = Rect.Empty;  // the backdrop region the Viewbox was last aimed at
+    private Size _brushBaseSize;           // the picture's size then
+    private Rect _lastBox = Rect.Empty;    // the region behind the picture at the last check
 
     public static readonly DependencyProperty SurfaceProperty = DependencyProperty.Register(
         nameof(Surface), typeof(string), typeof(LiquidGlassPanel),
@@ -216,11 +235,12 @@ public class LiquidGlassPanel : Grid
         Background = Brushes.Transparent;  // the whole surface takes clicks, also between children
 
         _blur.Effect = _blurEffect;
-        var backdrop = new Grid();
-        backdrop.Children.Add(_base);
-        backdrop.Children.Add(_blur);
-        backdrop.Children.Add(_overlayHost);
-        _host.Child = new Border { ClipToBounds = true, Child = backdrop };  // trims the blur overflow to the host
+        _picture.Child = _blur;
+        _picture.RenderTransform = _pictureShift;
+        _backdrop.Children.Add(_base);
+        _backdrop.Children.Add(_picture);
+        _backdrop.Children.Add(_overlayHost);
+        _host.Child = new Border { ClipToBounds = true, Child = _backdrop };  // trims the picture's overflow to the host
         _host.SizeChanged += (_, e) => { if (_effect != null) _effect.Size = e.NewSize; };
 
         _sheen.Background = new LinearGradientBrush(
@@ -332,6 +352,7 @@ public class LiquidGlassPanel : Grid
         _brush = null;
         _source = null;
         _blur.Fill = null;
+        _brushBase = _lastBox = Rect.Empty;
     }
 
     /// <summary>(Re)connects the backdrop and applies the tuning.</summary>
@@ -347,10 +368,17 @@ public class LiquidGlassPanel : Grid
         _brush = null;
         _source = null;
         _blur.Fill = null;
+        _brushBase = _lastBox = Rect.Empty;
+        _cachePicture = false;
+        _picture.CacheMode = null;
 
         if (_attached && !SettingsService.Current.EnablePerformanceMode && ResolveBackdrop() is { } source)
         {
             _source = source;
+            var mine = PresentationSource.FromVisual(this);
+            _cachePicture = mine == null || !ReferenceEquals(mine, PresentationSource.FromVisual(source));
+            _picture.CacheMode = _cachePicture ? _pictureCache : null;
+            _pictureShift.Matrix = Matrix.Identity;
             _brush = new VisualBrush(source) { ViewboxUnits = BrushMappingMode.Absolute, Stretch = Stretch.Fill, TileMode = TileMode.None };
             _blur.Fill = _brush;
             StartTracking();
@@ -842,7 +870,7 @@ public class LiquidGlassPanel : Grid
     }
 
     // ── Keeping the backdrop aligned ──
-    // The VisualBrush must show exactly what lies behind the panel, so its Viewbox follows the panel over the backdrop.
+    // The VisualBrush must show exactly what lies behind the panel, so it follows the panel over the backdrop (AimBrush).
     // A per-frame hook would do that, but it also keeps WPF rendering at 60 fps for as long as any glass is open. So
     // the hook runs only while the panel moves (or may start to): a layout pass, input, a window moving or the panel
     // showing arms it, and it unhooks itself after AlignIdleFrames still frames. A slow shared poll catches what
@@ -943,21 +971,24 @@ public class LiquidGlassPanel : Grid
     /// <summary>Points the brush at what lies behind the panel now; true when that moved.</summary>
     private bool UpdateViewbox()
     {
-        if (_brush == null || _source == null || _blur.ActualWidth <= 0 || !IsVisible) return false;
+        if (_brush == null || _source == null || _picture.ActualWidth <= 0 || !IsVisible) return false;
         try
         {
             var theirs = PresentationSource.FromVisual(_source);
-            var mine = PresentationSource.FromVisual(_blur);
+            var mine = PresentationSource.FromVisual(_backdrop);
             if (theirs == null || mine == null) return false;
-            var size = new Rect(0, 0, _blur.ActualWidth, _blur.ActualHeight);
+            // Where the picture sits before its own shift.
+            var size = _picture.RenderSize;
+            var at = new Rect((Point)VisualTreeHelper.GetOffset(_picture), size);
             Rect box;
             if (ReferenceEquals(theirs, mine))
-                box = _blur.TransformToVisual(_source).TransformBounds(size);  // same window: no trip through the screen
+                box = _backdrop.TransformToVisual(_source).TransformBounds(at);  // same window: no trip through the screen
             else
-                box = new Rect(_source.PointFromScreen(_blur.PointToScreen(size.TopLeft)),
-                               _source.PointFromScreen(_blur.PointToScreen(size.BottomRight)));
-            if (_brush.Viewbox == box) return false;
-            _brush.Viewbox = box;
+                box = new Rect(_source.PointFromScreen(_backdrop.PointToScreen(at.TopLeft)),
+                               _source.PointFromScreen(_backdrop.PointToScreen(at.BottomRight)));
+            if (box == _lastBox) return false;
+            _lastBox = box;
+            AimBrush(box, size);
             RequestSample();  // the panel moved over its backdrop (only while sampling on changes)
             NudgeSampler();
             return true;
@@ -967,6 +998,37 @@ public class LiquidGlassPanel : Grid
             // The backdrop's window went away; the glass keeps its last frame.
             return false;
         }
+    }
+
+    // ── Aiming the brush ──
+    // The cached picture shows the backdrop region in the brush's Viewbox. Aiming it anew means rendering that region
+    // again, so while the panel moves, grows or scales (an opening spring, a banner sliding into the stack) the picture
+    // is shifted and scaled to where the backdrop lies now, for as long as it still covers the glass and the blur's
+    // overscan; past PictureMargin it is aimed afresh. On screen the backdrop keeps its size either way.
+
+    /// <summary>Shows <paramref name="box"/> (the region behind the picture, in the backdrop's units) on the picture.</summary>
+    private void AimBrush(Rect box, Size size)
+    {
+        if (_brush == null || box.Width <= 0 || box.Height <= 0 || size.Width <= 0 || size.Height <= 0) return;
+        if (_cachePicture && !_brushBase.IsEmpty && _brushBaseSize == size)
+        {
+            double kx = size.Width / box.Width, ky = size.Height / box.Height;  // picture units per backdrop unit
+            // Maps where a backdrop point is drawn with the brush as aimed onto where it lies behind the panel now.
+            var shift = new Matrix(_brushBase.Width / box.Width, 0, 0, _brushBase.Height / box.Height,
+                (_brushBase.X - box.X) * kx, (_brushBase.Y - box.Y) * ky);
+            var needed = new Rect(PictureMargin, PictureMargin,
+                Math.Max(0, size.Width - 2 * PictureMargin), Math.Max(0, size.Height - 2 * PictureMargin));
+            if (Rect.Transform(new Rect(size), shift).Contains(needed))
+            {
+                _pictureShift.Matrix = shift;
+                return;
+            }
+        }
+
+        _brushBase = box;
+        _brushBaseSize = size;
+        _pictureShift.Matrix = Matrix.Identity;
+        _brush.Viewbox = box;
     }
 
     /// <summary>Brings a backed-off sampling timer back to its normal pace. Only shortens it, so a steady stream of
@@ -1048,13 +1110,13 @@ public class LiquidGlassPanel : Grid
         {
             _host.Effect = null;
             _host.Margin = new Thickness(0);
-            _blur.Visibility = Visibility.Collapsed;
+            _picture.Visibility = Visibility.Collapsed;
             _overlayHost.Visibility = Visibility.Collapsed;
             _rim.Visibility = Visibility.Collapsed;
             _tint.SetResourceReference(Border.BackgroundProperty, "PopupBg");
             return;
         }
-        _blur.Visibility = Visibility.Visible;
+        _picture.Visibility = Visibility.Visible;
         _overlayHost.Visibility = Visibility.Visible;
 
         if (p.Liquid && _brush != null)
@@ -1107,19 +1169,20 @@ public class LiquidGlassPanel : Grid
     /// <summary>
     /// The blur reaches only as far past the glass as its kernel does (a fixed 40 px overscan made small surfaces
     /// copy and blur several times their own area), and a blur too small to see is no effect at all, which saves
-    /// an off-screen pass whenever the backdrop redraws.
+    /// an off-screen pass whenever the backdrop redraws. The picture reaches PictureMargin further, for AimBrush.
     /// </summary>
     private void SetBackdropBlur(double radius)
     {
+        double overscan = 0;
         if (radius < 0.5)
-        {
             _blur.Effect = null;
-            _blur.Margin = new Thickness(0);
-            return;
+        else
+        {
+            _blurEffect.Radius = radius;
+            _blur.Effect = _blurEffect;
+            overscan = Math.Ceiling(radius * 1.5 + 2);
         }
-        _blurEffect.Radius = radius;
-        _blur.Effect = _blurEffect;
-        _blur.Margin = new Thickness(-Math.Ceiling(radius * 1.5 + 2));
+        _picture.Margin = new Thickness(-(overscan + (_cachePicture ? PictureMargin : 0)));
     }
 
     private static byte ToByte(double v) => (byte)Math.Clamp(Math.Round(v), 0, 255);

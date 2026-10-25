@@ -22,12 +22,20 @@ public partial class NotificationWindow : Window
     // ═══ Stack ═══
     // Banners stack under each other, newest on top: a new one flies in at the top and the older ones slide down to
     // make room; when one goes, the ones below slide up. Each banner is still its own window (so the glass and the
-    // placement over its parent work as before); the stack only decides where each window sits.
+    // placement over its parent work as before); the stack only decides where each card sits.
+    // The windows stay where they opened, at the top of the stack, and the cards slide inside them (_stackSlide):
+    // moving a window makes WPF wait for the frame being drawn (in any window), so a window sliding down frame by
+    // frame dropped everything, the new banner's fly-in included, to about 25 fps. A window only grows at the bottom
+    // before its card slides down and shrinks again once it has settled (SetSlideRoom).
     private static readonly List<NotificationWindow> Stack = new(); // newest first
     private const int MaxStacked = 4;
     private const double StackGap = 8;
+    private const double SlideOvershoot = 12;  // extra room while sliding, for the spring's overshoot
     private bool _placed;
     private readonly string _message;
+    private readonly TranslateTransform _stackSlide = new();  // the card's place in the stack, below the window's top
+    private double _slideTarget;
+    private double _bottomMargin;  // RootGrid's own, before any slide room
 
     private static readonly ExponentialEase ExpoEaseInOut = new ExponentialEase
     {
@@ -53,6 +61,8 @@ public partial class NotificationWindow : Window
         bool persistent = false)
     {
         InitializeComponent();
+        RootGrid.RenderTransform = _stackSlide;
+        _bottomMargin = RootGrid.Margin.Bottom;
         _onClick = onClick;
         _message = message ?? string.Empty;
 
@@ -180,27 +190,58 @@ public partial class NotificationWindow : Window
         double offset = 0;
         foreach (var win in Stack)
         {
-            win.MoveTo(win.AnchorTop() + offset);
+            win.MoveTo(offset);
             offset += win.RootBorder.ActualHeight + StackGap;
         }
     }
 
-    /// <summary>Slides the window to <paramref name="top"/> on a spring; a new banner just starts there.</summary>
-    private void MoveTo(double top)
+    /// <summary>Slides the card to <paramref name="offset"/> below the top of the stack on a spring; a new banner
+    /// just starts there.</summary>
+    private void MoveTo(double offset)
     {
         bool animate = _placed && !SettingsService.Current.EnablePerformanceMode && !FluidMotion.AnimationsDisabled;
         _placed = true;
+        _slideTarget = offset;
+        // The window only moves if its parent has (then the card jumps along with it).
+        double top = AnchorTop();
+        if (double.IsNaN(Top) || Math.Abs(Top - top) > 0.5)
+        {
+            Top = top;
+            animate = false;
+        }
         if (!animate)
         {
-            BeginAnimation(TopProperty, null);
-            Top = top;
+            _stackSlide.BeginAnimation(TranslateTransform.YProperty, null);
+            _stackSlide.Y = offset;
+            SetSlideRoom(offset);
             return;
         }
-        // No From: a banner still moving turns towards its new place from where it is.
+
+        // Room for the whole way first, so the card is never cut off by the window's edge.
+        SetSlideRoom(Math.Max(_stackSlide.Y, offset) + SlideOvershoot);
+        // A layout pass, so the glass starts following its card right away (a transform alone doesn't tell it).
+        CardGrid.InvalidateArrange();
+        void Settled()
+        {
+            if (_slideTarget == offset) SetSlideRoom(offset);
+        }
+        // No From: a card still moving turns towards its new place from where it is.
         if (Liquid.IsActive)
-            Liquid.To(this, TopProperty, top, Spring.WithBounce(0.5, 0.18));
+            Liquid.To(_stackSlide, TranslateTransform.YProperty, offset, Spring.WithBounce(0.5, 0.18), done: Settled);
         else
-            BeginAnimation(TopProperty, new DoubleAnimation(top, TimeSpan.FromMilliseconds(560)) { EasingFunction = AppleSpringEase.Interactive });
+        {
+            var slide = new DoubleAnimation(offset, TimeSpan.FromMilliseconds(560)) { EasingFunction = AppleSpringEase.Interactive };
+            slide.Completed += (_, _) => Settled();
+            _stackSlide.BeginAnimation(TranslateTransform.YProperty, slide);
+        }
+    }
+
+    /// <summary>Makes the window reach far enough below its top for a card <paramref name="below"/> further down.</summary>
+    private void SetSlideRoom(double below)
+    {
+        var m = RootGrid.Margin;
+        double bottom = _bottomMargin + Math.Max(0, below);
+        if (Math.Abs(m.Bottom - bottom) > 0.1) RootGrid.Margin = new Thickness(m.Left, m.Top, m.Right, bottom);
     }
 
     protected override void OnClosed(EventArgs e)
