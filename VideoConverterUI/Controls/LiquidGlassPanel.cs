@@ -25,7 +25,8 @@ namespace VideoConverterUI.Controls;
 /// What lies behind: <see cref="BackdropSource"/>, or found automatically: in a Popup (a ComboBox drop-down, a
 /// flyout) the content of the window the popup belongs to; in a window with an Owner (a dialog, the notification)
 /// the owner's content. A panel inside the window it should show needs an explicit BackdropSource that does not
-/// contain the panel (a VisualBrush can't show itself). <see cref="LiquidGlass"/> turns an existing Border into one.
+/// contain the panel (a VisualBrush can't show itself). <see cref="BackdropOverlay"/> adds something of the panel's
+/// own behind the glass, over that backdrop. <see cref="LiquidGlass"/> turns an existing Border into one.
 /// The panel also drives its parent's drop shadow (ShadowBlur/Depth/Opacity), so a parent that clips nothing can
 /// carry the shadow the clipped panel can't.
 /// </summary>
@@ -35,6 +36,7 @@ public class LiquidGlassPanel : Grid
     private readonly Border _base = new();
     private readonly Rectangle _blur = new() { Margin = new Thickness(-40) };  // overscan follows the blur radius (SetBackdropBlur)
     private readonly BlurEffect _blurEffect = new() { KernelType = KernelType.Gaussian, RenderingBias = RenderingBias.Performance };
+    private readonly Border _overlayHost = new() { IsHitTestVisible = false };  // BackdropOverlay, at the panel's own bounds
     private readonly Border _tint = new() { IsHitTestVisible = false };
     // Adaptive contrast: a window-coloured wash that fades in only where what lies behind would wash out the content
     // (something bright behind light text in dark mode, something dark behind dark text in light mode). Its strength
@@ -88,6 +90,15 @@ public class LiquidGlassPanel : Grid
         nameof(BackdropSource), typeof(Visual), typeof(LiquidGlassPanel),
         new PropertyMetadata(null, (d, _) => ((LiquidGlassPanel)d).Rebuild()));
 
+    public static readonly DependencyProperty BackdropOverlayProperty = DependencyProperty.Register(
+        nameof(BackdropOverlay), typeof(UIElement), typeof(LiquidGlassPanel),
+        new PropertyMetadata(null, (d, e) =>
+        {
+            var panel = (LiquidGlassPanel)d;
+            panel._overlayHost.Child = (UIElement?)e.NewValue;
+            panel.RequestSample();
+        }));
+
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
         nameof(CornerRadius), typeof(double), typeof(LiquidGlassPanel),
         new PropertyMetadata(double.NaN, (d, _) => ((LiquidGlassPanel)d).ApplyRadius()));
@@ -113,6 +124,17 @@ public class LiquidGlassPanel : Grid
     {
         get => (Visual?)GetValue(BackdropSourceProperty);
         set => SetValue(BackdropSourceProperty, value);
+    }
+
+    /// <summary>
+    /// Something the glass shows over its backdrop, laid out at the panel's own bounds (e.g. a picture on the glass
+    /// mirrored below itself, so the glass around it reflects it the way glass beside a video does). It goes through
+    /// the glass like the backdrop: frosted in the middle, lensed at the rim, and counted by the adaptive contrast.
+    /// </summary>
+    public UIElement? BackdropOverlay
+    {
+        get => (UIElement?)GetValue(BackdropOverlayProperty);
+        set => SetValue(BackdropOverlayProperty, value);
     }
 
     /// <summary>Corner radius; NaN (default) = the surface's tuned radius. Can be animated (the clip follows).</summary>
@@ -197,6 +219,7 @@ public class LiquidGlassPanel : Grid
         var backdrop = new Grid();
         backdrop.Children.Add(_base);
         backdrop.Children.Add(_blur);
+        backdrop.Children.Add(_overlayHost);
         _host.Child = new Border { ClipToBounds = true, Child = backdrop };  // trims the blur overflow to the host
         _host.SizeChanged += (_, e) => { if (_effect != null) _effect.Size = e.NewSize; };
 
@@ -505,6 +528,11 @@ public class LiquidGlassPanel : Grid
                     double kx = sw / box.Width, ky = sh / box.Height;
                     ctx.DrawRectangle(VideoStandIn, null, new Rect((r.X - box.X) * kx, (r.Y - box.Y) * ky, r.Width * kx, r.Height * ky));
                 }
+                if (_overlayHost.Child != null && _overlayHost.IsVisible)
+                    ctx.DrawRectangle(new VisualBrush(_overlayHost)
+                    {
+                        ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, ActualWidth, ActualHeight), Stretch = Stretch.Fill
+                    }, null, new Rect(0, 0, sw, sh));
             }
             if (_sampleBitmap == null || _sampleBitmap.PixelWidth != sw || _sampleBitmap.PixelHeight != sh)
                 _sampleBitmap = new RenderTargetBitmap(sw, sh, 96, 96, PixelFormats.Pbgra32);
@@ -1021,11 +1049,13 @@ public class LiquidGlassPanel : Grid
             _host.Effect = null;
             _host.Margin = new Thickness(0);
             _blur.Visibility = Visibility.Collapsed;
+            _overlayHost.Visibility = Visibility.Collapsed;
             _rim.Visibility = Visibility.Collapsed;
             _tint.SetResourceReference(Border.BackgroundProperty, "PopupBg");
             return;
         }
         _blur.Visibility = Visibility.Visible;
+        _overlayHost.Visibility = Visibility.Visible;
 
         if (p.Liquid && _brush != null)
             _effect ??= LiquidGlassEffect.TryCreate();
@@ -1050,6 +1080,7 @@ public class LiquidGlassPanel : Grid
             _effect.ReflectionReach = p.ReflectionReach;
             _effect.ReflectionWidth = p.ReflectionWidth;
             _host.Margin = new Thickness(-inset);
+            _overlayHost.Margin = new Thickness(inset);  // back on the panel's bounds
             _host.Effect = _effect;
             if (_host.ActualWidth > 0) _effect.Size = new Size(_host.ActualWidth, _host.ActualHeight);
             SetBackdropBlur(p.BackdropBlur);  // just softens; the shader does the frost
@@ -1058,6 +1089,7 @@ public class LiquidGlassPanel : Grid
         else
         {
             _host.Margin = new Thickness(0);
+            _overlayHost.Margin = new Thickness(0);
             _host.Effect = null;
             SetBackdropBlur(p.FallbackBlur);
             _rim.Visibility = IsLShape ? Visibility.Collapsed : Visibility.Visible;  // an L traces its own rim
