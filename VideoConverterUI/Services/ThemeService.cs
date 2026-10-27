@@ -101,8 +101,10 @@ public static class ThemeService
             SetBrush(res, "BgCard", "#252525", 255);
             SetBrush(res, "BgElevated", "#2C2C2C", 255);
             SetBrush(res, "BorderSub", "#3E3E3E", 255);
-            SetBrush(res, "Accent", "#FFFFFF", 255);
-            SetBrush(res, "AccentPink", "#FFFFFF", 255);
+            // Grey, not white: accent fills carry white text and switch knobs (selected sidebar item, Start, Update Now),
+            // and accent text sits on the dark greys. #7A7A7A is ~4:1 against both.
+            SetBrush(res, "Accent", "#7A7A7A", 255);
+            SetBrush(res, "AccentPink", "#7A7A7A", 255);
             SetBrush(res, "TextPrimary", "#FFFFFF", 255);
             SetBrush(res, "TextSec", "#A0A0A0", 255);
             SetBrush(res, "SuccessGreen", "#FFFFFF", 255);

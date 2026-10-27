@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private bool _confirmCancel;
     private bool _uninstalled;
     private bool _runningConfirmed;
+    private bool _autoUpdate; // started with /update over an existing install: no welcome, reopen the app at the end
     private FrameworkElement? _page;
     private Func<Task>? _retry;
 
@@ -133,7 +134,7 @@ public partial class MainWindow : Window
     private void UpdateSidebar()
     {
         var installed = _installed != null && !_uninstalled;
-        NavInstall.Visibility = _manifest != null && !_uninstalled ? Visibility.Visible : Visibility.Collapsed;
+        NavInstall.Visibility = _manifest != null && !_manifest.NeedsNewerSetup && !_uninstalled ? Visibility.Visible : Visibility.Collapsed;
         NavOpenApp.Visibility = installed && File.Exists(Path.Combine(_installed!.InstallDir, SetupPaths.AppExe)) ? Visibility.Visible : Visibility.Collapsed;
         NavOpenFolder.Visibility = installed && Directory.Exists(_installed!.InstallDir) ? Visibility.Visible : Visibility.Collapsed;
         NavUninstall.Visibility = installed ? Visibility.Visible : Visibility.Collapsed;
@@ -166,6 +167,7 @@ public partial class MainWindow : Window
         BtnRetry.Content = retryText;
         BtnRetry.Visibility = retry != null ? Visibility.Visible : Visibility.Collapsed;
         TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Error;
+        UpdateSidebar();
         ShowPage(PageError);
     }
 
@@ -203,6 +205,14 @@ public partial class MainWindow : Window
             return;
         }
         PrepareWelcome();
+        // Software Update in the app: no questions, the app asked for it and is closing itself.
+        if (App.UpdateMode && _installed != null && SetupPaths.CheckInstallDir(_installDir) == null)
+        {
+            _autoUpdate = true;
+            _runningConfirmed = true;
+            await RunInstallAsync();
+            return;
+        }
         ShowPage(PageWelcome);
     }
 
@@ -415,6 +425,19 @@ public partial class MainWindow : Window
         _installed = InstalledInfo.Read() ?? _installed;
         ShowPage(PageDone);
         PopBadge();
+
+        // Software Update: show "up to date" for a moment, then open the new version and go (warnings stay up).
+        if (_autoUpdate && engine.Warnings.Count == 0)
+        {
+            ChkLaunch.IsChecked = true;
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1.6) };
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop();
+                if (IsVisible) Finish_Click(this, new RoutedEventArgs());
+            };
+            timer.Start();
+        }
     }
 
     private void PopBadge()

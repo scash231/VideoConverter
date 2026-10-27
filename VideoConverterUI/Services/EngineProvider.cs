@@ -164,6 +164,12 @@ public static class EngineProvider
 
     // ── Leases: which engine is busy ─────────────────────────────────────────
 
+    /// <summary>True while any engine has a call or job running (a download, upload, metadata fetch…).</summary>
+    public static bool IsBusy
+    {
+        get { lock (_lock) return _busy.Count > 0; }
+    }
+
     private static IEngineService EnsureEngineLocked()
     {
         if (_currentEngine == null)

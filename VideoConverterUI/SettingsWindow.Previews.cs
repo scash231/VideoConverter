@@ -51,6 +51,7 @@ public partial class SettingsWindow
         }
 
         if (pane == PaneVideoColors) UpdateVideoColorsPreview();
+        if (pane == PaneUpdate) OnUpdatePaneShown();
         // Developer Mode (Advanced) decides whether the Editor button can show.
         if (pane == PaneToolbar || pane == PaneGlassLayout) UpdateToolbarPreview(animate: false);
         if (pane == PaneWindowGlass) UpdateWindowGlassPreview();

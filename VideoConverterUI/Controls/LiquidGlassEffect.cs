@@ -126,14 +126,16 @@ public sealed class LiquidGlassEffect : ShaderEffect
             // Reflection: the colour of what lies beyond the edge (from 40 % to 100 % of reflectReach out) spills into
             // a soft band inside it, like bright surroundings mirrored in thick glass. It reaches across gaps the lens
             // alone would squeeze into a hairline. Spread along the edge too (±30 % of the reach), so it is a colour
-            // glow rather than a copy of the text rows beside it. Off at reflection = 0.
+            // glow rather than a copy of the text rows beside it. Equal weights turned a sharp edge out there (where
+            // a thumbnail ends) into five even stairs along the rim; tent weights, with every other row shifted by
+            // half a step, fade it in instead. Off at reflection = 0.
             float spill = saturate(1 + d / max(reflectWidth, 1));
             float2 along = float2(-n.y, n.x);
             float4 refl = 0;
             for (int j = 1; j <= 4; j++)
                 for (int k = -2; k <= 2; k++)
-                    refl += tex2D(input, uv + (n * (0.2 + 0.2 * j) + along * (0.15 * k)) * reflectReach / s);
-            c = lerp(c, refl / 20, saturate(reflection) * spill * spill);
+                    refl += (3 - abs(k)) * tex2D(input, uv + (n * (0.2 + 0.2 * j) + along * (0.15 * k + 0.075 * (j % 2 - 0.5))) * reflectReach / s);
+            c = lerp(c, refl / 36, saturate(reflection) * spill * spill);
 
             float l = dot(c.rgb, float3(0.2126, 0.7152, 0.0722));
             c.rgb = lerp(l.xxx, c.rgb, saturation) * brightness;
