@@ -651,6 +651,10 @@
     <sys:String x:Key="PrefMediaTools">Media tools</sys:String>
     <sys:String x:Key="PrefRuntime">Runtime</sys:String>
     <sys:String x:Key="PrefWhatsNew">What's New</sys:String>
+    <sys:String x:Key="PrefWhatsNewLoading">Loading what's new…</sys:String>
+    <sys:String x:Key="PrefWhatsNewFailedTitle">What's New Couldn't Be Loaded</sys:String>
+    <sys:String x:Key="PrefWhatsNewFailedDetail">Check your internet connection and try again.</sys:String>
+    <sys:String x:Key="PrefWhatsNewOffline">Offline: showing the notes from the last time What's New loaded.</sys:String>
     <sys:String x:Key="PrefCurrentVersion">Current</sys:String>
 
     <!-- Software Update -->

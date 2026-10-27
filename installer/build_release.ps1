@@ -5,7 +5,9 @@
 .DESCRIPTION
   Output in dist\vc (the same layout as on the website, https://scash.uk/vc/...):
     manifest.json                     what VideoConverterSetup.exe reads (version, files, sizes, SHA-256) and the
-                                      app's Software Update (also the release notes, "notes")
+                                      app's Software Update (also this release's notes, "notes")
+    whatsnew.json                     every release's notes (installer\whatsnew.json), for the app's What's New;
+                                      the website only gives it to the app (header x-videoconverter)
     <version>\VideoConverterUI.exe    the app (framework-dependent single file)
     <version>\ferrite.exe             the Ferrite engine
     VideoConverterSetup.exe           the installer you give to people
@@ -14,14 +16,19 @@
   -Upload puts everything into the R2 bucket of the website (prefix vc/) with wrangler, manifest.json last,
   so a client never sees a manifest that points at files that are not there yet. Run `npx wrangler login` once first.
 
+  -WhatsNewOnly uploads only installer\whatsnew.json (fix or add notes without a release).
+  New release: add it at the top of its big version in installer\whatsnew.json, then bump BuildVersion.
+
 .EXAMPLE
   .\installer\build_release.ps1
   .\installer\build_release.ps1 -Upload
   .\installer\build_release.ps1 -SkipBuild -Upload
+  .\installer\build_release.ps1 -WhatsNewOnly
 #>
 param(
     [switch]$Upload,
     [switch]$SkipBuild,
+    [switch]$WhatsNewOnly,
     [string]$Bucket = "scash-files",
     [string]$Prefix = "vc",
     [string]$WebsiteDir = (Join-Path $PSScriptRoot "..\..\scash.uk")
@@ -31,8 +38,7 @@ $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 # -- Version (BuildInfoService.BuildVersion) and runtime (TargetFramework) --
-# UTF-8: the release notes have arrows and dashes; Windows PowerShell would read the file (no BOM) as ANSI
-$buildInfo = Get-Content (Join-Path $root "VideoConverterUI\Services\BuildInfoService.cs") -Raw -Encoding UTF8
+$buildInfo = Get-Content (Join-Path $root "VideoConverterUI\Services\BuildInfoService.cs") -Raw
 if ($buildInfo -notmatch 'BuildVersion\s*=>\s*"([^"]+)"') { throw "BuildVersion not found in BuildInfoService.cs" }
 $version = $Matches[1]
 if ($version -notmatch '^[0-9A-Za-z][0-9A-Za-z._+-]*$') { throw "Version '$version' can't be used as a folder name in the download address" }
@@ -42,6 +48,29 @@ if ($csproj -notmatch '<TargetFramework>net(\d+)\.') { throw "TargetFramework no
 $runtimeMajor = [int]$Matches[1]
 
 Write-Host "VideoConverter $version (.NET $runtimeMajor)" -ForegroundColor Cyan
+
+# -- What's New (installer\whatsnew.json): every release's notes, newest first --
+# UTF-8: the notes have arrows and dashes; Windows PowerShell would read the file (no BOM) as ANSI
+$whatsNewFile = Join-Path $PSScriptRoot "whatsnew.json"
+$whatsNew = Get-Content $whatsNewFile -Raw -Encoding UTF8 | ConvertFrom-Json
+if (-not $whatsNew.versions) { throw "whatsnew.json has no versions" }
+$release = $whatsNew.versions | ForEach-Object { $_.releases } | Where-Object { $_.version -eq $version } | Select-Object -First 1
+if (-not $release) { Write-Host "No notes for $version in whatsnew.json (What's New and More Info won't list it)" -ForegroundColor Yellow }
+
+$wranglerDir = if (Test-Path $WebsiteDir) { (Resolve-Path $WebsiteDir).Path } else { $root }
+function Put([string]$key, [string]$file, [string]$type) {
+    Write-Host "  -> $Bucket/$Prefix/$key" -ForegroundColor Cyan
+    Push-Location $wranglerDir
+    try { & npx wrangler r2 object put "$Bucket/$Prefix/$key" --file "$file" --content-type $type --remote }
+    finally { Pop-Location }
+    if ($LASTEXITCODE) { throw "Upload of $key failed" }
+}
+
+if ($WhatsNewOnly) {
+    Put "whatsnew.json" $whatsNewFile "application/json"
+    Write-Host "Done. What's New is up to date." -ForegroundColor Green
+    return
+}
 
 $publish = Join-Path $root "publish"
 $setupExe = Join-Path $root "VideoConverterSetup\bin\Release\net48\VideoConverterSetup.exe"
@@ -126,37 +155,7 @@ finally {
 }
 Remove-Item $stage -Recurse -Force
 
-# -- Release notes of this version (BuildInfoService.Versions), for the app's Software Update → More Info --
-# Reads the release's block line by line, in the layout BuildInfoService uses:
-#   new("27H1.27", "2026-10-28",  /  new("Section",  /  "item",  ... until the next release or the big version's end.
-function Get-ReleaseNotes([string]$source, [string]$ver) {
-    $notes = New-Object System.Collections.ArrayList
-    $lines = $source -split "`r?`n"
-    $start = -1
-    for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -match ('^\s*new\("' + [regex]::Escape($ver) + '",\s*"')) { $start = $i; break }
-    }
-    if ($start -lt 0) { return ,@() }
-    $indent = $lines[$start].Length - $lines[$start].TrimStart().Length
-    $section = $null
-    for ($i = $start + 1; $i -lt $lines.Count; $i++) {
-        $line = $lines[$i]
-        $trimmed = $line.Trim()
-        if ($trimmed -eq "") { continue }
-        $lead = $line.Length - $line.TrimStart().Length
-        if ($lead -lt $indent -or ($lead -eq $indent -and $trimmed.StartsWith("new("))) { break }
-        if ($line -match '^\s*new\("((?:[^"\\]|\\.)*)",\s*$') {
-            $section = [ordered]@{ title = ($Matches[1] -replace '\\(.)', '$1'); items = New-Object System.Collections.ArrayList }
-            [void]$notes.Add($section)
-        }
-        elseif ($section -and $line -match '^\s*"((?:[^"\\]|\\.)*)",?\s*$') {
-            [void]$section.items.Add(($Matches[1] -replace '\\(.)', '$1'))
-        }
-    }
-    return ,$notes.ToArray()
-}
-$notes = Get-ReleaseNotes $buildInfo $version
-if ($notes.Count -eq 0) { Write-Host "No release notes for $version in BuildInfoService.cs (More Info stays hidden)" -ForegroundColor Yellow }
+Copy-Item $whatsNewFile (Join-Path $dist "whatsnew.json")
 
 # -- manifest.json --
 $manifest = [ordered]@{
@@ -174,7 +173,7 @@ $manifest = [ordered]@{
     }
 }
 # setups ignore it; the app shows it under Software Update → More Info
-if ($notes.Count -gt 0) { $manifest.notes = $notes }
+if ($release -and $release.sections) { $manifest.notes = @($release.sections) }
 $json = $manifest | ConvertTo-Json -Depth 6
 [IO.File]::WriteAllText((Join-Path $dist "manifest.json"), $json, (New-Object Text.UTF8Encoding $false))
 
@@ -186,24 +185,13 @@ Get-ChildItem $dist -Recurse -File | ForEach-Object {
 
 # -- Upload --
 if ($Upload) {
-    $wranglerDir = if (Test-Path $WebsiteDir) { (Resolve-Path $WebsiteDir).Path } else { $root }
-    function Put([string]$key, [string]$file, [string]$type) {
-        Write-Host "  -> $Bucket/$Prefix/$key" -ForegroundColor Cyan
-        & npx wrangler r2 object put "$Bucket/$Prefix/$key" --file "$file" --content-type $type --remote
-        if ($LASTEXITCODE) { throw "Upload of $key failed" }
-    }
     Write-Host ""
     Write-Host "Uploading to R2..." -ForegroundColor Cyan
-    Push-Location $wranglerDir
-    try {
-        foreach ($f in $files) { Put $f.path (Join-Path $dist $f.path) "application/vnd.microsoft.portable-executable" }
-        Put "VideoConverterSetup.exe" (Join-Path $dist "VideoConverterSetup.exe") "application/vnd.microsoft.portable-executable"
-        Put "VideoConverter-Legacy-Python.zip" $legacyZip "application/zip"
-        Put "manifest.json" (Join-Path $dist "manifest.json") "application/json"
-    }
-    finally {
-        Pop-Location
-    }
+    foreach ($f in $files) { Put $f.path (Join-Path $dist $f.path) "application/vnd.microsoft.portable-executable" }
+    Put "VideoConverterSetup.exe" (Join-Path $dist "VideoConverterSetup.exe") "application/vnd.microsoft.portable-executable"
+    Put "VideoConverter-Legacy-Python.zip" $legacyZip "application/zip"
+    Put "whatsnew.json" (Join-Path $dist "whatsnew.json") "application/json"
+    Put "manifest.json" (Join-Path $dist "manifest.json") "application/json"
     Write-Host ""
     Write-Host "Done. Installer link: https://scash.uk/vc/VideoConverterSetup.exe" -ForegroundColor Green
 }
