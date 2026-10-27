@@ -20,7 +20,6 @@ namespace VideoConverterUI;
 /// </summary>
 public partial class SettingsWindow : Window
 {
-    private readonly Rect _originRect;
     private bool _isAnimatingClose;
     private StackPanel? _activePane;
     private readonly Dictionary<RadioButton, StackPanel> _panes = new();
@@ -35,14 +34,21 @@ public partial class SettingsWindow : Window
     public bool HasChanges { get; private set; }
 
     /// <summary>Pane to show when the window opens: "appearance", "advanced", "download", "upload" or null for General.</summary>
-    public string? InitialTab { get; init; }
+    public string? InitialTab { get; set; }
 
-    public SettingsWindow(Rect originRect)
+    /// <summary>Screen rect (of the button that opened it) the window morphs open from.</summary>
+    public Rect OriginRect { get; set; }
+
+    /// <summary>
+    /// Builds the whole window (~75 ms for its XAML and bindings). MainWindow does that ahead while the app is idle
+    /// and sets <see cref="OriginRect"/>, <see cref="InitialTab"/> and the Owner when it shows it; everything that
+    /// depends on the moment it opens (current values, subscriptions) happens in OnLoaded.
+    /// </summary>
+    public SettingsWindow()
     {
         InitializeComponent();
         // ScrollViewers mark mouse-down as handled (to take focus), so the drag handler also listens to handled events.
         AddHandler(MouseLeftButtonDownEvent, new MouseButtonEventHandler(Window_DragFromBackground), handledEventsToo: true);
-        _originRect = originRect;
         TabContentScroll.ScrollChanged += (_, _) => UpdateHeaderScrim();
 
         _panes[NavGeneral] = PaneGeneral;
@@ -81,7 +87,7 @@ public partial class SettingsWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        FluidMotion.MorphOpen(RootBorder, WindowScale, WindowTranslate, _originRect, this);
+        FluidMotion.MorphOpen(RootBorder, WindowScale, WindowTranslate, OriginRect, this);
 
         ReloadAll();
         _activePane = PaneGeneral;
@@ -573,7 +579,8 @@ public partial class SettingsWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (!_isAnimatingClose)
+        // A window built ahead and never shown (MainWindow's spare) just closes.
+        if (!_isAnimatingClose && IsLoaded)
         {
             e.Cancel = true;
             CloseWithAnimation();
