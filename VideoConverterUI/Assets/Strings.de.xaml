@@ -645,6 +645,10 @@
     <sys:String x:Key="PrefMediaTools">Medienwerkzeuge</sys:String>
     <sys:String x:Key="PrefRuntime">Laufzeit</sys:String>
     <sys:String x:Key="PrefWhatsNew">Neuerungen</sys:String>
+    <sys:String x:Key="PrefWhatsNewLoading">Neuerungen werden geladen …</sys:String>
+    <sys:String x:Key="PrefWhatsNewFailedTitle">Neuerungen konnten nicht geladen werden</sys:String>
+    <sys:String x:Key="PrefWhatsNewFailedDetail">Prüfe deine Internetverbindung und versuche es erneut.</sys:String>
+    <sys:String x:Key="PrefWhatsNewOffline">Offline: Hier stehen die Neuerungen vom letzten Laden.</sys:String>
     <sys:String x:Key="PrefCurrentVersion">Aktuell</sys:String>
 
     <!-- Softwareupdate -->

@@ -16,9 +16,7 @@ public partial class SettingsWindow
     private void BindUpdate()
     {
         BindSwitch(ChkAutoCheckUpdates, s => s.AutoCheckUpdates, (s, v) => s.AutoCheckUpdates = v);
-        TxtUpdateChannel.Text = BuildInfoService.Versions
-            .FirstOrDefault(v => v.Releases.Any(r => r.Version == BuildInfoService.BuildVersion))?.Channel
-            ?? BuildInfoService.Versions.FirstOrDefault()?.Channel ?? "";
+        TxtUpdateChannel.Text = BuildInfoService.BuildChannel;
         _reloaders.Add(UpdateUpdateUi); // texts set here follow the language
     }
 

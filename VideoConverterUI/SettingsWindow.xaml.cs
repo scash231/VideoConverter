@@ -111,6 +111,7 @@ public partial class SettingsWindow : Window
             ThemeService.ThemeApplied -= OnPreviewThemeApplied;
             UpdateService.Changed -= UpdateUpdateUi;
             SetUpdateSpinner(false);
+            SetWhatsNewSpinner(false);
             _motionReplayTimer.Stop();
         };
         SettingsService.ApplyResizeGripVisibility(this);
@@ -222,7 +223,8 @@ public partial class SettingsWindow : Window
 
     // ═══ What's New ═══
 
-    // About lists the big versions (BuildInfoService.Versions); one opens its releases (PaneVersion), a release its notes (PaneRelease).
+    // About → What's New (PaneWhatsNew) lists the big versions loaded from the website (WhatsNewService); one opens its
+    // releases (PaneVersion), a release its notes (PaneRelease).
 
     private sealed record WhatsNewVersionRow(ChangelogVersion Version, string Detail);
 
@@ -230,12 +232,55 @@ public partial class SettingsWindow : Window
 
     private ChangelogVersion? _openVersion;
 
+    /// <summary>Shows <see cref="WhatsNewService.Last"/>: loading (nothing yet), couldn't load, or the list (from the saved copy: noted).</summary>
     private void BindWhatsNew()
     {
-        VersionList.ItemsSource = BuildInfoService.Versions
+        var result = WhatsNewService.Last;
+        bool loading = result == null;
+        bool failed = result is { Failed: true };
+        WhatsNewLoading.Visibility = loading ? Visibility.Visible : Visibility.Collapsed;
+        SetWhatsNewSpinner(loading && _activePane == PaneWhatsNew);
+        WhatsNewFailed.Visibility = failed ? Visibility.Visible : Visibility.Collapsed;
+        TxtWhatsNewOffline.Visibility = result is { FromCache: true } ? Visibility.Visible : Visibility.Collapsed;
+        WhatsNewList.Visibility = loading || failed ? Visibility.Collapsed : Visibility.Visible;
+        VersionList.ItemsSource = result?.Versions
             .Select(v => new WhatsNewVersionRow(v, ReleaseCount(v.Releases.Count)))
             .ToList();
         if (_openVersion != null) FillVersionPage(_openVersion);
+    }
+
+    private void OpenWhatsNew_Click(object sender, RoutedEventArgs e)
+    {
+        OpenSubPage(PaneWhatsNew, PaneAbout, "PrefWhatsNew");
+        _ = LoadWhatsNewAsync(force: false);
+    }
+
+    private void WhatsNewRetry_Click(object sender, RoutedEventArgs e) => _ = LoadWhatsNewAsync(force: true);
+
+    private async Task LoadWhatsNewAsync(bool force)
+    {
+        // Something loaded already stays up while it looks again; only a first load or a retry shows the spinner.
+        if (WhatsNewService.Last is null or { Failed: true })
+        {
+            WhatsNewLoading.Visibility = Visibility.Visible;
+            WhatsNewFailed.Visibility = Visibility.Collapsed;
+            SetWhatsNewSpinner(true);
+        }
+        await WhatsNewService.LoadAsync(force);
+        if (IsLoaded) BindWhatsNew();
+    }
+
+    /// <summary>The arrow turns only while the page loads (no endless animation left behind on a hidden page).</summary>
+    private void SetWhatsNewSpinner(bool spinning)
+    {
+        if (!spinning || FluidMotion.AnimationsDisabled)
+        {
+            WhatsNewSpinnerTurn.BeginAnimation(RotateTransform.AngleProperty, null);
+            return;
+        }
+        if (WhatsNewSpinnerTurn.HasAnimatedProperties) return;
+        WhatsNewSpinnerTurn.BeginAnimation(RotateTransform.AngleProperty,
+            new DoubleAnimation(0, 360, TimeSpan.FromSeconds(0.9)) { RepeatBehavior = RepeatBehavior.Forever });
     }
 
     /// <summary>"8 releases" in the UI language (Russian has a separate form for 2–4).</summary>
@@ -263,8 +308,9 @@ public partial class SettingsWindow : Window
         if ((sender as FrameworkElement)?.DataContext is not WhatsNewVersionRow row) return;
         _openVersion = row.Version;
         FillVersionPage(row.Version);
+        string whatsNewTitle = TxtPaneTitle.Text; // what Back puts back
         TxtPaneTitle.Text = row.Version.Name;
-        PushSubPage(PaneVersion, PaneAbout);
+        PushSubPage(PaneVersion, PaneWhatsNew, whatsNewTitle);
     }
 
     private void OpenRelease_Click(object sender, RoutedEventArgs e)
@@ -689,7 +735,7 @@ public partial class SettingsWindow : Window
 
     private bool IsSubPage(StackPanel pane) =>
         pane == PaneLiquidGlass || pane == PaneGlassReadability || pane == PaneColors || pane == PaneVideoColors || pane == PaneWindowGlass
-        || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneVersion || pane == PaneRelease
+        || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneWhatsNew || pane == PaneVersion || pane == PaneRelease
         || pane == PaneUpdate;
 
     /// <summary>Switches to a pane by name: "update" (General → Software Update), "appearance", "glass", "animations", "advanced", "download" or "upload".</summary>
