@@ -44,7 +44,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         TaskbarItemInfo = new TaskbarItemInfo();
-        TitleBar.Opacity = 0;
+        Sidebar.Opacity = 0;
+        WindowButtons.Opacity = 0;
         PageLoading.Visibility = Visibility.Collapsed;
         ApplyExpand();
         Loaded += OnLoaded;
@@ -72,6 +73,8 @@ public partial class MainWindow : Window
         _page = page;
         foreach (var child in Pages.Children)
             if (child is FrameworkElement fe && fe != page && fe != old) fe.Visibility = Visibility.Collapsed;
+        NavInstall.Tag = page == PageWelcome ? "on" : null;
+        NavUninstall.Tag = page == PageUninstall ? "on" : null;
 
         if (old != null)
         {
@@ -122,7 +125,20 @@ public partial class MainWindow : Window
         Shell.Height = double.NaN;
         Shell.CornerRadius = new CornerRadius(FullRadius);
         ShellGrid.Children.Remove(Splash);
-        TitleBar.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(220)));
+        Sidebar.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(220)));
+        WindowButtons.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(220)));
+    }
+
+    /// <summary>Shows the sidebar actions that fit what is installed, and locks them while setup works.</summary>
+    private void UpdateSidebar()
+    {
+        var installed = _installed != null && !_uninstalled;
+        NavInstall.Visibility = _manifest != null && !_uninstalled ? Visibility.Visible : Visibility.Collapsed;
+        NavOpenApp.Visibility = installed && File.Exists(Path.Combine(_installed!.InstallDir, SetupPaths.AppExe)) ? Visibility.Visible : Visibility.Collapsed;
+        NavOpenFolder.Visibility = installed && Directory.Exists(_installed!.InstallDir) ? Visibility.Visible : Visibility.Collapsed;
+        NavUninstall.Visibility = installed ? Visibility.Visible : Visibility.Collapsed;
+        NavItems.IsEnabled = !_busy;
+        TxtSideVersion.Text = _manifest?.Version ?? _installed?.Version ?? "";
     }
 
     /// <summary>Sizes the shell between the cube (Expand 0) and the full window (Expand 1).</summary>
@@ -214,13 +230,13 @@ public partial class MainWindow : Window
             _installDir = _installed.InstallDir;
             ChkDesktop.IsChecked = _installed.DesktopShortcut;
             BtnChangeDir.Visibility = Visibility.Collapsed;
-            BtnUninstallLink.Visibility = Visibility.Visible;
             var same = string.Equals(_installed.Version, m.Version, StringComparison.OrdinalIgnoreCase);
             TxtWelcomeTitle.Text = same ? "Reinstall VideoConverter" : "Update VideoConverter";
             TxtWelcomeSub.Text = same
-                ? $"Version {m.Version} is already installed. Reinstalling repairs it and updates yt-dlp."
-                : $"Version {_installed.Version} is installed. Setup updates it to {m.Version} and keeps your settings.";
+                ? "This version is already installed. Reinstalling repairs it and updates yt-dlp."
+                : "A newer version is ready. Your settings stay as they are.";
             BtnInstall.Content = same ? "Reinstall" : "Update";
+            NavInstall.Content = BtnInstall.Content;
         }
         else
         {
@@ -236,7 +252,9 @@ public partial class MainWindow : Window
                      + (needsRuntime ? runtime.Size : 0)
                      + (needsFfmpeg ? 100L * 1024 * 1024 : 0);
 
-        TxtSpecVersion.Text = m.Version;
+        TxtSpecVersion.Text = _installed != null && !string.Equals(_installed.Version, m.Version, StringComparison.OrdinalIgnoreCase)
+            ? $"{_installed.Version} → {m.Version}"
+            : m.Version;
         TxtSpecDownload.Text = $"about {Math.Ceiling(bytes / 1048576.0 / 5) * 5:0} MB";
         var extras = new System.Collections.Generic.List<string>();
         if (needsRuntime) extras.Add($".NET {runtime.Major} Runtime");
@@ -245,6 +263,7 @@ public partial class MainWindow : Window
         RowIncludes.Visibility = extras.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         UpdateRunningNote();
+        UpdateSidebar();
     }
 
     private bool UpdateRunningNote()
@@ -253,8 +272,40 @@ public partial class MainWindow : Window
         var any = running.Count > 0;
         foreach (var p in running) p.Dispose();
         TxtRunningNote.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
-        BtnUninstallLink.Visibility = !any && _installed != null ? Visibility.Visible : Visibility.Collapsed;
         return any;
+    }
+
+    // ── Sidebar ────────────────────────────────────────────────────────────
+
+    private void NavInstall_Click(object sender, RoutedEventArgs e)
+    {
+        if (_busy || _manifest == null || _page == PageWelcome) return;
+        if (_page == PageDone) PrepareWelcome(); // just installed: it's an update/reinstall now
+        ShowPage(PageWelcome);
+    }
+
+    private void NavOpenApp_Click(object sender, RoutedEventArgs e)
+    {
+        if (_installed != null) LaunchApp(_installed.InstallDir);
+    }
+
+    private void NavOpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (_installed == null) return;
+        try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"{_installed.InstallDir}\"") { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Write("open folder failed: " + ex); }
+    }
+
+    private static void LaunchApp(string dir)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(Path.Combine(dir, SetupPaths.AppExe)) { WorkingDirectory = dir, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Log.Write("launch failed: " + ex);
+        }
     }
 
     private void ChangeDir_Click(object sender, RoutedEventArgs e)
@@ -315,6 +366,7 @@ public partial class MainWindow : Window
 
         _cts = new CancellationTokenSource();
         _busy = true;
+        UpdateSidebar();
         try
         {
             await engine.RunAsync(_cts.Token);
@@ -338,6 +390,7 @@ public partial class MainWindow : Window
             engine.OverallProgress -= SetProgress;
             _cts.Dispose();
             _cts = null;
+            UpdateSidebar();
             if (_confirmClose) Close();
         }
     }
@@ -359,6 +412,7 @@ public partial class MainWindow : Window
         WarningList.ItemsSource = engine.Warnings;
         ChkLaunch.Visibility = Visibility.Visible;
         BtnFinish.Content = "Finish";
+        _installed = InstalledInfo.Read() ?? _installed;
         ShowPage(PageDone);
         PopBadge();
     }
@@ -374,18 +428,7 @@ public partial class MainWindow : Window
 
     private void Finish_Click(object sender, RoutedEventArgs e)
     {
-        if (!_uninstalled && ChkLaunch.IsChecked == true)
-        {
-            var exe = Path.Combine(_installDir, SetupPaths.AppExe);
-            try
-            {
-                Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = _installDir, UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                Log.Write("launch failed: " + ex);
-            }
-        }
+        if (!_uninstalled && ChkLaunch.IsChecked == true) LaunchApp(_installDir);
         Close();
     }
 
@@ -433,18 +476,22 @@ public partial class MainWindow : Window
             ShowError("VideoConverter isn't installed for this Windows user, so there is nothing to remove.", null, "Nothing to uninstall");
             return;
         }
-        TxtTitleMode.Text = "Uninstall";
+        TxtUninstallVersion.Text = string.IsNullOrEmpty(_installed.Version) ? "VideoConverter" : "VideoConverter " + _installed.Version;
         TxtUninstallDir.Text = _installed.InstallDir;
         BtnUninstallCancel.Content = fromWelcome ? "Back" : "Cancel";
+        UpdateSidebar();
         ShowPage(PageUninstall);
     }
 
-    private void UninstallLink_Click(object sender, RoutedEventArgs e) => ShowUninstallPage(fromWelcome: true);
+    // without a manifest (/uninstall from Windows "Apps") there is no welcome page to go back to
+    private void UninstallLink_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_busy && _page != PageUninstall) ShowUninstallPage(fromWelcome: _manifest != null);
+    }
 
     private void UninstallCancel_Click(object sender, RoutedEventArgs e)
     {
         if (!_uninstallFromWelcome) { Close(); return; }
-        TxtTitleMode.Text = "Setup";
         ShowPage(PageWelcome);
     }
 
@@ -467,6 +514,7 @@ public partial class MainWindow : Window
         WarningList.ItemsSource = null;
         ChkLaunch.Visibility = Visibility.Collapsed;
         BtnFinish.Content = "Close";
+        UpdateSidebar();
         ShowPage(PageDone);
         PopBadge();
     }

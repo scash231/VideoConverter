@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:VideoConverterSetup"
-        Title="VideoConverter Setup" Width="660" Height="500"
+        Title="VideoConverter Setup" Width="600" Height="460"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen" Icon="app.ico"
         FontFamily="{StaticResource UiFont}" TextOptions.TextFormattingMode="Display"
@@ -11,9 +11,9 @@
     <Window.Resources>
         <!-- one row of the progress list: number, then a mark for how it went -->
         <DataTemplate x:Key="StepRow" DataType="{x:Type local:SetupStep}">
-            <Grid Height="32">
+            <Grid Height="29">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="34" />
+                    <ColumnDefinition Width="30" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
@@ -23,7 +23,7 @@
                                Foreground="{DynamicResource TextTer}" VerticalAlignment="Center" />
                     <Grid x:Name="Spinner" Visibility="Collapsed" Width="13" Height="13" HorizontalAlignment="Left">
                         <Ellipse Stroke="{DynamicResource Track}" StrokeThickness="1.6" />
-                        <Path x:Name="SpinArc" Width="13" Height="13" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                        <Path x:Name="SpinArc" Width="13" Height="13" Stroke="{DynamicResource Accent}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                               Data="M 6.5,0.8 A 5.7,5.7 0 0 1 12.2,6.5" RenderTransformOrigin="0.5,0.5">
                             <Path.RenderTransform>
                                 <RotateTransform />
@@ -36,7 +36,7 @@
                     <Path x:Name="Failed" Visibility="Collapsed" Data="M 2.5,3 L 11.5,12 M 11.5,3 L 2.5,12" Stroke="{DynamicResource ErrorRed}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                 </Grid>
 
-                <TextBlock x:Name="Name" Grid.Column="1" Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center"
+                <TextBlock x:Name="Name" Grid.Column="1" Text="{Binding Title}" FontSize="13" VerticalAlignment="Center"
                            Foreground="{DynamicResource TextSec}" TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="2" Text="{Binding Detail}" FontFamily="{StaticResource MonoFont}" FontSize="11.5" VerticalAlignment="Center" Margin="12,0,0,0"
                            Foreground="{DynamicResource TextSec}" />
@@ -78,227 +78,230 @@
     </Window.Resources>
 
     <Border x:Name="Shell" Margin="18" CornerRadius="10" Background="{DynamicResource BgDeep}"
-            BorderBrush="{DynamicResource WindowBorder}" BorderThickness="1">
+            BorderBrush="{DynamicResource WindowBorder}" BorderThickness="1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
         <Border.Effect>
             <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Opacity="0.55" />
         </Border.Effect>
 
         <Grid x:Name="ShellGrid" SizeChanged="ShellGrid_SizeChanged">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="48" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+            <Grid x:Name="Body">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="156" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-            <!-- the gradient: a wash down from the top edge -->
-            <Rectangle Grid.RowSpan="2" Height="230" VerticalAlignment="Top" Fill="{DynamicResource HeaderWash}" IsHitTestVisible="False" />
+                <!-- ══════ Sidebar: the VC mark, then what setup can do besides installing ══════ -->
+                <Grid x:Name="Sidebar" Background="Transparent">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <!-- ══════ Title bar ══════ -->
-            <Grid x:Name="TitleBar" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <StackPanel Orientation="Horizontal" Margin="18,0,0,0" VerticalAlignment="Center">
-                    <Image Source="app.ico" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality" />
-                    <TextBlock Text="VideoConverter" Margin="9,0,0,0" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-                    <TextBlock x:Name="TxtTitleMode" Text="Setup" Margin="5,0,0,0" FontSize="12.5" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center">
+                    <TextBlock Text="VC" Margin="24,20,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="Black"
+                               Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Left" />
+
+                    <StackPanel x:Name="NavItems" Grid.Row="1" Margin="14,40,14,0">
+                        <Button x:Name="NavInstall" Style="{StaticResource NavButton}" Content="Install" Tag="on" Click="NavInstall_Click" />
+                        <Button x:Name="NavOpenApp" Style="{StaticResource NavButton}" Content="Open app" Visibility="Collapsed" Click="NavOpenApp_Click" />
+                        <Button x:Name="NavOpenFolder" Style="{StaticResource NavButton}" Content="Open folder" Visibility="Collapsed" Click="NavOpenFolder_Click" />
+                        <Button x:Name="NavUninstall" Style="{StaticResource NavButton}" Content="Uninstall" Visibility="Collapsed" Click="UninstallLink_Click" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Margin="14,0,14,14">
+                        <Button x:Name="NavLog" Style="{StaticResource NavButton}" Content="Setup log" Foreground="{DynamicResource TextSec}" Click="OpenLog_Click" />
+                        <TextBlock x:Name="TxtSideVersion" Margin="10,4,0,0" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTer}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- ══════ Pages ══════ -->
+                <Grid x:Name="Pages" Grid.Column="1" Margin="22,28,26,22">
+
+                    <!-- loading the manifest (again, after an error; the first time the cube shows it) -->
+                    <StackPanel x:Name="PageLoading" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Control Style="{StaticResource Spinner}" Width="22" Height="22" Foreground="{DynamicResource Accent}" />
+                        <TextBlock Text="Getting the latest version" Style="{StaticResource Sub}" Margin="0,14,0,0" HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- welcome / options -->
+                    <Grid x:Name="PageWelcome" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel>
+                            <TextBlock x:Name="TxtWelcomeTitle" Text="Install VideoConverter" Style="{StaticResource Title}" />
+                            <TextBlock x:Name="TxtWelcomeSub" Style="{StaticResource Sub}" Margin="0,4,0,0"
+                                       Text="Videos and audio from Instagram, TikTok and YouTube." />
+
+                            <StackPanel Margin="0,18,0,0">
+                                <!-- the release, with the app icon on the right -->
+                                <Border Style="{StaticResource Card}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="VideoConverter" Style="{StaticResource CardTitle}" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="TxtSpecVersion" Style="{StaticResource CardSub}" />
+                                                <TextBlock Text="  ·  " Style="{StaticResource CardSub}" Foreground="{DynamicResource TextTer}" />
+                                                <TextBlock x:Name="TxtSpecDownload" Style="{StaticResource CardSub}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <Image Grid.Column="1" Source="app.ico" Width="24" Height="24" VerticalAlignment="Top" Margin="12,0,0,0"
+                                               RenderOptions.BitmapScalingMode="HighQuality" />
+                                    </Grid>
+                                </Border>
+
+                                <Border x:Name="RowIncludes" Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Also installs" Style="{StaticResource CardTitle}" />
+                                        <TextBlock x:Name="TxtSpecIncludes" Style="{StaticResource CardSub}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="Location" Style="{StaticResource CardTitle}" />
+                                            <TextBlock x:Name="TxtDir" Style="{StaticResource CardSub}" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                        </StackPanel>
+                                        <Button x:Name="BtnChangeDir" Grid.Column="1" Style="{StaticResource LinkButton}" Content="Change" Margin="12,0,0,0"
+                                                VerticalAlignment="Center" Click="ChangeDir_Click" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtDirError" Visibility="Collapsed" Margin="2,0,0,4" FontSize="12.5" Foreground="{DynamicResource ErrorRed}" TextWrapping="Wrap" />
+
+                            <CheckBox x:Name="ChkDesktop" Style="{StaticResource Check}" Content="Create a desktop shortcut" IsChecked="True" Margin="2,6,0,0" HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1">
+                            <TextBlock x:Name="TxtRunningNote" Visibility="Collapsed" FontSize="12.5" Foreground="{DynamicResource WarnAmber}" TextWrapping="Wrap" MaxWidth="190"
+                                       HorizontalAlignment="Left" VerticalAlignment="Center" Text="VideoConverter is open. Setup will close it." />
+                            <Button x:Name="BtnInstall" Style="{StaticResource PrimaryButton}" Content="Install" HorizontalAlignment="Right" IsDefault="True" Click="Install_Click" />
+                        </Grid>
+                    </Grid>
+
+                    <!-- progress (install and uninstall) -->
+                    <Grid x:Name="PageProgress" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel>
+                            <TextBlock x:Name="TxtProgressTitle" Text="Installing VideoConverter" Style="{StaticResource Title}" />
+                            <TextBlock x:Name="TxtProgressSub" Text="This takes a minute or two, depending on your connection." Style="{StaticResource Sub}" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,16,0,14" Padding="14,6">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                                <ItemsControl x:Name="StepList" ItemTemplate="{StaticResource StepRow}" />
+                            </ScrollViewer>
+                        </Border>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ProgressBar x:Name="Bar" Style="{StaticResource Bar}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TxtPercent" Grid.Column="1" Text="0 %" Width="46" TextAlignment="Right" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                       Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" />
+                            <Button x:Name="BtnCancel" Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="16,0,0,0" MinWidth="96" Click="Cancel_Click" />
+                        </Grid>
+                    </Grid>
+
+                    <!-- finished -->
+                    <Grid x:Name="PageDone" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
+                            <Path x:Name="DoneBadge" Data="M 2,15 L 11,24 L 30,4" Stroke="{DynamicResource SuccessGreen}" StrokeThickness="3"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Left" RenderTransformOrigin="0.3,0.6">
+                                <Path.RenderTransform>
+                                    <ScaleTransform ScaleX="0.4" ScaleY="0.4" />
+                                </Path.RenderTransform>
+                            </Path>
+                            <TextBlock x:Name="TxtDoneTitle" Text="VideoConverter is ready" Style="{StaticResource Title}" Margin="0,18,0,0" />
+                            <TextBlock x:Name="TxtDoneSub" Style="{StaticResource Sub}" Margin="0,4,0,0" Text="You'll find it in the Start menu." />
+                            <ItemsControl x:Name="WarningList" Margin="0,14,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontSize="12.5" Foreground="{DynamicResource WarnAmber}" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                        <Grid Grid.Row="1">
+                            <CheckBox x:Name="ChkLaunch" Style="{StaticResource Check}" Content="Open VideoConverter now" IsChecked="True" Margin="2,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                            <Button x:Name="BtnFinish" Style="{StaticResource PrimaryButton}" Content="Finish" HorizontalAlignment="Right" IsDefault="True" Click="Finish_Click" />
+                        </Grid>
+                    </Grid>
+
+                    <!-- error: a red rule beside the message, no badge -->
+                    <Grid x:Name="PageError" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border VerticalAlignment="Center" BorderBrush="{DynamicResource ErrorRed}" BorderThickness="2,0,0,0" Padding="18,2,0,2">
+                            <StackPanel>
+                                <TextBlock x:Name="TxtErrorTitle" Text="Setup couldn't finish" Style="{StaticResource Title}" />
+                                <TextBox x:Name="TxtError" Margin="-2,6,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
+                                         Foreground="{DynamicResource TextSec}" FontSize="13" TextWrapping="Wrap" MaxHeight="150" VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource SecondaryButton}" Content="Close" Click="Close_Click" />
+                            <Button x:Name="BtnRetry" Style="{StaticResource PrimaryButton}" Content="Try again" Margin="10,0,0,0" IsDefault="True" Click="Retry_Click" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- uninstall confirmation -->
+                    <Grid x:Name="PageUninstall" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Uninstall VideoConverter?" Style="{StaticResource Title}" />
+                            <TextBlock Style="{StaticResource Sub}" Margin="0,4,0,0"
+                                       Text="Removes the app, the Ferrite engine and the shortcuts. Videos you downloaded stay where they are." />
+                            <Border Style="{StaticResource Card}" Margin="0,18,0,8">
+                                <StackPanel>
+                                    <TextBlock x:Name="TxtUninstallVersion" Text="VideoConverter" Style="{StaticResource CardTitle}" />
+                                    <TextBlock x:Name="TxtUninstallDir" Style="{StaticResource CardSub}" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                </StackPanel>
+                            </Border>
+                            <CheckBox x:Name="ChkRemoveData" Style="{StaticResource Check}" Margin="2,6,0,0" HorizontalAlignment="Left"
+                                      Content="Also delete settings and tools (FFmpeg, yt-dlp)" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="BtnUninstallCancel" Style="{StaticResource SecondaryButton}" Content="Cancel" IsCancel="True" Click="UninstallCancel_Click" />
+                            <Button Style="{StaticResource DangerButton}" Content="Uninstall" Margin="10,0,0,0" Click="Uninstall_Click" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <!-- ══════ Window buttons, top right like the reference: bare glyphs ══════ -->
+                <StackPanel x:Name="WindowButtons" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,12,0">
                     <Button Style="{StaticResource TitleBarButton}" Content="&#xE921;" ToolTip="Minimize" Click="Minimize_Click" />
                     <Button x:Name="BtnClose" Style="{StaticResource TitleBarButton}" Content="&#xE8BB;" ToolTip="Close" Margin="2,0,0,0" Click="Close_Click" />
                 </StackPanel>
             </Grid>
 
-            <!-- ══════ Pages ══════ -->
-            <Grid x:Name="Pages" Grid.Row="1" Margin="40,10,40,30">
-
-                <!-- loading the manifest (again, after an error; the first time the cube shows it) -->
-                <StackPanel x:Name="PageLoading" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <Control Style="{StaticResource Spinner}" Width="22" Height="22" />
-                    <TextBlock Text="Getting the latest version" Style="{StaticResource Sub}" Margin="0,14,0,0" HorizontalAlignment="Center" />
-                </StackPanel>
-
-                <!-- welcome / options -->
-                <Grid x:Name="PageWelcome" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel>
-                        <TextBlock x:Name="TxtWelcomeTitle" Text="Install VideoConverter" Style="{StaticResource Title}" />
-                        <TextBlock x:Name="TxtWelcomeSub" Style="{StaticResource Sub}" Margin="0,8,0,0" MaxWidth="520" HorizontalAlignment="Left"
-                                   Text="Download videos and audio from Instagram, TikTok, YouTube and YouTube Music. Setup gets everything the app needs." />
-
-                        <!-- summary -->
-                        <Border Margin="0,24,0,0" BorderBrush="{DynamicResource Hairline}" BorderThickness="0,0,0,1">
-                            <StackPanel>
-                                <Border Style="{StaticResource SpecRow}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="104" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Version" Style="{StaticResource SpecKey}" />
-                                        <TextBlock x:Name="TxtSpecVersion" Grid.Column="1" Style="{StaticResource SpecValue}" />
-                                    </Grid>
-                                </Border>
-                                <Border Style="{StaticResource SpecRow}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="104" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Download" Style="{StaticResource SpecKey}" />
-                                        <TextBlock x:Name="TxtSpecDownload" Grid.Column="1" Style="{StaticResource SpecValue}" />
-                                    </Grid>
-                                </Border>
-                                <Border x:Name="RowIncludes" Style="{StaticResource SpecRow}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="104" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Also installs" Style="{StaticResource SpecKey}" />
-                                        <TextBlock x:Name="TxtSpecIncludes" Grid.Column="1" Style="{StaticResource SpecValue}" />
-                                    </Grid>
-                                </Border>
-                                <Border Style="{StaticResource SpecRow}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="104" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Location" Style="{StaticResource SpecKey}" />
-                                        <TextBlock x:Name="TxtDir" Grid.Column="1" Style="{StaticResource SpecValue}" />
-                                        <Button x:Name="BtnChangeDir" Grid.Column="2" Style="{StaticResource LinkButton}" Content="Change" Margin="16,0,0,0"
-                                                VerticalAlignment="Center" Click="ChangeDir_Click" />
-                                    </Grid>
-                                </Border>
-                            </StackPanel>
-                        </Border>
-                        <TextBlock x:Name="TxtDirError" Visibility="Collapsed" Margin="0,8,0,0" FontSize="12.5" Foreground="{DynamicResource ErrorRed}" TextWrapping="Wrap" />
-
-                        <CheckBox x:Name="ChkDesktop" Style="{StaticResource Check}" Content="Create a desktop shortcut" IsChecked="True" Margin="0,20,0,0" HorizontalAlignment="Left" />
-                    </StackPanel>
-
-                    <Grid Grid.Row="1">
-                        <StackPanel VerticalAlignment="Center">
-                            <Button x:Name="BtnUninstallLink" Style="{StaticResource LinkButton}" Content="Uninstall VideoConverter" Visibility="Collapsed" HorizontalAlignment="Left" Click="UninstallLink_Click" />
-                            <TextBlock x:Name="TxtRunningNote" Visibility="Collapsed" FontSize="12.5" Foreground="{DynamicResource WarnAmber}" TextWrapping="Wrap" MaxWidth="330" HorizontalAlignment="Left"
-                                       Text="VideoConverter is open. Setup will close it." />
-                        </StackPanel>
-                        <Button x:Name="BtnInstall" Style="{StaticResource PrimaryButton}" Content="Install" HorizontalAlignment="Right" IsDefault="True" Click="Install_Click" />
-                    </Grid>
-                </Grid>
-
-                <!-- progress (install and uninstall) -->
-                <Grid x:Name="PageProgress" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel>
-                        <TextBlock x:Name="TxtProgressTitle" Text="Installing VideoConverter" Style="{StaticResource Title}" />
-                        <TextBlock x:Name="TxtProgressSub" Text="This takes a minute or two, depending on your connection." Style="{StaticResource Sub}" Margin="0,8,0,0" />
-                    </StackPanel>
-                    <ScrollViewer Grid.Row="1" Margin="0,20,0,12" VerticalScrollBarVisibility="Auto" Focusable="False">
-                        <ItemsControl x:Name="StepList" ItemTemplate="{StaticResource StepRow}" />
-                    </ScrollViewer>
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ProgressBar x:Name="Bar" Style="{StaticResource Bar}" VerticalAlignment="Center" />
-                        <TextBlock x:Name="TxtPercent" Grid.Column="1" Text="0 %" Width="50" TextAlignment="Right" FontFamily="{StaticResource MonoFont}" FontSize="12"
-                                   Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" />
-                        <Button x:Name="BtnCancel" Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="20,0,0,0" MinWidth="104" Click="Cancel_Click" />
-                    </Grid>
-                </Grid>
-
-                <!-- finished -->
-                <Grid x:Name="PageDone" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel VerticalAlignment="Center" MaxWidth="520" HorizontalAlignment="Left">
-                        <Path x:Name="DoneBadge" Data="M 2,15 L 11,24 L 30,4" Stroke="{DynamicResource SuccessGreen}" StrokeThickness="3"
-                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Left" RenderTransformOrigin="0.3,0.6">
-                            <Path.RenderTransform>
-                                <ScaleTransform ScaleX="0.4" ScaleY="0.4" />
-                            </Path.RenderTransform>
-                        </Path>
-                        <TextBlock x:Name="TxtDoneTitle" Text="VideoConverter is ready" Style="{StaticResource Title}" Margin="0,20,0,0" />
-                        <TextBlock x:Name="TxtDoneSub" Style="{StaticResource Sub}" Margin="0,8,0,0" Text="You'll find it in the Start menu." />
-                        <ItemsControl x:Name="WarningList" Margin="0,16,0,0">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding}" FontSize="12.5" Foreground="{DynamicResource WarnAmber}" TextWrapping="Wrap" Margin="0,0,0,6" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                    <Grid Grid.Row="1">
-                        <CheckBox x:Name="ChkLaunch" Style="{StaticResource Check}" Content="Open VideoConverter now" IsChecked="True" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                        <Button x:Name="BtnFinish" Style="{StaticResource PrimaryButton}" Content="Finish" HorizontalAlignment="Right" IsDefault="True" Click="Finish_Click" />
-                    </Grid>
-                </Grid>
-
-                <!-- error: a red rule beside the message, no badge -->
-                <Grid x:Name="PageError" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Border VerticalAlignment="Center" BorderBrush="{DynamicResource ErrorRed}" BorderThickness="2,0,0,0" Padding="20,2,0,2">
-                        <StackPanel>
-                            <TextBlock x:Name="TxtErrorTitle" Text="Setup couldn't finish" Style="{StaticResource Title}" FontSize="24" />
-                            <TextBox x:Name="TxtError" Margin="-2,8,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
-                                     Foreground="{DynamicResource TextSec}" FontSize="13.5" TextWrapping="Wrap" MaxHeight="150" VerticalScrollBarVisibility="Auto" />
-                            <Button Style="{StaticResource LinkButton}" Content="Open the setup log" Margin="0,14,0,0" HorizontalAlignment="Left" Click="OpenLog_Click" />
-                        </StackPanel>
-                    </Border>
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Style="{StaticResource SecondaryButton}" Content="Close" Click="Close_Click" />
-                        <Button x:Name="BtnRetry" Style="{StaticResource PrimaryButton}" Content="Try again" Margin="10,0,0,0" IsDefault="True" Click="Retry_Click" />
-                    </StackPanel>
-                </Grid>
-
-                <!-- uninstall confirmation -->
-                <Grid x:Name="PageUninstall" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="Uninstall VideoConverter?" Style="{StaticResource Title}" />
-                        <TextBlock Style="{StaticResource Sub}" Margin="0,8,0,0" MaxWidth="520" HorizontalAlignment="Left"
-                                   Text="This removes the app, the Ferrite engine and the shortcuts. Videos you downloaded stay where they are." />
-                        <Border Margin="0,24,0,0" BorderBrush="{DynamicResource Hairline}" BorderThickness="0,0,0,1">
-                            <Border Style="{StaticResource SpecRow}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="104" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Installed in" Style="{StaticResource SpecKey}" />
-                                    <TextBlock x:Name="TxtUninstallDir" Grid.Column="1" Style="{StaticResource SpecValue}" />
-                                </Grid>
-                            </Border>
-                        </Border>
-                        <CheckBox x:Name="ChkRemoveData" Style="{StaticResource Check}" Margin="0,20,0,0" HorizontalAlignment="Left"
-                                  Content="Also delete settings and downloaded tools (FFmpeg, yt-dlp)" />
-                    </StackPanel>
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button x:Name="BtnUninstallCancel" Style="{StaticResource SecondaryButton}" Content="Cancel" IsCancel="True" Click="UninstallCancel_Click" />
-                        <Button Style="{StaticResource DangerButton}" Content="Uninstall" Margin="10,0,0,0" Click="Uninstall_Click" />
-                    </StackPanel>
-                </Grid>
-            </Grid>
-
             <!-- ══════ Start: the window is a small cube with just the spinner, then grows (MainWindow.ExpandAsync) ══════ -->
-            <Grid x:Name="Splash" Grid.RowSpan="2" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Control Style="{StaticResource Spinner}" Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Grid x:Name="Splash" Background="Transparent">
+                <Control Style="{StaticResource Spinner}" Width="28" Height="28" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Grid>
         </Grid>
     </Border>
