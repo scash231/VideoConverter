@@ -4,7 +4,8 @@
 
 .DESCRIPTION
   Output in dist\vc (the same layout as on the website, https://scash.uk/vc/...):
-    manifest.json                     what VideoConverterSetup.exe reads (version, files, sizes, SHA-256)
+    manifest.json                     what VideoConverterSetup.exe reads (version, files, sizes, SHA-256) and the
+                                      app's Software Update (also the release notes, "notes")
     <version>\VideoConverterUI.exe    the app (framework-dependent single file)
     <version>\ferrite.exe             the Ferrite engine
     VideoConverterSetup.exe           the installer you give to people
@@ -30,7 +31,8 @@ $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 # -- Version (BuildInfoService.BuildVersion) and runtime (TargetFramework) --
-$buildInfo = Get-Content (Join-Path $root "VideoConverterUI\Services\BuildInfoService.cs") -Raw
+# UTF-8: the release notes have arrows and dashes; Windows PowerShell would read the file (no BOM) as ANSI
+$buildInfo = Get-Content (Join-Path $root "VideoConverterUI\Services\BuildInfoService.cs") -Raw -Encoding UTF8
 if ($buildInfo -notmatch 'BuildVersion\s*=>\s*"([^"]+)"') { throw "BuildVersion not found in BuildInfoService.cs" }
 $version = $Matches[1]
 if ($version -notmatch '^[0-9A-Za-z][0-9A-Za-z._+-]*$') { throw "Version '$version' can't be used as a folder name in the download address" }
@@ -124,12 +126,44 @@ finally {
 }
 Remove-Item $stage -Recurse -Force
 
+# -- Release notes of this version (BuildInfoService.Versions), for the app's Software Update → More Info --
+# Reads the release's block line by line, in the layout BuildInfoService uses:
+#   new("27H1.27", "2026-10-28",  /  new("Section",  /  "item",  ... until the next release or the big version's end.
+function Get-ReleaseNotes([string]$source, [string]$ver) {
+    $notes = New-Object System.Collections.ArrayList
+    $lines = $source -split "`r?`n"
+    $start = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match ('^\s*new\("' + [regex]::Escape($ver) + '",\s*"')) { $start = $i; break }
+    }
+    if ($start -lt 0) { return ,@() }
+    $indent = $lines[$start].Length - $lines[$start].TrimStart().Length
+    $section = $null
+    for ($i = $start + 1; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
+        $trimmed = $line.Trim()
+        if ($trimmed -eq "") { continue }
+        $lead = $line.Length - $line.TrimStart().Length
+        if ($lead -lt $indent -or ($lead -eq $indent -and $trimmed.StartsWith("new("))) { break }
+        if ($line -match '^\s*new\("((?:[^"\\]|\\.)*)",\s*$') {
+            $section = [ordered]@{ title = ($Matches[1] -replace '\\(.)', '$1'); items = New-Object System.Collections.ArrayList }
+            [void]$notes.Add($section)
+        }
+        elseif ($section -and $line -match '^\s*"((?:[^"\\]|\\.)*)",?\s*$') {
+            [void]$section.items.Add(($Matches[1] -replace '\\(.)', '$1'))
+        }
+    }
+    return ,$notes.ToArray()
+}
+$notes = Get-ReleaseNotes $buildInfo $version
+if ($notes.Count -eq 0) { Write-Host "No release notes for $version in BuildInfoService.cs (More Info stays hidden)" -ForegroundColor Yellow }
+
 # -- manifest.json --
 $manifest = [ordered]@{
     name      = "VideoConverter"
     version   = $version
     published = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-    minSetup  = 3
+    minSetup  = 4
     files     = $files
     setup     = $setup
     runtime   = [ordered]@{
@@ -139,6 +173,8 @@ $manifest = [ordered]@{
         size      = 62914560
     }
 }
+# setups ignore it; the app shows it under Software Update → More Info
+if ($notes.Count -gt 0) { $manifest.notes = $notes }
 $json = $manifest | ConvertTo-Json -Depth 6
 [IO.File]::WriteAllText((Join-Path $dist "manifest.json"), $json, (New-Object Text.UTF8Encoding $false))
 

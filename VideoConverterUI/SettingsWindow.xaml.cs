@@ -104,10 +104,13 @@ public partial class SettingsWindow : Window
 
         SettingsService.SettingsChanged += OnSettingsChanged;
         ThemeService.ThemeApplied += OnPreviewThemeApplied;
+        UpdateService.Changed += UpdateUpdateUi;
         Closed += (_, _) =>
         {
             SettingsService.SettingsChanged -= OnSettingsChanged;
             ThemeService.ThemeApplied -= OnPreviewThemeApplied;
+            UpdateService.Changed -= UpdateUpdateUi;
+            SetUpdateSpinner(false);
             _motionReplayTimer.Stop();
         };
         SettingsService.ApplyResizeGripVisibility(this);
@@ -471,6 +474,7 @@ public partial class SettingsWindow : Window
         BindCombo(CmbBackendLogLevel, s => s.BackendLogLevel, (s, v) => s.BackendLogLevel = v);
         BindCombo(CmbGlassSampling, s => s.GlassSamplingMode ?? "timer", (s, v) => s.GlassSamplingMode = v);
 
+        BindUpdate();
         BindAppearance();
     }
 
@@ -685,11 +689,18 @@ public partial class SettingsWindow : Window
 
     private bool IsSubPage(StackPanel pane) =>
         pane == PaneLiquidGlass || pane == PaneGlassReadability || pane == PaneColors || pane == PaneVideoColors || pane == PaneWindowGlass
-        || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneVersion || pane == PaneRelease;
+        || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneVersion || pane == PaneRelease
+        || pane == PaneUpdate;
 
-    /// <summary>Switches to a pane by name: "appearance", "glass", "animations", "advanced", "download" or "upload".</summary>
+    /// <summary>Switches to a pane by name: "update" (General → Software Update), "appearance", "glass", "animations", "advanced", "download" or "upload".</summary>
     public void SelectPane(string name)
     {
+        if (name == "update")
+        {
+            NavGeneral.IsChecked = true;
+            if (_activePane != PaneUpdate) OpenSubPage(PaneUpdate, PaneGeneral, "PrefSoftwareUpdate");
+            return;
+        }
         var nav = name switch
         {
             "appearance" => NavAppearance,

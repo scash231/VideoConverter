@@ -20,7 +20,7 @@ public static class BuildInfoService
 {
     public static string BuildName => "27H1 Canary";
 
-    public static string BuildVersion => "27H1.26.3";
+    public static string BuildVersion => "27H1.27.1";
 
     /// <summary>Source hash this build was stamped with.</summary>
     public static string CommitSha => "108cf6ad03b3fb6052047d908d55f310a8f60dbd";
@@ -48,6 +48,32 @@ public static class BuildInfoService
     [
         new("27H1", "Canary",
         [
+            new("27H1.27.1", "2026-10-28",
+            [
+                new("Fixed",
+                [
+                    "Reduce visual effects: the selected item in the Settings sidebar, buttons like Download and Try me, checkmarks and switches no longer turn into blank white shapes. The accent colour in this mode is now a grey that white text shows up on.",
+                ]),
+                new("Changed",
+                [
+                    "Settings → General: the note under \"Show error details automatically\" is gone.",
+                ]),
+            ]),
+            new("27H1.27", "2026-10-27",
+            [
+                new("New",
+                [
+                    "Software Update in Settings: see whether you have the newest VideoConverter, read what's new in an update before you install it, and install it with Update Now. VideoConverter closes, updates and opens again by itself.",
+                    "Automatic updates: VideoConverter looks for a new version when it starts and shows a notification when there is one (Settings → General → Software Update, on by default).",
+                ]),
+            ]),
+            new("27H1.26.4", "2026-10-27",
+            [
+                new("Fixed",
+                [
+                    "The glass around the preview picks up the thumbnail's colours softly: the bottom edge of the Upload / Download switch no longer shows a band that stops at a hard line where the thumbnail ends.",
+                ]),
+            ]),
             new("27H1.26.3", "2026-10-27",
             [
                 new("Performance",

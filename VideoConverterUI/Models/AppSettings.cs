@@ -28,6 +28,19 @@ public sealed class AppSettings
     [JsonPropertyName("playlist_detected_notification")]
     public bool PlaylistDetectedNotification { get; set; } = true;
 
+    // Software Update
+    /// <summary>Look for a new release at startup and every few hours, and say so when there is one.</summary>
+    [JsonPropertyName("auto_check_updates")]
+    public bool AutoCheckUpdates { get; set; } = true;
+
+    /// <summary>When the last update check succeeded (UTC), shown as "Last checked".</summary>
+    [JsonPropertyName("last_update_check")]
+    public DateTime? LastUpdateCheck { get; set; }
+
+    /// <summary>The release the "update available" banner was last shown for, so it appears once per release.</summary>
+    [JsonPropertyName("notified_update_version")]
+    public string? NotifiedUpdateVersion { get; set; }
+
     [JsonIgnore]
     public bool NotifyOnComplete => CompletionNotificationMode != "off";
 

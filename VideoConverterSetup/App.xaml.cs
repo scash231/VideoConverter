@@ -11,6 +11,8 @@ namespace VideoConverterSetup;
 ///   /dir=&lt;path&gt;         preset the install folder
 ///   /keepmsi            leave an old MSI install (installer/Package.wxs) alone instead of removing it
 ///   /noupdate           don't swap this setup for the newer one named in the manifest (/updated: already swapped)
+///   /update             started by the app's Software Update: update the existing install right away (same
+///                       folder and shortcuts), then open the app again; without an install it is a normal setup
 /// </summary>
 public partial class App : Application
 {
@@ -20,6 +22,7 @@ public partial class App : Application
     public static string ManifestLocation { get; private set; } = ReleaseManifest.DefaultUrl;
     public static string? PresetDir { get; private set; }
     public static bool KeepOldMsi { get; private set; }
+    public static bool UpdateMode { get; private set; }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -43,6 +46,7 @@ public partial class App : Application
             else if (a.StartsWith("manifest=", StringComparison.OrdinalIgnoreCase)) ManifestLocation = a.Substring(9).Trim('"');
             else if (a.StartsWith("dir=", StringComparison.OrdinalIgnoreCase)) PresetDir = a.Substring(4).Trim('"');
             else if (a.Equals("keepmsi", StringComparison.OrdinalIgnoreCase)) KeepOldMsi = true;
+            else if (a.Equals("update", StringComparison.OrdinalIgnoreCase)) UpdateMode = true;
         }
 
         base.OnStartup(e);

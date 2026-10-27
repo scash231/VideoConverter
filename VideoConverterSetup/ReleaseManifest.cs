@@ -20,8 +20,9 @@ public sealed class ReleaseManifest
 
     /// <summary>Bump when a manifest needs features an older setup does not understand.</summary>
     /// 1: the first web setup. 2: black cube, updates itself (<see cref="SelfUpdate"/>). 3: the redesign.
+    /// 4: navy sidebar + cards layout (the older look is retired: minSetup 4 makes those setups update or stop).
     /// Setups below the manifest's minSetup update themselves (2+) or are told to download the newest one (1).
-    public const int SetupProtocol = 3;
+    public const int SetupProtocol = 4;
 
     [DataMember(Name = "name")] public string Name { get; set; } = "VideoConverter";
     [DataMember(Name = "version")] public string Version { get; set; } = "";

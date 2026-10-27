@@ -523,7 +523,6 @@
     <sys:String x:Key="PrefAutoFetch">Videodetails automatisch laden</sys:String>
     <sys:String x:Key="PrefErrorsHeader">Fehler</sys:String>
     <sys:String x:Key="PrefShowErrors">Fehlerdetails automatisch anzeigen</sys:String>
-    <sys:String x:Key="PrefShowErrorsFooter">Wenn das aus ist, erscheint stattdessen eine Mitteilung. Klicke darauf, um zu sehen, was schiefging.</sys:String>
     <sys:String x:Key="PrefFinishedAlert">Wenn ein Download fertig ist</sys:String>
     <sys:String x:Key="PrefPlaylistAlert">Playlist erkannt</sys:String>
     <sys:String x:Key="PrefPlaylistAlertSub">Anbieten, einen Playlist-Link im Multi Downloader zu öffnen</sys:String>
@@ -647,6 +646,34 @@
     <sys:String x:Key="PrefRuntime">Laufzeit</sys:String>
     <sys:String x:Key="PrefWhatsNew">Neuerungen</sys:String>
     <sys:String x:Key="PrefCurrentVersion">Aktuell</sys:String>
+
+    <!-- Softwareupdate -->
+    <sys:String x:Key="PrefSoftwareUpdate">Softwareupdate</sys:String>
+    <sys:String x:Key="PrefAutoUpdates">Automatische Updates</sys:String>
+    <sys:String x:Key="PrefAutoUpdatesSub">Sucht beim Start von VideoConverter nach einer neuen Version und sagt Bescheid, wenn es eine gibt.</sys:String>
+    <sys:String x:Key="PrefUpdateChannel">Update-Kanal</sys:String>
+    <sys:String x:Key="PrefUpdateChecking">Nach Updates suchen …</sys:String>
+    <sys:String x:Key="PrefUpdateUpToDate">VideoConverter ist auf dem neuesten Stand</sys:String>
+    <sys:String x:Key="PrefUpdateLastChecked">Zuletzt geprüft: {0}</sys:String>
+    <sys:String x:Key="PrefUpdateTodayAt">heute um {0}</sys:String>
+    <sys:String x:Key="PrefUpdateNeverChecked">Noch nicht geprüft</sys:String>
+    <sys:String x:Key="PrefUpdateCheckNow">Jetzt prüfen</sys:String>
+    <sys:String x:Key="PrefUpdateTryAgain">Erneut versuchen</sys:String>
+    <sys:String x:Key="PrefUpdateFailedTitle">Suche nach Updates fehlgeschlagen</sys:String>
+    <sys:String x:Key="PrefUpdateFailedOffline">Prüfe deine Internetverbindung und versuche es erneut.</sys:String>
+    <sys:String x:Key="PrefUpdateFailedDetail">Etwas ist schiefgegangen: {0}</sys:String>
+    <sys:String x:Key="PrefUpdateAvailable">Update verfügbar</sys:String>
+    <sys:String x:Key="PrefUpdateNow">Jetzt aktualisieren</sys:String>
+    <sys:String x:Key="PrefUpdateMoreInfo">Weitere Infos …</sys:String>
+    <sys:String x:Key="PrefUpdateDownloading">Update wird geladen …</sys:String>
+    <sys:String x:Key="PrefUpdateStarting">Installationsprogramm wird gestartet …</sys:String>
+    <sys:String x:Key="PrefUpdateFooter">VideoConverter wird während der Installation geschlossen und danach wieder geöffnet. Deine Einstellungen bleiben erhalten.</sys:String>
+    <sys:String x:Key="PrefUpdateConfirmTitle">Auf {0} aktualisieren?</sys:String>
+    <sys:String x:Key="PrefUpdateConfirmMessage">VideoConverter wird geschlossen, installiert das Update und öffnet sich wieder.</sys:String>
+    <sys:String x:Key="PrefUpdateConfirmBusy">Ein Download läuft noch und wird abgebrochen. VideoConverter wird geschlossen, installiert das Update und öffnet sich wieder.</sys:String>
+    <sys:String x:Key="PrefUpdateInstall">Aktualisieren</sys:String>
+    <sys:String x:Key="UpdateBannerAvailable">VideoConverter {0} ist verfügbar.</sys:String>
+    <sys:String x:Key="UpdateBannerAction">Anzeigen</sys:String>
     <sys:String x:Key="PrefReleaseCountOne">{0} Version</sys:String>
     <sys:String x:Key="PrefReleaseCountFew">{0} Versionen</sys:String>
     <sys:String x:Key="PrefReleaseCount">{0} Versionen</sys:String>

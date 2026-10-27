@@ -526,7 +526,6 @@
     <sys:String x:Key="PrefAutoFetch">Загружать сведения о видео автоматически</sys:String>
     <sys:String x:Key="PrefErrorsHeader">Ошибки</sys:String>
     <sys:String x:Key="PrefShowErrors">Показывать подробности ошибок автоматически</sys:String>
-    <sys:String x:Key="PrefShowErrorsFooter">Если выключено, вместо этого появляется уведомление. Нажмите на него, чтобы узнать, что пошло не так.</sys:String>
     <sys:String x:Key="PrefFinishedAlert">Когда загрузка завершена</sys:String>
     <sys:String x:Key="PrefPlaylistAlert">Обнаружен плейлист</sys:String>
     <sys:String x:Key="PrefPlaylistAlertSub">Предлагать открыть ссылку на плейлист в Multi Downloader</sys:String>
@@ -650,6 +649,34 @@
     <sys:String x:Key="PrefRuntime">Среда выполнения</sys:String>
     <sys:String x:Key="PrefWhatsNew">Что нового</sys:String>
     <sys:String x:Key="PrefCurrentVersion">Текущая</sys:String>
+
+    <!-- Обновление ПО -->
+    <sys:String x:Key="PrefSoftwareUpdate">Обновление ПО</sys:String>
+    <sys:String x:Key="PrefAutoUpdates">Автоматические обновления</sys:String>
+    <sys:String x:Key="PrefAutoUpdatesSub">Ищет новую версию при запуске VideoConverter и сообщает, если она есть.</sys:String>
+    <sys:String x:Key="PrefUpdateChannel">Канал обновлений</sys:String>
+    <sys:String x:Key="PrefUpdateChecking">Поиск обновлений…</sys:String>
+    <sys:String x:Key="PrefUpdateUpToDate">У вас последняя версия VideoConverter</sys:String>
+    <sys:String x:Key="PrefUpdateLastChecked">Последняя проверка: {0}</sys:String>
+    <sys:String x:Key="PrefUpdateTodayAt">сегодня в {0}</sys:String>
+    <sys:String x:Key="PrefUpdateNeverChecked">Ещё не проверялось</sys:String>
+    <sys:String x:Key="PrefUpdateCheckNow">Проверить</sys:String>
+    <sys:String x:Key="PrefUpdateTryAgain">Повторить</sys:String>
+    <sys:String x:Key="PrefUpdateFailedTitle">Не удалось проверить обновления</sys:String>
+    <sys:String x:Key="PrefUpdateFailedOffline">Проверьте подключение к интернету и попробуйте снова.</sys:String>
+    <sys:String x:Key="PrefUpdateFailedDetail">Что-то пошло не так: {0}</sys:String>
+    <sys:String x:Key="PrefUpdateAvailable">Доступно обновление</sys:String>
+    <sys:String x:Key="PrefUpdateNow">Обновить сейчас</sys:String>
+    <sys:String x:Key="PrefUpdateMoreInfo">Подробнее…</sys:String>
+    <sys:String x:Key="PrefUpdateDownloading">Загрузка обновления…</sys:String>
+    <sys:String x:Key="PrefUpdateStarting">Запуск установщика…</sys:String>
+    <sys:String x:Key="PrefUpdateFooter">VideoConverter закроется на время установки и откроется снова, когда она завершится. Ваши настройки сохранятся.</sys:String>
+    <sys:String x:Key="PrefUpdateConfirmTitle">Обновить до {0}?</sys:String>
+    <sys:String x:Key="PrefUpdateConfirmMessage">VideoConverter закроется, установит обновление и откроется снова.</sys:String>
+    <sys:String x:Key="PrefUpdateConfirmBusy">Загрузка ещё идёт и будет остановлена. VideoConverter закроется, установит обновление и откроется снова.</sys:String>
+    <sys:String x:Key="PrefUpdateInstall">Обновить</sys:String>
+    <sys:String x:Key="UpdateBannerAvailable">Доступна версия VideoConverter {0}.</sys:String>
+    <sys:String x:Key="UpdateBannerAction">Показать</sys:String>
     <sys:String x:Key="PrefReleaseCountOne">{0} выпуск</sys:String>
     <sys:String x:Key="PrefReleaseCountFew">{0} выпуска</sys:String>
     <sys:String x:Key="PrefReleaseCount">{0} выпусков</sys:String>

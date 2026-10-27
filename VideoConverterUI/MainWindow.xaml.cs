@@ -208,6 +208,11 @@ public partial class MainWindow : Window
         }
 
         PrepareSettingsWindow(TimeSpan.FromSeconds(3));
+        // Automatic updates: a banner once per new release, which opens Settings → Software Update.
+        UpdateService.StartAutomaticChecks(update => NotificationWindow.Show(
+            string.Format(L("UpdateBannerAvailable"), update.Version), this, NotificationType.Info,
+            onClick: () => OpenSettingsWindow(GetBtnRect(BtnSettings), "update"),
+            actionText: L("UpdateBannerAction")));
 
         Activated += (_, _) =>
         {
@@ -1234,6 +1239,9 @@ public partial class MainWindow : Window
     /// <summary>How much longer than the thumbnail its reflection on the preview card's glass is drawn out.</summary>
     private const double ThumbReflectionStretch = 1.6;
 
+    /// <summary>Blur radius of the thumbnail's copy in the window's glass backdrop, so the glass around it lenses its colours in softly.</summary>
+    private const double ThumbBackdropBlur = 18;
+
     /// <summary>
     /// The thumbnail's surroundings reflect it, the way glass beside a video does in the Editor (and beside the
     /// colourful preview in Settings):
@@ -1276,8 +1284,13 @@ public partial class MainWindow : Window
         LiquidGlass.SetBackdropOverlay(BorderMeta, reflection);
 
         // The copy in the window's backdrop follows the thumbnail (layout passes, and every frame of the card's
-        // fade in or out, which also moves it) and is only there while the card is.
+        // fade in or out, which also moves it) and is only there while the card is. It is blurred: the rims squeeze
+        // a sharp edge into a hard line (where the thumbnail ends along the toggle's bottom rim), a soft one into a
+        // gradient. The blurred picture is cached so the glass doesn't blur it again on every frame it redraws; it
+        // is small enough that Auto Dim's software samples drawing it at full size cost little.
         var onBackdrop = ThumbCopy();
+        onBackdrop.Effect = new BlurEffect { Radius = ThumbBackdropBlur, RenderingBias = RenderingBias.Performance };
+        onBackdrop.CacheMode = new BitmapCache();
         GlassBackdrop.Child = new Canvas { Children = { onBackdrop } };
         void Place()
         {
