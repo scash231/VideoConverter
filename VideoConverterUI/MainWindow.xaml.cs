@@ -77,6 +77,10 @@ public partial class MainWindow : Window
     {
         ThemeService.ThemeApplied -= OnThemeApplied;
         SettingsService.SettingsChanged -= OnSettingsChanged;
+        // The spare Settings window was never shown but counts in Application.Windows: left open, the app would keep
+        // running after the main window closes.
+        _settingsSpare?.Close();
+        _settingsSpare = null;
 
         if (SettingsService.Current.EnablePerformanceMode)
         {
@@ -202,6 +206,8 @@ public partial class MainWindow : Window
         {
             if (RootBorder != null) RootBorder.CornerRadius = 0;
         }
+
+        PrepareSettingsWindow(TimeSpan.FromSeconds(3));
 
         Activated += (_, _) =>
         {
@@ -2251,7 +2257,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        var win = new SettingsWindow(originRect) { Owner = this, InitialTab = initialTab };
+        var win = _settingsSpare ?? new SettingsWindow();
+        _settingsSpare = null;
+        win.OriginRect = originRect;
+        win.InitialTab = initialTab;
+        win.Owner = this;
         _settingsWin = win;
         win.Closed += (sender, args) =>
         {
@@ -2259,9 +2269,25 @@ public partial class MainWindow : Window
             UpdateHeaderToolButtonsVisibility();
             if (win.HasChanges)
                 ApplySettings();
+            PrepareSettingsWindow(TimeSpan.FromSeconds(2));
         };
         win.Show();
         UpdateHeaderToolButtonsVisibility();
+    }
+
+    // Building Settings (its XAML is the biggest) froze the main window for ~75 ms on every click, longest the
+    // first time. So the next one is built ahead while the app is idle and a click only shows it. It gets its
+    // Owner when it opens, so until then it doesn't count as open (IsWindowOpen).
+    private SettingsWindow? _settingsSpare;
+
+    private async void PrepareSettingsWindow(TimeSpan delay)
+    {
+        await Task.Delay(delay);
+        await Dispatcher.InvokeAsync(() =>
+        {
+            if (_settingsSpare != null || _settingsWin != null || _isAnimatingClose || !IsLoaded) return;
+            _settingsSpare = new SettingsWindow();
+        }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     // ════════════════════════════════════════════════════════════
