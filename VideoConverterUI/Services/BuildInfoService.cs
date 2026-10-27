@@ -20,7 +20,7 @@ public static class BuildInfoService
 {
     public static string BuildName => "27H1 Canary";
 
-    public static string BuildVersion => "27H1.26.2";
+    public static string BuildVersion => "27H1.26.3";
 
     /// <summary>Source hash this build was stamped with.</summary>
     public static string CommitSha => "108cf6ad03b3fb6052047d908d55f310a8f60dbd";
@@ -48,6 +48,13 @@ public static class BuildInfoService
     [
         new("27H1", "Canary",
         [
+            new("27H1.26.3", "2026-10-27",
+            [
+                new("Performance",
+                [
+                    "Settings opens without the app freezing for a moment first: the window is prepared in the background while the app is idle, so clicking the button only has to show it. Most noticeable the first time you open it.",
+                ]),
+            ]),
             new("27H1.26.2", "2026-10-25",
             [
                 new("Performance",
