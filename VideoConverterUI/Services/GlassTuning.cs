@@ -70,6 +70,8 @@ public static class GlassSurfaces
     public const string HeaderPill = "HeaderPill";
     /// <summary>The main window's link field.</summary>
     public const string UrlBar = "UrlBar";
+    /// <summary>The track of the main window's Upload / Download switcher.</summary>
+    public const string SegmentTrack = "SegmentTrack";
     /// <summary>The main window's cards (preview, upload/download settings, finished actions).</summary>
     public const string Card = "Card";
     /// <summary>The main window's Start button (also the progress capsule while a job runs).</summary>
@@ -458,6 +460,49 @@ public static class GlassTuning
         // refract: the look comes from the rim, the lens bending the gradient and the sheen. 34 px capsules: the round
         // buttons' thin rim, a little more tint for the small labels.
         [GlassSurfaces.HeaderPill] = new("Main window header pills (help, console/log, tools, language)",
+            () => new GlassParams
+            {
+                CornerRadius = 17,
+                Frost = 6,
+                Refraction = 10,
+                Bevel = 4,
+                Dispersion = 0,
+                Highlight = 0.45,
+                Inset = 24,
+                Reflection = 0.4,
+                ReflectionReach = 20,
+                ReflectionWidth = 9,
+                BackdropBlur = 3,
+                TintAlpha = 0x34,
+                FallbackTintAlpha = 0xA8,
+                ShadowBlur = 10,
+                ShadowDepth = 2,
+                ShadowOpacity = 0.18,
+            },
+            () => new GlassParams
+            {
+                CornerRadius = 17,
+                Saturation = 1.6,
+                Brightness = 1.04,
+                Frost = 6,
+                Refraction = 10,
+                Bevel = 4,
+                Dispersion = 0,
+                Highlight = 0.3,
+                Inset = 24,
+                Reflection = 0.3,
+                ReflectionReach = 20,
+                ReflectionWidth = 9,
+                BackdropBlur = 3,
+                TintAlpha = 0x66,
+                FallbackTintAlpha = 0xC8,
+                ShadowBlur = 10,
+                ShadowDepth = 2,
+                ShadowOpacity = 0.12,
+            }),
+        // A 34 px track that the thumb nearly fills: the header pills' thin rim, so the lens doesn't leave a dark band
+        // between the thumb and the edge (the link field's thick rim did).
+        [GlassSurfaces.SegmentTrack] = new("Main window Upload / Download switcher track",
             () => new GlassParams
             {
                 CornerRadius = 17,
