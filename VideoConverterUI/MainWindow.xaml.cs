@@ -798,7 +798,7 @@ public partial class MainWindow : Window
     {
         if (_isUploadDisabledForYtMusic && SegmentTrack != null && SegmentTranslateX != null && SegmentScale != null && DownloadTranslateX != null)
         {
-            double colW = (SegmentTrack.ActualWidth - 6.0) / 2.0;
+            double colW = (SegmentTrack.ActualWidth - 5.0) / 2.0;
             if (colW > 0)
             {
                 SegmentTranslateX.X = colW / 2.0;
@@ -817,7 +817,7 @@ public partial class MainWindow : Window
         var bouncy = AppleSpringEase.Bouncy;
         var gentle = AppleSpringEase.Gentle;
 
-        double colW = (SegmentTrack?.ActualWidth > 0 ? (SegmentTrack.ActualWidth - 6.0) / 2.0 : (RbUpload?.ActualWidth > 0 ? RbUpload.ActualWidth : 150.0));
+        double colW = (SegmentTrack?.ActualWidth > 0 ? (SegmentTrack.ActualWidth - 5.0) / 2.0 : (RbUpload?.ActualWidth > 0 ? RbUpload.ActualWidth : 150.0));
 
         if (!enabled)
         {

@@ -5,6 +5,28 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.27.4",
+          "date": "2026-10-28",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "The Upload / Download switcher in the main window wraps snugly around the selected side again, in the window's own colour, like before Liquid Glass.",
+                "Cloud → Configuration lists Google Drive, Dropbox, OneDrive and Discord one below the other. \"In Use\" marks the service picked under Cloud → Service, and a Setup button scrolls straight to its service. Dropbox's token, test and synced folder are now in one group.",
+                "Liquid Glass is clear by default, and Reset in Settings → Appearance → Liquid Glass goes back to clear.",
+                "Liquid motion: windows open a little quicker, and buttons no longer grow when you hover over them.",
+                "New installs start with Ferrite as the engine, shorter notifications, icon labels shown, and the Multi Downloader running 5 downloads at once with automatic retry."
+              ]
+            },
+            {
+              "title": "Fixed",
+              "items": [
+                "Multi Downloader: the glass bars showed the queue behind them shifted to the right. It now lines up."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.27.3",
           "date": "2026-10-28",
           "sections": [

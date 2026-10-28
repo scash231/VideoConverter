@@ -49,13 +49,13 @@ public sealed class AppSettings
 
     // Notification display duration in seconds (0 = stay until dismissed)
     [JsonPropertyName("notification_duration_info")]
-    public int NotificationDurationInfo { get; set; } = 4;
+    public int NotificationDurationInfo { get; set; } = 3;
 
     [JsonPropertyName("notification_duration_error")]
-    public int NotificationDurationError { get; set; } = 6;
+    public int NotificationDurationError { get; set; } = 4;
 
     [JsonPropertyName("notification_duration_complete")]
-    public int NotificationDurationComplete { get; set; } = 5;
+    public int NotificationDurationComplete { get; set; } = 2;
 
     // Upload defaults
     [JsonPropertyName("default_privacy")]
@@ -88,10 +88,10 @@ public sealed class AppSettings
 
     // Batch Queue Settings
     [JsonPropertyName("batch_max_concurrency")]
-    public int BatchMaxConcurrency { get; set; } = 2;
+    public int BatchMaxConcurrency { get; set; } = 5;
 
     [JsonPropertyName("batch_auto_retry")]
-    public bool BatchAutoRetry { get; set; } = false;
+    public bool BatchAutoRetry { get; set; } = true;
 
     [JsonPropertyName("batch_auto_remove_done")]
     public bool BatchAutoRemoveDone { get; set; } = false;
@@ -135,13 +135,13 @@ public sealed class AppSettings
 
     // Performance & Execution Engine
     [JsonPropertyName("execution_engine")]
-    public string ExecutionEngine { get; set; } = "native"; // "native" | "python"
+    public string ExecutionEngine { get; set; } = "ferrite"; // "native" | "ferrite" | "python"
 
     [JsonPropertyName("use_gpu")]
     public bool UseGpu { get; set; } = true;
 
     [JsonPropertyName("max_concurrent_jobs")]
-    public int MaxConcurrentJobs { get; set; } = 1;
+    public int MaxConcurrentJobs { get; set; } = 4;
 
     // Backend
     [JsonPropertyName("backend_url")]
@@ -158,7 +158,7 @@ public sealed class AppSettings
 
     // Developer
     [JsonPropertyName("enable_developer_mode")]
-    public bool EnableDeveloperMode { get; set; } = false;
+    public bool EnableDeveloperMode { get; set; } = true;
 
     /// <summary>When Liquid Glass checks whether the text on it needs dimming (Settings → Developer):
     /// "timer" (every 0.4 s), "changes" (after scrolling, resizing or moving) or "both".</summary>
@@ -175,16 +175,16 @@ public sealed class AppSettings
     public bool VerboseLogging { get; set; } = true;
 
     [JsonPropertyName("bypass_file_restrictions")]
-    public bool BypassFileRestrictions { get; set; } = false;
+    public bool BypassFileRestrictions { get; set; } = true;
 
     [JsonPropertyName("show_performance_overlay")]
-    public bool ShowPerformanceOverlay { get; set; } = true;
+    public bool ShowPerformanceOverlay { get; set; } = false;
 
     [JsonPropertyName("enable_performance_mode")]
     public bool EnablePerformanceMode { get; set; } = false;
 
     [JsonPropertyName("auto_progress_mode")]
-    public string AutoProgressMode { get; set; } = "show_with_log";
+    public string AutoProgressMode { get; set; } = "disabled";
 
     [JsonIgnore]
     public bool AutoShowProgressWindow
@@ -200,22 +200,22 @@ public sealed class AppSettings
     }
 
     [JsonPropertyName("hide_scrollbars")]
-    public bool HideScrollbars { get; set; } = true;
+    public bool HideScrollbars { get; set; } = false;
 
     [JsonPropertyName("smooth_scrolling")]
     public bool SmoothScrolling { get; set; } = true;
 
     [JsonPropertyName("show_icon_labels")]
-    public bool ShowIconLabels { get; set; } = false;
+    public bool ShowIconLabels { get; set; } = true;
 
     [JsonPropertyName("show_help_pill")]
-    public bool ShowHelpPill { get; set; } = false;
+    public bool ShowHelpPill { get; set; } = true;
 
     [JsonPropertyName("show_dev_pill")]
     public bool ShowDevPill { get; set; } = true;
 
     [JsonPropertyName("show_editor_pill")]
-    public bool ShowEditorPill { get; set; } = false;
+    public bool ShowEditorPill { get; set; } = true;
 
     [JsonPropertyName("show_lang_pill")]
     public bool ShowLangPill { get; set; } = false;
@@ -243,7 +243,7 @@ public sealed class AppSettings
     public bool ShowWindowResizerGrip { get; set; } = true;
 
     [JsonPropertyName("resizer_grip_only_on_hover")]
-    public bool ResizerGripOnlyOnHover { get; set; } = true;
+    public bool ResizerGripOnlyOnHover { get; set; } = false;
 
     public AppSettings Clone()
     {

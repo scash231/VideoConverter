@@ -544,7 +544,7 @@ public class LiquidGlassPanel : Grid
             using (var ctx = dv.RenderOpen())
             {
                 ctx.DrawRectangle(_base.Background, null, new Rect(0, 0, sw, sh));
-                ctx.DrawRectangle(new VisualBrush(_source) { ViewboxUnits = BrushMappingMode.Absolute, Viewbox = box, Stretch = Stretch.Fill },
+                ctx.DrawRectangle(new VisualBrush(_source) { ViewboxUnits = BrushMappingMode.Absolute, Viewbox = InBrushSpace(_source, box), Stretch = Stretch.Fill },
                     null, new Rect(0, 0, sw, sh));
                 // Off-screen rendering leaves video black; count a showing video as bright, busy footage instead.
                 foreach (var video in _videos)
@@ -559,7 +559,8 @@ public class LiquidGlassPanel : Grid
                 if (_overlayHost.Child != null && _overlayHost.IsVisible)
                     ctx.DrawRectangle(new VisualBrush(_overlayHost)
                     {
-                        ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, ActualWidth, ActualHeight), Stretch = Stretch.Fill
+                        ViewboxUnits = BrushMappingMode.Absolute, Viewbox = InBrushSpace(_overlayHost, new Rect(0, 0, ActualWidth, ActualHeight)),
+                        Stretch = Stretch.Fill
                     }, null, new Rect(0, 0, sw, sh));
             }
             if (_sampleBitmap == null || _sampleBitmap.PixelWidth != sw || _sampleBitmap.PixelHeight != sh)
@@ -986,6 +987,7 @@ public class LiquidGlassPanel : Grid
             else
                 box = new Rect(_source.PointFromScreen(_backdrop.PointToScreen(at.TopLeft)),
                                _source.PointFromScreen(_backdrop.PointToScreen(at.BottomRight)));
+            box = InBrushSpace(_source, box);
             if (box == _lastBox) return false;
             _lastBox = box;
             AimBrush(box, size);
@@ -998,6 +1000,18 @@ public class LiquidGlassPanel : Grid
             // The backdrop's window went away; the glass keeps its last frame.
             return false;
         }
+    }
+
+    /// <summary>
+    /// A VisualBrush draws its visual with the visual's own offset (Margin, layout position) and RenderTransform, so an
+    /// absolute Viewbox counts in the parent's units, not the visual's: moves <paramref name="local"/> there. Without
+    /// it a backdrop with a margin showed shifted by that margin (the Multi Downloader's queue, 12 px to the right).
+    /// </summary>
+    private static Rect InBrushSpace(Visual visual, Rect local)
+    {
+        if (VisualTreeHelper.GetTransform(visual) is { } t) local = t.TransformBounds(local);
+        local.Offset(VisualTreeHelper.GetOffset(visual));
+        return local;
     }
 
     // ── Aiming the brush ──

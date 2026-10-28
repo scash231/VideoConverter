@@ -143,7 +143,7 @@ public partial class SettingsWindow
     private void OpenColors_Click(object sender, RoutedEventArgs e)
         => OpenSubPage(PaneColors, PaneAppearance, "PrefColorsHeader");
 
-    private void ResetLiquidGlass_Click(object sender, RoutedEventArgs e) => SliderLiquidGlass.Value = 0.5;
+    private void ResetLiquidGlass_Click(object sender, RoutedEventArgs e) => SliderLiquidGlass.Value = 0;
 
     // ═══ Bindings ═══
 
@@ -234,7 +234,7 @@ public partial class SettingsWindow
             "Disabled (Static)" => (100, 1.00, 100, false, false, false),
             "Subtle"            => (200, 1.015, 250, true, false, true),
             "Balanced"          => (300, 1.03, 350, true, true, true),
-            Liquid.Name         => (400, 1.04, 350, true, true, true),
+            Liquid.Name         => (301, 1.04, 350, false, true, true),
             _                   => (380, 1.03, 350, true, true, true),
         };
         // Liquid opens windows its own way; the other profiles go back to Morph.
