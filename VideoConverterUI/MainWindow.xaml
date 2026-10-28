@@ -1044,18 +1044,17 @@
                 </Border>
 
                 <!-- ──── MODE TOGGLE (Apple iOS segmented control) ──── -->
-                <!-- The track is Liquid Glass (the link field's surface, UrlBar); the indicator slides on it -->
-                <Border x:Name="SegmentTrack" Grid.Row="1" CornerRadius="50" Padding="3" Height="38"
-                        controls:LiquidGlass.Surface="UrlBar" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
-                        BorderBrush="{DynamicResource BorderSub}"
+                <!-- The track is deliberately not Liquid Glass: a plain inset pill in the window's own tint that wraps
+                     snugly around the thumb (on glass it read as a dark slab with the thumb floating in it) -->
+                <Border x:Name="SegmentTrack" Grid.Row="1" CornerRadius="50" Padding="2.5" Height="34"
+                        Background="{DynamicResource InputBg}"
+                        BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
                         Margin="0,0,0,10"
+                        ClipToBounds="True"
                         SizeChanged="SegmentTrack_SizeChanged"
                         PreviewMouseLeftButtonDown="Segment_PreviewMouseDown"
                         PreviewMouseMove="Segment_PreviewMouseMove"
                         PreviewMouseLeftButtonUp="Segment_PreviewMouseUp">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="14" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.16"/>
-                    </Border.Effect>
                     <Grid ClipToBounds="True">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -1078,8 +1077,8 @@
                                 </TransformGroup>
                             </Border.RenderTransform>
                             <Border.Effect>
-                                <DropShadowEffect x:Name="PillGlow" BlurRadius="10" ShadowDepth="2"
-                                                  Direction="270" Color="#000000" Opacity="0.3"/>
+                                <DropShadowEffect x:Name="PillGlow" BlurRadius="5" ShadowDepth="1"
+                                                  Direction="270" Color="#000000" Opacity="0.22"/>
                             </Border.Effect>
                             <Grid IsHitTestVisible="False">
                                 <Border CornerRadius="50">

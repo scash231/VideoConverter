@@ -77,7 +77,7 @@ public sealed class ThemeSettings
 
     /// <summary>Window opening speed in ms; for the Liquid style, the spring's response.</summary>
     [JsonPropertyName("window_anim_duration")]
-    public int WindowAnimDuration { get; set; } = 400;
+    public int WindowAnimDuration { get; set; } = 301;
 
     [JsonPropertyName("window_anim_easing")]
     public string WindowAnimEasing { get; set; } = "Apple Spring";
@@ -89,7 +89,7 @@ public sealed class ThemeSettings
     public double ButtonHoverScale { get; set; } = 1.04;
 
     [JsonPropertyName("enable_hover_micro_anims")]
-    public bool EnableHoverMicroAnims { get; set; } = true;
+    public bool EnableHoverMicroAnims { get; set; } = false;
 
     [JsonPropertyName("progress_bar_anim_speed")]
     public int ProgressBarAnimSpeed { get; set; } = 350;
@@ -106,9 +106,9 @@ public sealed class ThemeSettings
     [JsonPropertyName("enable_staggered_animations")]
     public bool EnableStaggeredAnimations { get; set; } = true;
 
-    /// <summary>Liquid Glass look, Settings → Appearance → Liquid Glass: 0 = clear, 0.5 = default, 1 = tinted.</summary>
+    /// <summary>Liquid Glass look, Settings → Appearance → Liquid Glass: 0 = clear (the default), 0.5 = as tuned, 1 = tinted.</summary>
     [JsonPropertyName("liquid_glass_tint")]
-    public double LiquidGlassTint { get; set; } = 0.5;
+    public double LiquidGlassTint { get; set; } = 0;
 
     /// <summary>Liquid Glass dims (or, in light mode, lightens) itself just where a bright or busy backdrop would make
     /// the text on it hard to read (LiquidGlassPanel.AdaptiveContrast). Settings → Appearance → Liquid Glass.</summary>

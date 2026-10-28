@@ -68,7 +68,7 @@ public static class GlassSurfaces
     public const string Toolbar = "Toolbar";
     /// <summary>The main window's header pills (help, console/log, tools, language, performance overlay).</summary>
     public const string HeaderPill = "HeaderPill";
-    /// <summary>The main window's link field and its mode toggle's track.</summary>
+    /// <summary>The main window's link field.</summary>
     public const string UrlBar = "UrlBar";
     /// <summary>The main window's cards (preview, upload/download settings, finished actions).</summary>
     public const string Card = "Card";
@@ -498,8 +498,8 @@ public static class GlassTuning
                 ShadowDepth = 2,
                 ShadowOpacity = 0.12,
             }),
-        // A wide capsule holding the link text: the Multi Downloader's link bar. The mode toggle's track shares it.
-        [GlassSurfaces.UrlBar] = new("Main window link field and mode toggle",
+        // A wide capsule holding the link text: the Multi Downloader's link bar.
+        [GlassSurfaces.UrlBar] = new("Main window link field",
             () => new GlassParams
             {
                 CornerRadius = 25,
@@ -670,7 +670,7 @@ public static class GlassTuning
     public static GlassParams Effective(string surface)
     {
         var p = Current(surface).Clone();
-        var t = Math.Clamp(ThemeService.Current?.LiquidGlassTint ?? 0.5, 0, 1);
+        var t = Math.Clamp(ThemeService.Current?.LiquidGlassTint ?? 0, 0, 1);
         if (t < 0.5)
         {
             var k = (0.5 - t) * 2;
