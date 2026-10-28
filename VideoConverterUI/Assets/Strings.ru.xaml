@@ -593,6 +593,7 @@
     <sys:String x:Key="PrefCloudWebhookBad">Вебхук ответил {0}</sys:String>
     <sys:String x:Key="PrefCloudTestFailed">Не удалось подключиться: {0}</sys:String>
     <sys:String x:Key="PrefCloudNotSet">Не настроено</sys:String>
+    <sys:String x:Key="PrefCloudInUse">Используется</sys:String>
     <sys:String x:Key="PrefWinEditor">Видеоредактор</sys:String>
     <sys:String x:Key="PrefHandleHeader">Маркер изменения размера</sys:String>
     <sys:String x:Key="PrefShowHandle">Показывать маркер</sys:String>

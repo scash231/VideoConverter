@@ -10,9 +10,9 @@ using VideoConverterUI.Services;
 
 namespace VideoConverterUI;
 
-// Settings → Cloud → Configuration (sub-page PaneCloudConfig): where each service's uploads go. Was CloudSetupDialog.
-// Everything applies at once like the rest of Settings; the switcher only picks which service shows, Cloud → Service
-// picks the one in use.
+// Settings → Cloud → Configuration (sub-page PaneCloudConfig): where each service's uploads go, every service in its
+// own section under the others. Was CloudSetupDialog. Everything applies at once like the rest of Settings; Cloud →
+// Service picks the service in use, marked "In Use" here.
 public partial class SettingsWindow
 {
     private static readonly HttpClient CloudTestHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
@@ -36,49 +36,53 @@ public partial class SettingsWindow
         UpdateCloudConfigRows();
     }
 
-    /// <summary>Opens Configuration on one service ("gdrive", "dropbox", "onedrive", "webhook"; else the one in use).</summary>
+    /// <summary>Opens Configuration; with a service ("dropbox", "onedrive", "webhook") it scrolls to that one's section.</summary>
     private void OpenCloudConfig(string? provider)
     {
         TxtDropboxTest.Text = TxtWebhookTest.Text = L("PrefCloudNotTested");
         if (_activePane != PaneCloudConfig) OpenSubPage(PaneCloudConfig, PaneCloud, "PrefCloudConfig");
-        ShowCloudConfigSection(provider ?? SettingsService.Current.CloudProvider);
+        UpdateCloudConfigRows();
+
+        FrameworkElement? section = provider switch
+        {
+            "dropbox" => CloudCfgDropbox,
+            "onedrive" => CloudCfgOneDrive,
+            "webhook" => CloudCfgWebhook,
+            _ => null,
+        };
+        if (section == null) return;
+        // After the page has its layout: its header at the top, below the title.
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (_activePane != PaneCloudConfig || !section.IsVisible) return;
+            double y = section.TransformToAncestor(PaneCloudConfig).Transform(new Point()).Y;
+            TabContentScroll.ScrollToVerticalOffset(Math.Max(0, y - 8));
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     private void OpenCloudConfig_Click(object sender, RoutedEventArgs e) => OpenCloudConfig(null);
 
-    private void CloudConfigSegment_Click(object sender, RoutedEventArgs e) =>
-        ShowCloudConfigSection((sender as FrameworkElement)?.Tag as string);
-
-    private void ShowCloudConfigSection(string? provider)
-    {
-        provider = provider is "dropbox" or "onedrive" or "webhook" ? provider : "gdrive";
-        SegCloudGDrive.IsChecked = provider == "gdrive";
-        SegCloudDropbox.IsChecked = provider == "dropbox";
-        SegCloudOneDrive.IsChecked = provider == "onedrive";
-        SegCloudWebhook.IsChecked = provider == "webhook";
-        CloudCfgGDrive.Visibility = provider == "gdrive" ? Visibility.Visible : Visibility.Collapsed;
-        CloudCfgDropbox.Visibility = provider == "dropbox" ? Visibility.Visible : Visibility.Collapsed;
-        CloudCfgOneDrive.Visibility = provider == "onedrive" ? Visibility.Visible : Visibility.Collapsed;
-        CloudCfgWebhook.Visibility = provider == "webhook" ? Visibility.Visible : Visibility.Collapsed;
-        UpdateCloudConfigRows();
-    }
-
-    /// <summary>The folder rows (chosen folder, the one found automatically, or none) and the Cloud pane's Configuration value.</summary>
+    /// <summary>The folder rows (chosen folder, the one found automatically, or none), "In Use", and the Cloud pane's Configuration value.</summary>
     private void UpdateCloudConfigRows()
     {
         var s = SettingsService.Current;
+        var provider = s.CloudProvider ?? "gdrive";
+        InUseGDrive.Visibility = provider == "gdrive" ? Visibility.Visible : Visibility.Collapsed;
+        InUseDropbox.Visibility = provider == "dropbox" ? Visibility.Visible : Visibility.Collapsed;
+        InUseOneDrive.Visibility = provider == "onedrive" ? Visibility.Visible : Visibility.Collapsed;
+        InUseWebhook.Visibility = provider == "webhook" ? Visibility.Visible : Visibility.Collapsed;
+
+        // Detection looks through the disk, so it only runs while the page is open.
         bool open = _activePane == PaneCloudConfig;
-        ShowFolder(TxtGDriveFolder, BtnClearGDrive, s.GDriveFolderPath, open && SegCloudGDrive.IsChecked == true ? CloudStorageService.DetectGoogleDriveFolder : null);
-        ShowFolder(TxtDropboxFolder, BtnClearDropbox, s.DropboxFolderPath, open && SegCloudDropbox.IsChecked == true ? CloudStorageService.DetectDropboxFolder : null);
-        ShowFolder(TxtOneDriveFolder, BtnClearOneDrive, s.OneDriveFolderPath, open && SegCloudOneDrive.IsChecked == true ? CloudStorageService.DetectOneDriveFolder : null);
+        ShowFolder(TxtGDriveFolder, BtnClearGDrive, s.GDriveFolderPath, open ? CloudStorageService.DetectGoogleDriveFolder : null);
+        ShowFolder(TxtDropboxFolder, BtnClearDropbox, s.DropboxFolderPath, open ? CloudStorageService.DetectDropboxFolder : null);
+        ShowFolder(TxtOneDriveFolder, BtnClearOneDrive, s.OneDriveFolderPath, open ? CloudStorageService.DetectOneDriveFolder : null);
 
         // On the Cloud pane: the service in use, or that it still needs setting up.
-        var provider = s.CloudProvider ?? "gdrive";
         bool ready = provider == "custom" || CloudStorageService.GetProviderStatus(provider, s).ready;
         TxtCloudConfigValue.Text = ready ? CloudStorageService.GetProviderDisplayName(provider) : L("PrefCloudNotSet");
     }
 
-    // Detection looks through the disk, so it only runs for the service on screen.
     private static void ShowFolder(TextBlock text, Button clear, string? chosen, Func<string?>? detect)
     {
         bool hasChosen = !string.IsNullOrWhiteSpace(chosen);
