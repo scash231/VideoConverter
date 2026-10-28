@@ -1065,9 +1065,11 @@
                         <!-- The thumb: a raised, translucent white lift, iOS-style. Being translucent it brightens whatever
                              colour the glass under it has (the thumbnail's tint included) instead of sitting on it as a
                              grey slab, and reads as white in light mode; a sheen over its upper half and a rim catching
-                             light along the top make it read as a piece of glass resting on the track. -->
+                             light along the top make it read as a piece of glass resting on the track. Corner radius =
+                             half its height (34 - 2 × 2.5 = 29): a larger one makes WPF draw long elliptical ends that
+                             don't follow the glass track's round ones. -->
                         <Border x:Name="SegmentIndicator" Grid.Column="0"
-                                CornerRadius="50"
+                                CornerRadius="14.5"
                                 Background="#22FFFFFF"
                                 BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
                                 RenderTransformOrigin="0.5,0.5"
@@ -1083,7 +1085,7 @@
                                                   Direction="270" Color="#000000" Opacity="0.22"/>
                             </Border.Effect>
                             <Grid IsHitTestVisible="False">
-                                <Border CornerRadius="50">
+                                <Border CornerRadius="14.5">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                             <GradientStop Color="#1EFFFFFF" Offset="0"/>
@@ -1091,7 +1093,7 @@
                                         </LinearGradientBrush>
                                     </Border.Background>
                                 </Border>
-                                <Border CornerRadius="50" BorderThickness="1">
+                                <Border CornerRadius="14.5" BorderThickness="1">
                                     <Border.BorderBrush>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                             <GradientStop Color="#48FFFFFF" Offset="0"/>

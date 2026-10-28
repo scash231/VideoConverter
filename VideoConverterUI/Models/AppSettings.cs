@@ -135,7 +135,7 @@ public sealed class AppSettings
 
     // Performance & Execution Engine
     [JsonPropertyName("execution_engine")]
-    public string ExecutionEngine { get; set; } = "ferrite"; // "native" | "ferrite" | "python"
+    public string ExecutionEngine { get; set; } = "native"; // "native" | "ferrite" | "python"
 
     [JsonPropertyName("use_gpu")]
     public bool UseGpu { get; set; } = true;
@@ -166,7 +166,7 @@ public sealed class AppSettings
     public string GlassSamplingMode { get; set; } = "timer";
 
     [JsonPropertyName("dev_console_enabled")]
-    public bool DevConsoleEnabled { get; set; } = true;
+    public bool DevConsoleEnabled { get; set; } = false;
 
     [JsonPropertyName("auto_open_console_on_error")]
     public bool AutoOpenConsoleOnError { get; set; } = false;
@@ -209,7 +209,7 @@ public sealed class AppSettings
     public bool ShowIconLabels { get; set; } = true;
 
     [JsonPropertyName("show_help_pill")]
-    public bool ShowHelpPill { get; set; } = true;
+    public bool ShowHelpPill { get; set; } = false;
 
     [JsonPropertyName("show_dev_pill")]
     public bool ShowDevPill { get; set; } = true;

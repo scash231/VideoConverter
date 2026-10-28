@@ -53,7 +53,7 @@ public sealed class ThemeSettings
     public bool EnableBorders { get; set; } = true;
 
     [JsonPropertyName("gradient_effect_mode")]
-    public string GradientEffectMode { get; set; } = "both";
+    public string GradientEffectMode { get; set; } = "none";
 
     [JsonPropertyName("bg_gradient_strength")]
     public double BgGradientStrength { get; set; } = 1.0;
@@ -106,9 +106,9 @@ public sealed class ThemeSettings
     [JsonPropertyName("enable_staggered_animations")]
     public bool EnableStaggeredAnimations { get; set; } = true;
 
-    /// <summary>Liquid Glass look, Settings → Appearance → Liquid Glass: 0 = clear (the default), 0.5 = as tuned, 1 = tinted.</summary>
+    /// <summary>Liquid Glass look, Settings → Appearance → Liquid Glass: 0 = clear, 0.5 = as tuned (the default), 1 = tinted.</summary>
     [JsonPropertyName("liquid_glass_tint")]
-    public double LiquidGlassTint { get; set; } = 0;
+    public double LiquidGlassTint { get; set; } = 0.5;
 
     /// <summary>Liquid Glass dims (or, in light mode, lightens) itself just where a bright or busy backdrop would make
     /// the text on it hard to read (LiquidGlassPanel.AdaptiveContrast). Settings → Appearance → Liquid Glass.</summary>
@@ -118,12 +118,12 @@ public sealed class ThemeSettings
     /// <summary>How strongly the glass dims behind text: 0 = softer, 0.5 = standard, 1 = stronger (also dims spots the
     /// standard leaves clear). Settings → Appearance → Liquid Glass → Text readability.</summary>
     [JsonPropertyName("liquid_glass_dim_strength")]
-    public double LiquidGlassDimStrength { get; set; } = 0.5;
+    public double LiquidGlassDimStrength { get; set; } = 0.42;
 
     /// <summary>Dim only the spots of the glass where text sits on it (and leave empty parts of the glass clear),
     /// instead of everywhere the background is too bright or busy. Settings → Appearance → Liquid Glass → Text readability.</summary>
     [JsonPropertyName("liquid_glass_dim_text_only")]
-    public bool LiquidGlassDimTextOnly { get; set; } = false;
+    public bool LiquidGlassDimTextOnly { get; set; } = true;
 
     public ThemeSettings Clone()
     {

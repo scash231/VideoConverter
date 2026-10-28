@@ -652,7 +652,7 @@ public class LiquidGlassPanel : Grid
         // The user's strength (Text readability → Strength): standard (0.5) aims for the contrast above. Softer asks for
         // less and washes less deeply; stronger asks for more, so it also dims spots the standard leaves clear, and may
         // wash a little deeper.
-        double k = Math.Clamp(ThemeService.Current?.LiquidGlassDimStrength ?? 0.5, 0, 1);
+        double k = Math.Clamp(ThemeService.Current?.LiquidGlassDimStrength ?? 0.42, 0, 1);
         double targetScale = k < 0.5 ? 0.55 + 0.9 * k : 1 + 1.8 * (k - 0.5);   // 0.55 … 1 … 1.9
         double depth = k < 0.5 ? 0.5 + k : 1;                                  // 0.5 … 1
         double maxScrim = k > 0.5 ? MaxScrim + 0.1 * (k - 0.5) : MaxScrim;     // … 0.97

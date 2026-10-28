@@ -715,7 +715,7 @@ public static class GlassTuning
     public static GlassParams Effective(string surface)
     {
         var p = Current(surface).Clone();
-        var t = Math.Clamp(ThemeService.Current?.LiquidGlassTint ?? 0, 0, 1);
+        var t = Math.Clamp(ThemeService.Current?.LiquidGlassTint ?? 0.5, 0, 1);
         if (t < 0.5)
         {
             var k = (0.5 - t) * 2;

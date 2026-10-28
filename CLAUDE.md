@@ -10,8 +10,8 @@ from Instagram, TikTok, YouTube and YouTube Music. It can optionally "fingerprin
 so platforms don't flag them as duplicates), trim or crop them, generate subtitles, and upload them to cloud storage.
 Three interchangeable execution engines do the actual work (setting `execution_engine`):
 
-- **Native** (`"native"`): `Services/NativeEngineService.cs` runs `yt-dlp` and `ffmpeg` as child processes in-process. No YouTube upload.
-- **Ferrite** (the default, `"ferrite"`): a 1:1 Rust port of Native in `backend-ferrite/` (Cargo workspace), run as the sidecar `ferrite.exe` and driven by
+- **Native** (the default, `"native"`): `Services/NativeEngineService.cs` runs `yt-dlp` and `ffmpeg` as child processes in-process. No YouTube upload.
+- **Ferrite** (`"ferrite"`): a 1:1 Rust port of Native in `backend-ferrite/` (Cargo workspace), run as the sidecar `ferrite.exe` and driven by
   `Services/FerriteBackend.cs` over JSON lines on stdin/stdout. Same outputs as Native, plus YouTube upload (token.json compatible with Legacy).
   `backend-ferrite/PORTING.md` is the full spec: API contract, protocol, parity checklist, results.
 - **Legacy** (`"python"`, shown as "Legacy", **no longer supported**, not in the installer; only a manual download
