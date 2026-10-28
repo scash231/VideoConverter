@@ -1044,17 +1044,19 @@
                 </Border>
 
                 <!-- ──── MODE TOGGLE (Apple iOS segmented control) ──── -->
-                <!-- The track is deliberately not Liquid Glass: a plain inset pill in the window's own tint that wraps
-                     snugly around the thumb (on glass it read as a dark slab with the thumb floating in it) -->
+                <!-- The track is Liquid Glass (surface SegmentTrack: a thin rim, so it wraps snugly around the thumb
+                     instead of the thumb floating in a thick lens); the indicator slides on it -->
                 <Border x:Name="SegmentTrack" Grid.Row="1" CornerRadius="50" Padding="2.5" Height="34"
-                        Background="{DynamicResource InputBg}"
-                        BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
+                        controls:LiquidGlass.Surface="SegmentTrack" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                        BorderBrush="{DynamicResource BorderSub}"
                         Margin="0,0,0,10"
-                        ClipToBounds="True"
                         SizeChanged="SegmentTrack_SizeChanged"
                         PreviewMouseLeftButtonDown="Segment_PreviewMouseDown"
                         PreviewMouseMove="Segment_PreviewMouseMove"
                         PreviewMouseLeftButtonUp="Segment_PreviewMouseUp">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
+                    </Border.Effect>
                     <Grid ClipToBounds="True">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
