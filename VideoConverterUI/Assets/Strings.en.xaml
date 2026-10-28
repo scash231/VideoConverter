@@ -596,6 +596,7 @@
     <sys:String x:Key="PrefCloudWebhookBad">The webhook answered {0}</sys:String>
     <sys:String x:Key="PrefCloudTestFailed">Couldn't connect: {0}</sys:String>
     <sys:String x:Key="PrefCloudNotSet">Not set up</sys:String>
+    <sys:String x:Key="PrefCloudInUse">In Use</sys:String>
     <sys:String x:Key="PrefWinEditor">Video Editor</sys:String>
     <sys:String x:Key="PrefHandleHeader">Resize handle</sys:String>
     <sys:String x:Key="PrefShowHandle">Show resize handle</sys:String>

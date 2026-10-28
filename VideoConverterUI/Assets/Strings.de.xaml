@@ -590,6 +590,7 @@
     <sys:String x:Key="PrefCloudWebhookBad">Der Webhook antwortete mit {0}</sys:String>
     <sys:String x:Key="PrefCloudTestFailed">Keine Verbindung: {0}</sys:String>
     <sys:String x:Key="PrefCloudNotSet">Nicht eingerichtet</sys:String>
+    <sys:String x:Key="PrefCloudInUse">Aktiv</sys:String>
     <sys:String x:Key="PrefWinEditor">Video-Editor</sys:String>
     <sys:String x:Key="PrefHandleHeader">Griff zum Ändern der Größe</sys:String>
     <sys:String x:Key="PrefShowHandle">Griff anzeigen</sys:String>

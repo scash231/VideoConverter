@@ -1548,21 +1548,18 @@
                             </Border>
                         </StackPanel>
 
-                        <!-- ── Cloud → Configuration (sub-page): where each service's uploads go (SettingsWindow.Cloud.cs).
-                             The switcher only picks which service's settings show; Cloud → Service picks the one in use. ── -->
+                        <!-- ── Cloud → Configuration (sub-page): every service's settings under each other, a section each
+                             (SettingsWindow.Cloud.cs); "In Use" marks the one Cloud → Service picked. Opened from a Setup
+                             button it scrolls to that service. ── -->
                         <StackPanel x:Name="PaneCloudConfig" Visibility="Collapsed">
-                            <Border Style="{StaticResource GlassSegmentTrack}" CornerRadius="10" Margin="0,0,0,14">
-                                <UniformGrid Rows="1">
-                                    <RadioButton x:Name="SegCloudGDrive" Style="{StaticResource GlassSegment}" GroupName="CloudConfig" Height="28" Content="Google Drive" Tag="gdrive" Click="CloudConfigSegment_Click"/>
-                                    <RadioButton x:Name="SegCloudDropbox" Style="{StaticResource GlassSegment}" GroupName="CloudConfig" Height="28" Content="Dropbox" Tag="dropbox" Click="CloudConfigSegment_Click"/>
-                                    <RadioButton x:Name="SegCloudOneDrive" Style="{StaticResource GlassSegment}" GroupName="CloudConfig" Height="28" Content="OneDrive" Tag="onedrive" Click="CloudConfigSegment_Click"/>
-                                    <RadioButton x:Name="SegCloudWebhook" Style="{StaticResource GlassSegment}" GroupName="CloudConfig" Height="28" Content="Discord" Tag="webhook" Click="CloudConfigSegment_Click"/>
-                                </UniformGrid>
-                            </Border>
-
-                            <!-- Google Drive -->
-                            <StackPanel x:Name="CloudCfgGDrive">
-                                <Border Style="{StaticResource Group}">
+                            <StackPanel x:Name="CloudCfgGDrive" Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Header}" Text="Google Drive"/>
+                                <Border x:Name="InUseGDrive" Visibility="Collapsed" Background="{DynamicResource Accent}" CornerRadius="5"
+                                        Padding="6,1,6,2" Margin="8,0,0,6" VerticalAlignment="Bottom">
+                                    <TextBlock Text="{DynamicResource PrefCloudInUse}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                            <Border Style="{StaticResource Group}">
                                     <DockPanel Style="{StaticResource Row}">
                                         <Button Style="{StaticResource Push}" Content="{DynamicResource PrefChoose}" Tag="gdrive" Click="CloudChooseFolder_Click"/>
                                         <Button x:Name="BtnClearGDrive" Style="{StaticResource Push}" Content="{DynamicResource PrefCloudAutomatic}" Tag="gdrive" Margin="0,0,8,0" Click="CloudClearFolder_Click"/>
@@ -1571,32 +1568,32 @@
                                             <TextBlock x:Name="TxtGDriveFolder" Style="{StaticResource Sub}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                     </DockPanel>
-                                </Border>
-                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudGDriveFooter}"/>
-                            </StackPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudGDriveFooter}"/>
 
-                            <!-- Dropbox: an access token uploads directly; without one the synced folder is used -->
-                            <StackPanel x:Name="CloudCfgDropbox" Visibility="Collapsed">
-                                <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefCloudDropboxApi}"/>
-                                <Border Style="{StaticResource Group}">
-                                    <StackPanel>
-                                        <DockPanel Style="{StaticResource Row}">
-                                            <PasswordBox x:Name="PwdDropboxToken" DockPanel.Dock="Right" Width="220" VerticalAlignment="Center" FontSize="12" Padding="6,3"/>
-                                            <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefCloudToken}"/>
-                                        </DockPanel>
-                                        <Border Style="{StaticResource Sep}"/>
-                                        <DockPanel Style="{StaticResource Row}">
-                                            <Button Style="{StaticResource Push}" Content="{DynamicResource PrefCloudTest}" Click="TestDropbox_Click"/>
-                                            <StackPanel Style="{StaticResource LabelStack}">
-                                                <TextBlock Style="{StaticResource LabelInStack}" Text="{DynamicResource PrefCloudConnection}"/>
-                                                <TextBlock x:Name="TxtDropboxTest" Style="{StaticResource Sub}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                        </DockPanel>
-                                    </StackPanel>
+                            <StackPanel x:Name="CloudCfgDropbox" Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Header}" Text="Dropbox"/>
+                                <Border x:Name="InUseDropbox" Visibility="Collapsed" Background="{DynamicResource Accent}" CornerRadius="5"
+                                        Padding="6,1,6,2" Margin="8,0,0,6" VerticalAlignment="Bottom">
+                                    <TextBlock Text="{DynamicResource PrefCloudInUse}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
                                 </Border>
-                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudDropboxApiFooter}"/>
-                                <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefCloudSyncedFolder}"/>
-                                <Border Style="{StaticResource Group}">
+                            </StackPanel>
+                            <!-- an access token uploads directly; without one the synced folder is used -->
+                            <Border Style="{StaticResource Group}">
+                                <StackPanel>
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <PasswordBox x:Name="PwdDropboxToken" DockPanel.Dock="Right" Width="220" VerticalAlignment="Center" FontSize="12" Padding="6,3"/>
+                                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefCloudToken}"/>
+                                    </DockPanel>
+                                    <Border Style="{StaticResource Sep}"/>
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <Button Style="{StaticResource Push}" Content="{DynamicResource PrefCloudTest}" Click="TestDropbox_Click"/>
+                                        <StackPanel Style="{StaticResource LabelStack}">
+                                            <TextBlock Style="{StaticResource LabelInStack}" Text="{DynamicResource PrefCloudConnection}"/>
+                                            <TextBlock x:Name="TxtDropboxTest" Style="{StaticResource Sub}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <Border Style="{StaticResource Sep}"/>
                                     <DockPanel Style="{StaticResource Row}">
                                         <Button Style="{StaticResource Push}" Content="{DynamicResource PrefChoose}" Tag="dropbox" Click="CloudChooseFolder_Click"/>
                                         <Button x:Name="BtnClearDropbox" Style="{StaticResource Push}" Content="{DynamicResource PrefCloudAutomatic}" Tag="dropbox" Margin="0,0,8,0" Click="CloudClearFolder_Click"/>
@@ -1605,12 +1602,18 @@
                                             <TextBlock x:Name="TxtDropboxFolder" Style="{StaticResource Sub}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                     </DockPanel>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudDropboxApiFooter}"/>
+
+                            <StackPanel x:Name="CloudCfgOneDrive" Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Header}" Text="OneDrive"/>
+                                <Border x:Name="InUseOneDrive" Visibility="Collapsed" Background="{DynamicResource Accent}" CornerRadius="5"
+                                        Padding="6,1,6,2" Margin="8,0,0,6" VerticalAlignment="Bottom">
+                                    <TextBlock Text="{DynamicResource PrefCloudInUse}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
                                 </Border>
                             </StackPanel>
-
-                            <!-- OneDrive -->
-                            <StackPanel x:Name="CloudCfgOneDrive" Visibility="Collapsed">
-                                <Border Style="{StaticResource Group}">
+                            <Border Style="{StaticResource Group}">
                                     <DockPanel Style="{StaticResource Row}">
                                         <Button Style="{StaticResource Push}" Content="{DynamicResource PrefChoose}" Tag="onedrive" Click="CloudChooseFolder_Click"/>
                                         <Button x:Name="BtnClearOneDrive" Style="{StaticResource Push}" Content="{DynamicResource PrefCloudAutomatic}" Tag="onedrive" Margin="0,0,8,0" Click="CloudClearFolder_Click"/>
@@ -1619,30 +1622,33 @@
                                             <TextBlock x:Name="TxtOneDriveFolder" Style="{StaticResource Sub}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                     </DockPanel>
-                                </Border>
-                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudOneDriveFooter}"/>
-                            </StackPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudOneDriveFooter}"/>
 
-                            <!-- Discord (or any webhook) -->
-                            <StackPanel x:Name="CloudCfgWebhook" Visibility="Collapsed">
-                                <Border Style="{StaticResource Group}">
-                                    <StackPanel>
-                                        <DockPanel Style="{StaticResource Row}">
-                                            <TextBox x:Name="TxtWebhookUrl" DockPanel.Dock="Right" Width="260" VerticalAlignment="Center" FontSize="12" Padding="6,3"/>
-                                            <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefCloudWebhookUrl}"/>
-                                        </DockPanel>
-                                        <Border Style="{StaticResource Sep}"/>
-                                        <DockPanel Style="{StaticResource Row}">
-                                            <Button Style="{StaticResource Push}" Content="{DynamicResource PrefCloudSendTest}" Click="TestWebhook_Click"/>
-                                            <StackPanel Style="{StaticResource LabelStack}">
-                                                <TextBlock Style="{StaticResource LabelInStack}" Text="{DynamicResource PrefCloudConnection}"/>
-                                                <TextBlock x:Name="TxtWebhookTest" Style="{StaticResource Sub}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                        </DockPanel>
-                                    </StackPanel>
+                            <StackPanel x:Name="CloudCfgWebhook" Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Header}" Text="Discord"/>
+                                <Border x:Name="InUseWebhook" Visibility="Collapsed" Background="{DynamicResource Accent}" CornerRadius="5"
+                                        Padding="6,1,6,2" Margin="8,0,0,6" VerticalAlignment="Bottom">
+                                    <TextBlock Text="{DynamicResource PrefCloudInUse}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
                                 </Border>
-                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudWebhookFooter}"/>
                             </StackPanel>
+                            <Border Style="{StaticResource Group}">
+                                <StackPanel>
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <TextBox x:Name="TxtWebhookUrl" DockPanel.Dock="Right" Width="260" VerticalAlignment="Center" FontSize="12" Padding="6,3"/>
+                                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefCloudWebhookUrl}"/>
+                                    </DockPanel>
+                                    <Border Style="{StaticResource Sep}"/>
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <Button Style="{StaticResource Push}" Content="{DynamicResource PrefCloudSendTest}" Click="TestWebhook_Click"/>
+                                        <StackPanel Style="{StaticResource LabelStack}">
+                                            <TextBlock Style="{StaticResource LabelInStack}" Text="{DynamicResource PrefCloudConnection}"/>
+                                            <TextBlock x:Name="TxtWebhookTest" Style="{StaticResource Sub}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefCloudWebhookFooter}"/>
                         </StackPanel>
 
                         <!-- ── Glass & Layout → Window sizes (sub-page): the resize handle, and resetting sizes ── -->
