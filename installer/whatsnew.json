@@ -5,6 +5,19 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.27.3",
+          "date": "2026-10-28",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "Cloud setup moved into Settings → Cloud → Configuration: Google Drive, Dropbox, OneDrive and Discord each have their page there, in the same look as the rest of Settings, and changes apply right away. The Setup buttons in the main window and the Multi Downloader open it.",
+                "Cloud → Configuration shows the service in use, or \"Not set up\" while it still needs a folder, token or webhook."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.27.2",
           "date": "2026-10-28",
           "sections": [
