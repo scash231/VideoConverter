@@ -143,7 +143,7 @@ public partial class SettingsWindow
     private void OpenColors_Click(object sender, RoutedEventArgs e)
         => OpenSubPage(PaneColors, PaneAppearance, "PrefColorsHeader");
 
-    private void ResetLiquidGlass_Click(object sender, RoutedEventArgs e) => SliderLiquidGlass.Value = 0;
+    private void ResetLiquidGlass_Click(object sender, RoutedEventArgs e) => SliderLiquidGlass.Value = 0.5;
 
     // ═══ Bindings ═══
 

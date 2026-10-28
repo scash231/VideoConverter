@@ -199,7 +199,7 @@ public partial class MainWindow : Window
         UpdatePerformanceOverlayVisibility();
         UpdateIconLabelsVisibility();
         ApplySettings();
-        FluidMotion.SetCornerRadiusValue(SegmentIndicator, 50);
+        FluidMotion.SetCornerRadiusValue(SegmentIndicator, 14.5);
         Mode_Changed(sender, e);
 
         if (SettingsService.Current.EnablePerformanceMode)
