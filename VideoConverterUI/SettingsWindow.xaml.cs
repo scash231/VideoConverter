@@ -488,7 +488,7 @@ public partial class SettingsWindow : Window
 
         // Cloud
         BindSwitch(ChkCloudUpload, s => s.CloudUploadEnabled, (s, v) => s.CloudUploadEnabled = v);
-        BindCombo(CmbCloudProvider, s => s.CloudProvider, (s, v) => s.CloudProvider = v);
+        BindCombo(CmbCloudProvider, s => s.CloudProvider, (s, v) => s.CloudProvider = v, _ => UpdateCloudConfigRows());
         BindSwitch(ChkCloudTemp, s => s.CloudTempDownload, (s, v) => s.CloudTempDownload = v);
 
         // Resize handle (the preview follows in SettingsWindow.Previews.cs)
@@ -521,6 +521,7 @@ public partial class SettingsWindow : Window
         BindCombo(CmbGlassSampling, s => s.GlassSamplingMode ?? "timer", (s, v) => s.GlassSamplingMode = v);
 
         BindUpdate();
+        BindCloudConfig();
         BindAppearance();
     }
 
@@ -735,12 +736,18 @@ public partial class SettingsWindow : Window
 
     private bool IsSubPage(StackPanel pane) =>
         pane == PaneLiquidGlass || pane == PaneGlassReadability || pane == PaneColors || pane == PaneVideoColors || pane == PaneWindowGlass
-        || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneWhatsNew || pane == PaneVersion || pane == PaneRelease
+        || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneCloudConfig || pane == PaneWhatsNew || pane == PaneVersion || pane == PaneRelease
         || pane == PaneUpdate;
 
-    /// <summary>Switches to a pane by name: "update" (General → Software Update), "appearance", "glass", "animations", "advanced", "download" or "upload".</summary>
+    /// <summary>Switches to a pane by name: "update" (General → Software Update), "cloud-config" or "cloud-config:dropbox" (Cloud → Configuration on a service), "appearance", "glass", "animations", "advanced", "download", "upload" or "cloud".</summary>
     public void SelectPane(string name)
     {
+        if (name.StartsWith("cloud-config", StringComparison.Ordinal))
+        {
+            NavCloud.IsChecked = true;
+            OpenCloudConfig(name.Length > 13 ? name[13..] : null);
+            return;
+        }
         if (name == "update")
         {
             NavGeneral.IsChecked = true;
@@ -755,6 +762,7 @@ public partial class SettingsWindow : Window
             "advanced" => NavAdvanced,
             "download" => NavDownloads,
             "upload" => NavYouTube,
+            "cloud" => NavCloud,
             _ => null,
         };
         if (nav != null) nav.IsChecked = true;
@@ -815,12 +823,6 @@ public partial class SettingsWindow : Window
     {
         Commit(s => s.CookiesFilePath = "");
         UpdateFolderRows();
-    }
-
-    private void BtnOpenCloudSetup_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new CloudSetupDialog(SettingsService.Current.CloudProvider) { Owner = this };
-        dlg.ShowDialog();
     }
 
     // ═══ Engine ═══

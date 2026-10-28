@@ -212,6 +212,7 @@ public partial class BatchQueueWindow : Window
         {
             SettingsService.ApplyResizeGripVisibility(this);
             UpdateOptionsTextVisibility();
+            UpdateCloudToolbarUi();
         });
     }
 
@@ -1847,26 +1848,15 @@ public partial class BatchQueueWindow : Window
         }
     }
 
-    private void BtnBatchCloudConfig_Click(object sender, RoutedEventArgs e)
-    {
-        OpenCloudSetup();
-    }
+    private void BtnBatchCloudConfig_Click(object sender, RoutedEventArgs e) => OpenCloudSetup((UIElement)sender);
 
-    private void BtnPopupCloudConfig_Click(object sender, RoutedEventArgs e)
-    {
-        OpenCloudSetup();
-    }
+    private void BtnPopupCloudConfig_Click(object sender, RoutedEventArgs e) => OpenCloudSetup((UIElement)sender);
 
-    private void OpenCloudSetup()
+    /// <summary>Settings → Cloud → Configuration (the main window opens it); the toolbar follows through OnSettingsChanged.</summary>
+    private void OpenCloudSetup(UIElement origin)
     {
         var provider = (CmbPopupCloudProvider.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? SettingsService.Current.CloudProvider ?? "gdrive";
-        var dlg = new CloudSetupDialog(provider) { Owner = this };
-        dlg.Closed += (_, _) =>
-        {
-            UpdateCloudToolbarUi();
-            LogMessage($"Cloud settings updated for {CloudStorageService.GetProviderDisplayName(provider)}.", "CONFIG");
-        };
-        dlg.ShowDialog();
+        (Owner as MainWindow ?? Application.Current.MainWindow as MainWindow)?.OpenCloudConfiguration(origin, provider);
     }
 
     private void ChkPopupCloudTempOnly_Click(object sender, RoutedEventArgs e)

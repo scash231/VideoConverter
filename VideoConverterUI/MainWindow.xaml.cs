@@ -1001,10 +1001,13 @@ public partial class MainWindow : Window
     private void BtnCloudConfig_Click(object sender, RoutedEventArgs e)
     {
         var provider = (CmbCloudProvider.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "gdrive";
-        var dlg = new CloudSetupDialog(provider) { Owner = this };
-        dlg.Closed += (_, _) => UpdateCloudUiState();
-        dlg.ShowDialog();
+        OpenCloudConfiguration((UIElement)sender, provider);
     }
+
+    /// <summary>Settings → Cloud → Configuration on <paramref name="provider"/>, opening from <paramref name="origin"/>
+    /// (the main window's and the Multi Downloader's Setup buttons).</summary>
+    internal void OpenCloudConfiguration(UIElement origin, string? provider) =>
+        OpenSettingsWindow(GetBtnRect(origin), provider is { Length: > 0 } ? "cloud-config:" + provider : "cloud-config");
 
     private void BtnChangeCloudFolder_Click(object sender, RoutedEventArgs e)
     {
