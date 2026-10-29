@@ -724,6 +724,25 @@
                                         </Style.Triggers>
                                     </Style>
                                 </StackPanel.Style>
+                                <!-- Text Color: its own page (the text changes colour instead of the glass dimming) -->
+                                <Border Style="{StaticResource Group}" Margin="0,22,0,0">
+                                    <Button Style="{StaticResource NavRow}" Click="OpenGlassTextColor_Click">
+                                        <DockPanel Style="{StaticResource Row}">
+                                            <ui:SymbolIcon Symbol="ChevronRight24" DockPanel.Dock="Right" FontSize="12" Margin="6,0,0,0"
+                                                           Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtGlassTextColorValue" DockPanel.Dock="Right" Style="{StaticResource Value}"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Style="{StaticResource Label}" Margin="0" Text="{DynamicResource PrefGlassTextColor}"/>
+                                                <Border CornerRadius="4" Padding="4,0" Margin="6,1,0,0" VerticalAlignment="Center" BorderThickness="0.75"
+                                                        BorderBrush="{DynamicResource TextSec}" Opacity="0.6">
+                                                    <TextBlock Text="{DynamicResource PrefBeta}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Button>
+                                </Border>
+                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassTextColorSub}"/>
+
                                 <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefGlassDimStrength}"/>
                                 <Border Style="{StaticResource Group}">
                                     <StackPanel Margin="12,12,12,8">
@@ -759,6 +778,69 @@
                                 </Border>
                                 <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassSamplingHelp}"/>
                             </StackPanel>
+                        </StackPanel>
+
+                        <!-- ── Liquid Glass → Auto Dim → Text Color (sub-page of Auto Dim) ── -->
+                        <StackPanel x:Name="PaneGlassTextColor" Visibility="Collapsed">
+                            <!-- Preview: one glass bar over a bright half and a dark half, a label over each, so the label
+                                 over the half that washes it out changes colour while the other keeps its own -->
+                            <Border Style="{StaticResource Group}" Padding="0" ClipToBounds="True" helpers:ClipHelper.CornerRadiusClip="True">
+                                <Grid Height="150">
+                                    <Grid x:Name="TextColorPreviewScene">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#FFFFFF" Offset="0"/>
+                                                    <GradientStop Color="#FFE27A" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Border Grid.Column="1">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#3A2470" Offset="0"/>
+                                                    <GradientStop Color="#0B1020" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Ellipse Grid.ColumnSpan="2" Width="110" Height="110" Fill="#FF3D7F" HorizontalAlignment="Center"
+                                                 VerticalAlignment="Top" Margin="0,-55,0,0"/>
+                                    </Grid>
+                                    <controls:LiquidGlassPanel Surface="Popup" BackdropSource="{Binding ElementName=TextColorPreviewScene}"
+                                                               Height="62" CornerRadius="20" Margin="16,0,16,16" VerticalAlignment="Bottom">
+                                        <Grid Margin="16,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition/>
+                                                <ColumnDefinition/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <TextBlock Text="{DynamicResource PrefTextColorPreviewBright}" FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{DynamicResource PrefTextColorPreviewSub}" FontSize="11.5" Margin="0,2,0,0"
+                                                           Foreground="{DynamicResource TextSec}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+                                                <TextBlock Text="{DynamicResource PrefTextColorPreviewDark}" FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{DynamicResource PrefTextColorPreviewSub}" FontSize="11.5" Margin="0,2,0,0"
+                                                           Foreground="{DynamicResource TextSec}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </controls:LiquidGlassPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Style="{StaticResource Group}">
+                                <DockPanel Style="{StaticResource Row}">
+                                    <CheckBox x:Name="ChkGlassAdaptiveText" Style="{StaticResource Switch}"/>
+                                    <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefGlassAdaptiveText}"/>
+                                </DockPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassAdaptiveTextHelp}"/>
                         </StackPanel>
 
                         <!-- ── Appearance → Colors (sub-page, opened from the row in Appearance) ── -->

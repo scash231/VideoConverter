@@ -132,13 +132,28 @@ public partial class SettingsWindow
         PushSubPage(PaneGlassReadability, PaneLiquidGlass, parentTitle);
     }
 
+    /// <summary>Auto Dim → Text Color, pushed over the Auto Dim page.</summary>
+    private void OpenGlassTextColor_Click(object sender, RoutedEventArgs e)
+    {
+        string parentTitle = TxtPaneTitle.Text;
+        TxtPaneTitle.SetResourceReference(TextBlock.TextProperty, "PrefGlassTextColor");
+        PushSubPage(PaneGlassTextColor, PaneGlassReadability, parentTitle);
+    }
+
     private string DimStrengthLabel(double v) => SnapToDefault(v) == 0.5
         ? L("PrefGlassDimStandard")
         : v < 0.5 ? L("PrefGlassDimSofter") : L("PrefGlassDimStronger");
 
-    /// <summary>The Text readability row on the Liquid Glass page: Off, or how strong.</summary>
-    private void UpdateGlassReadabilityValue() => TxtGlassReadabilityValue.Text =
-        ChkGlassAutoDim.IsChecked == true ? DimStrengthLabel(SliderDimStrength.Value) : L("PrefGlassReadabilityOff");
+    /// <summary>The Auto Dim row on the Liquid Glass page (Off, Text Color, or how strong) and the Text Color row on
+    /// the Auto Dim page (On / Off).</summary>
+    private void UpdateGlassReadabilityValue()
+    {
+        bool textColor = ChkGlassAdaptiveText.IsChecked == true;
+        TxtGlassReadabilityValue.Text = ChkGlassAutoDim.IsChecked != true ? L("PrefGlassReadabilityOff")
+            : textColor ? L("PrefGlassTextColor")
+            : DimStrengthLabel(SliderDimStrength.Value);
+        TxtGlassTextColorValue.Text = L(textColor ? "PrefGlassTextColorOn" : "PrefGlassReadabilityOff");
+    }
 
     private void OpenColors_Click(object sender, RoutedEventArgs e)
         => OpenSubPage(PaneColors, PaneAppearance, "PrefColorsHeader");
@@ -170,9 +185,12 @@ public partial class SettingsWindow
         BindThemeSlider(SliderDimStrength, TxtDimStrengthState, DimStrengthLabel,
             t => t.LiquidGlassDimStrength, (t, v) => t.LiquidGlassDimStrength = SnapToDefault(v));
         BindThemeSwitch(ChkGlassDimTextOnly, t => t.LiquidGlassDimTextOnly, (t, v) => t.LiquidGlassDimTextOnly = v);
+        BindThemeSwitch(ChkGlassAdaptiveText, t => t.LiquidGlassAdaptiveText, (t, v) => t.LiquidGlassAdaptiveText = v);
         _reloaders.Add(UpdateGlassReadabilityValue);
         ChkGlassAutoDim.Checked += (_, _) => UpdateGlassReadabilityValue();
         ChkGlassAutoDim.Unchecked += (_, _) => UpdateGlassReadabilityValue();
+        ChkGlassAdaptiveText.Checked += (_, _) => UpdateGlassReadabilityValue();
+        ChkGlassAdaptiveText.Unchecked += (_, _) => UpdateGlassReadabilityValue();
         SliderDimStrength.ValueChanged += (_, _) => UpdateGlassReadabilityValue();
 
         // Video colors

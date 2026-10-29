@@ -125,6 +125,12 @@ public sealed class ThemeSettings
     [JsonPropertyName("liquid_glass_dim_text_only")]
     public bool LiquidGlassDimTextOnly { get; set; } = true;
 
+    /// <summary>Instead of dimming the glass, text on it turns dark over a bright backdrop (light over a dark one in
+    /// light mode) wherever its usual colour would be hard to read. Settings → Appearance → Liquid Glass → Text
+    /// readability → Text Color.</summary>
+    [JsonPropertyName("liquid_glass_adaptive_text")]
+    public bool LiquidGlassAdaptiveText { get; set; }
+
     public ThemeSettings Clone()
     {
         var json = System.Text.Json.JsonSerializer.Serialize(this);

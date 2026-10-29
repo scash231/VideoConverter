@@ -5,6 +5,32 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.28",
+          "date": "2026-10-29",
+          "sections": [
+            {
+              "title": "New",
+              "items": [
+                "Text Color (beta) in Settings → Appearance → Liquid Glass → Auto Dim: the text changes colour instead of the glass dimming. Where text would be hard to read, it turns dark over a bright background (light over a dark one in light mode), and the glass stays clear. Coloured text and text on buttons keep their colour, and Strength sets how soon the text changes."
+              ]
+            },
+            {
+              "title": "Changed",
+              "items": [
+                "The Upload / Download switcher's track is Liquid Glass again, with a small shadow like the header pills. It still wraps snugly around the selected side.",
+                "New installs start with the Native engine, the developer console off, the help pill hidden and no gradient effect.",
+                "Liquid Glass looks as tuned by default again, and Reset goes back to that. Auto Dim is a little softer by default and only dims right behind text."
+              ]
+            },
+            {
+              "title": "Fixed",
+              "items": [
+                "The selected side of the Upload / Download switcher now follows the track's round ends instead of looking off at both ends."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.27.4",
           "date": "2026-10-28",
           "sections": [

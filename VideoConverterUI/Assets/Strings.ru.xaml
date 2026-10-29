@@ -643,6 +643,14 @@
     <sys:String x:Key="PrefGlassDimStrengthHelp">«Сильнее» затемняет и те места, где текст читается лишь немного хуже.</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnly">Только прямо под текстом</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnlyHelp">Затемняет только места, где стоит текст, а остальное стекло остаётся прозрачным.</sys:String>
+    <sys:String x:Key="PrefGlassTextColor">Цвет текста</sys:String>
+    <sys:String x:Key="PrefGlassTextColorOn">Вкл.</sys:String>
+    <sys:String x:Key="PrefGlassTextColorSub">Меняет цвет текста вместо затемнения стекла.</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveText">Менять цвет текста вместо затемнения</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Там, где текст было бы трудно прочитать, он становится тёмным на светлом фоне (в светлом режиме — светлым на тёмном), а стекло остаётся прозрачным. Цветной текст и текст на кнопках сохраняют свой цвет. Сила на странице «Автозатемнение» задаёт, как рано меняется текст.</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewBright">Светлый фон</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewDark">Тёмный фон</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewSub">Читается на обоих</sys:String>
     <sys:String x:Key="PrefGlassSampling">Подстройка</sys:String>
     <sys:String x:Key="PrefGlassSamplingRow">Проверять фон</sys:String>
     <sys:String x:Key="PrefGlassSamplingTimer">Регулярно</sys:String>
