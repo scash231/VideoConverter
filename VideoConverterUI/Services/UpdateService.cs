@@ -35,6 +35,9 @@ public static class UpdateService
     /// <summary>How often a running app looks again (Automatic updates on).</summary>
     private static readonly TimeSpan AutoCheckInterval = TimeSpan.FromHours(6);
 
+    /// <summary>A check stays in Checking at least this long, so the spinner doesn't just flash.</summary>
+    private static readonly TimeSpan MinCheckDuration = TimeSpan.FromSeconds(2);
+
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
     private static DispatcherTimer? _autoTimer;
     private static Task? _checking;
@@ -88,6 +91,7 @@ public static class UpdateService
         {
             if (State is UpdateState.Downloading or UpdateState.Installing) return;
             Set(UpdateState.Checking);
+            var minSpin = Task.Delay(MinCheckDuration);
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, ManifestUrl);
@@ -103,6 +107,7 @@ public static class UpdateService
                 s.LastUpdateCheck = DateTime.UtcNow;
                 SettingsService.Save(s);
 
+                await minSpin;
                 LatestVersion = manifest.Version;
                 if (CompareVersions(manifest.Version, BuildInfoService.BuildVersion) > 0)
                 {
@@ -127,6 +132,7 @@ public static class UpdateService
             {
                 Debug.WriteLine($"UpdateService: check failed: {ex}");
                 Error = ex is HttpRequestException or TaskCanceledException ? null : ex.Message;
+                await minSpin;
                 Set(UpdateState.Failed);
             }
         }
