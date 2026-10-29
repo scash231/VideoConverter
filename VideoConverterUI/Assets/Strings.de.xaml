@@ -640,6 +640,14 @@
     <sys:String x:Key="PrefGlassDimStrengthHelp">Stärker dunkelt auch Stellen ab, die nur etwas schwer lesbar sind.</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnly">Nur direkt hinter Text</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnlyHelp">Dunkelt nur die Stellen ab, an denen Text steht, und lässt den Rest des Glases klar.</sys:String>
+    <sys:String x:Key="PrefGlassTextColor">Textfarbe</sys:String>
+    <sys:String x:Key="PrefGlassTextColorOn">Ein</sys:String>
+    <sys:String x:Key="PrefGlassTextColorSub">Ändert die Farbe des Textes, statt das Glas abzudunkeln.</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveText">Textfarbe ändern statt abdunkeln</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Wo Text schwer zu lesen wäre, wird er über hellem Hintergrund dunkel (im hellen Modus über dunklem hell), und das Glas bleibt klar. Farbiger Text und Text auf Schaltflächen behalten ihre Farbe. Die Stärke auf der Seite „Auto-Abdunkeln“ legt fest, wie früh sich der Text ändert.</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewBright">Heller Hintergrund</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewDark">Dunkler Hintergrund</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewSub">Auf beiden lesbar</sys:String>
     <sys:String x:Key="PrefGlassSampling">Anpassen</sys:String>
     <sys:String x:Key="PrefGlassSamplingRow">Hintergrund prüfen</sys:String>
     <sys:String x:Key="PrefGlassSamplingTimer">Regelmäßig</sys:String>

@@ -735,7 +735,7 @@ public partial class SettingsWindow : Window
     }
 
     private bool IsSubPage(StackPanel pane) =>
-        pane == PaneLiquidGlass || pane == PaneGlassReadability || pane == PaneColors || pane == PaneVideoColors || pane == PaneWindowGlass
+        pane == PaneLiquidGlass || pane == PaneGlassReadability || pane == PaneGlassTextColor || pane == PaneColors || pane == PaneVideoColors || pane == PaneWindowGlass
         || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneCloudConfig || pane == PaneWhatsNew || pane == PaneVersion || pane == PaneRelease
         || pane == PaneUpdate;
 

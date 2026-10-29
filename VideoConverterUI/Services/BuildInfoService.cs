@@ -28,7 +28,7 @@ public static class BuildInfoService
 
     public static string BuildChannel => "Canary";
 
-    public static string BuildVersion => "27H1.27.4.3";
+    public static string BuildVersion => "27H1.28";
 
     /// <summary>Source hash this build was stamped with.</summary>
     public static string CommitSha => "108cf6ad03b3fb6052047d908d55f310a8f60dbd";

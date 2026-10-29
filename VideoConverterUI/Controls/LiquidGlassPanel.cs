@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -74,6 +75,10 @@ public class LiquidGlassPanel : Grid
     private double[]? _lastNeed;
     private int _dimVersion, _lastDimVersion = -1;  // bumped whenever what the map depends on (colours, strength) may have changed
     private readonly Dictionary<int, double> _needByColor = new();  // scrim per backdrop colour, for the current _dimVersion
+    // Text Color mode: the glass colour per sample, and the pixels and _dimVersion it was worked out from.
+    private Rgb[]? _lastGlass;
+    private byte[]? _lastGlassPx;
+    private int _lastGlassVersion = -1;
     // Keeping the backdrop aligned: a per-frame hook only while the panel moves (or may be about to), see ArmAlign.
     private bool _alignHooked;
     private int _alignIdleFrames;
@@ -349,6 +354,7 @@ public class LiquidGlassPanel : Grid
         _sampler.Stop();
         _changeSampler.Stop();
         UnwatchChanges();
+        RestoreText(animate: false);
         _brush = null;
         _source = null;
         _blur.Fill = null;
@@ -363,8 +369,9 @@ public class LiquidGlassPanel : Grid
         _changeSampler.Stop();
         UnwatchChanges();
         _sampledOnce = false;
-        _lastPx = null;
+        _lastPx = _lastGlassPx = null;
         ClearScrim(animate: false);
+        RestoreText(animate: false);
         _brush = null;
         _source = null;
         _blur.Fill = null;
@@ -462,6 +469,10 @@ public class LiquidGlassPanel : Grid
     /// Liquid Glass, <see cref="Models.ThemeSettings.LiquidGlassAutoDim"/>) and a live backdrop to sample.</summary>
     private bool AutoDims => AdaptiveContrast && _brush != null && (ThemeService.Current?.LiquidGlassAutoDim ?? true);
 
+    /// <summary>Whether the text changes colour instead of the glass dimming (Auto Dim → Text Color,
+    /// <see cref="Models.ThemeSettings.LiquidGlassAdaptiveText"/>).</summary>
+    private bool AdaptsText => AutoDims && ThemeService.Current?.LiquidGlassAdaptiveText == true;
+
     /// <summary>Starts or stops sampling for the user's switch and the sampling mode (called from <see cref="Apply"/>
     /// and when settings change).</summary>
     private void ApplyAutoDim()
@@ -473,6 +484,7 @@ public class LiquidGlassPanel : Grid
             _changeSampler.Stop();
             UnwatchChanges();
             ClearScrim(animate: true);
+            RestoreText(animate: true);
             return;
         }
 
@@ -514,8 +526,9 @@ public class LiquidGlassPanel : Grid
     {
         if (_source == null || !IsVisible || ActualWidth * ActualHeight < 4000)
         {
-            _lastPx = null;
+            _lastPx = _lastGlassPx = null;
             ClearScrim(animate: true);
+            RestoreText(animate: true);
             return false;
         }
         // Nobody sees a minimized window, and its off-screen render would be wasted.
@@ -570,6 +583,24 @@ public class LiquidGlassPanel : Grid
 
             var px = new byte[sw * sh * 4];
             _sampleBitmap.CopyPixels(px, sw * 4, 0);
+
+            // Text Color: the text changes colour where it would be hard to read, and the glass stays clear.
+            if (AdaptsText)
+            {
+                ClearScrim(animate: true);
+                bool fresh = _lastGlass == null || _lastGlassPx == null || _lastGlassVersion != _dimVersion
+                             || !px.AsSpan().SequenceEqual(_lastGlassPx);
+                if (fresh)
+                {
+                    _lastGlass = GlassColors(px, sw * sh);
+                    _lastGlassPx = px;
+                    _lastGlassVersion = _dimVersion;
+                }
+                AdaptText(_lastGlass!, sw, sh);
+                return fresh;
+            }
+            RestoreText(animate: true);
+
             bool textOnly = ThemeService.Current?.LiquidGlassDimTextOnly == true;
 
             // Same pixels, same settings: the map is the same too. Only text-only mode still has work to do, since
@@ -715,15 +746,33 @@ public class LiquidGlassPanel : Grid
         if (ActualWidth <= 0 || ActualHeight <= 0) return;
         var covered = new bool[need.Length];
         var area = new Rect(0, 0, ActualWidth, ActualHeight);
-        foreach (UIElement child in Children)
-            if (!IsLayer(child)) MarkText(child, covered, w, h, area);
+        double cw = area.Width / w, ch = area.Height / h;
+        foreach (var (_, r) in FindText(area, onGlassOnly: false))
+        {
+            int x0 = Math.Clamp((int)(r.Left / cw), 0, w - 1), x1 = Math.Clamp((int)Math.Ceiling(r.Right / cw) - 1, 0, w - 1);
+            int y0 = Math.Clamp((int)(r.Top / ch), 0, h - 1), y1 = Math.Clamp((int)Math.Ceiling(r.Bottom / ch) - 1, 0, h - 1);
+            for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
+                    covered[y * w + x] = true;
+        }
         for (int i = 0; i < need.Length; i++)
             if (!covered[i]) need[i] = 0;
     }
 
-    private void MarkText(DependencyObject d, bool[] covered, int w, int h, Rect area)
+    /// <summary>The text on the glass and where it is (in the panel, with <see cref="TextMargin"/> around it).
+    /// <paramref name="onGlassOnly"/> leaves out text on a surface of its own: a filled button, nested glass.</summary>
+    private List<(FrameworkElement Element, Rect Bounds)> FindText(Rect area, bool onGlassOnly)
+    {
+        var found = new List<(FrameworkElement, Rect)>();
+        foreach (UIElement child in Children)
+            if (!IsLayer(child)) FindText(child, area, onGlassOnly, found);
+        return found;
+    }
+
+    private void FindText(DependencyObject d, Rect area, bool onGlassOnly, List<(FrameworkElement, Rect)> into)
     {
         if (d is UIElement { IsVisible: false }) return;
+        if (onGlassOnly && HasOwnSurface(d)) return;
 
         Rect? text = d switch
         {
@@ -731,22 +780,14 @@ public class LiquidGlassPanel : Grid
             TextBoxBase or PasswordBox => new Rect(((FrameworkElement)d).RenderSize),
             _ => null,
         };
-        if (text is { } local && d is Visual visual)
+        if (text is { } local && d is FrameworkElement element)
         {
             try
             {
-                var r = visual.TransformToAncestor(this).TransformBounds(local);
+                var r = element.TransformToAncestor(this).TransformBounds(local);
                 r.Inflate(TextMargin, TextMargin);
                 r.Intersect(area);  // scrolled or clipped out of the panel
-                if (!r.IsEmpty)
-                {
-                    double cw = area.Width / w, ch = area.Height / h;
-                    int x0 = Math.Clamp((int)(r.Left / cw), 0, w - 1), x1 = Math.Clamp((int)Math.Ceiling(r.Right / cw) - 1, 0, w - 1);
-                    int y0 = Math.Clamp((int)(r.Top / ch), 0, h - 1), y1 = Math.Clamp((int)Math.Ceiling(r.Bottom / ch) - 1, 0, h - 1);
-                    for (int y = y0; y <= y1; y++)
-                        for (int x = x0; x <= x1; x++)
-                            covered[y * w + x] = true;
-                }
+                if (!r.IsEmpty) into.Add((element, r));
             }
             catch (InvalidOperationException)
             {
@@ -756,8 +797,194 @@ public class LiquidGlassPanel : Grid
         }
 
         for (int i = 0, n = VisualTreeHelper.GetChildrenCount(d); i < n; i++)
-            MarkText(VisualTreeHelper.GetChild(d, i), covered, w, h, area);
+            FindText(VisualTreeHelper.GetChild(d, i), area, onGlassOnly, into);
     }
+
+    /// <summary>Whether <paramref name="d"/> draws a surface of its own that its text sits on instead of the glass:
+    /// a mostly opaque fill (an accent button), or another glass panel (which looks after its own text).</summary>
+    private bool HasOwnSurface(DependencyObject d)
+    {
+        if (d is LiquidGlassPanel && d != this) return true;
+        var fill = d switch
+        {
+            Panel p => p.Background,
+            Border b => b.Background,
+            Control c => c.Background,
+            _ => null,
+        };
+        return fill switch
+        {
+            null => false,
+            SolidColorBrush s => s.Color.A * s.Opacity > 150,
+            _ => fill.Opacity > 0.6,  // gradients and pictures
+        };
+    }
+
+    // ── Text Color instead of a wash (ThemeSettings.LiquidGlassAdaptiveText) ──
+    // Text whose colour would be hard to read where it sits (light text over a bright spot in dark mode, dark text
+    // over a dark spot in light mode) turns to the other end of the grey scale, or secondary text to full strength,
+    // whichever reads better, and the glass stays clear. Only grey
+    // text (labels, icon glyphs, text boxes) on the glass itself changes: coloured text and text on a fill of its own
+    // keep their colour. The new colour is an animation on the element, so its own value, style or binding is left
+    // as it was and comes back when the animation is removed.
+
+    private sealed class AdaptedText
+    {
+        public bool Flipped;
+        public Color Target;  // the colour it shows, or fades to
+        public int Pass;      // the last AdaptText pass that found this text
+    }
+
+    private readonly Dictionary<FrameworkElement, AdaptedText> _adapted = new();
+    private int _textPass;
+    private const double FlipMargin = 1.2;  // the other colour must read this much better before text changes (and back)
+
+    /// <summary>Per sample, the colour of the glass (backdrop through the shader's colour shift, under the tint).</summary>
+    private Rgb[] GlassColors(byte[] px, int count)
+    {
+        var tintColor = (_tint.Background as SolidColorBrush)?.Color ?? Colors.Transparent;
+        Rgb tint = Rgb.From(tintColor);
+        double tintA = tintColor.A / 255.0;
+        var glass = new Rgb[count];
+        for (int i = 0; i < count; i++)
+            glass[i] = Shade(new Rgb(px[i * 4 + 2] / 255.0, px[i * 4 + 1] / 255.0, px[i * 4] / 255.0)).Toward(tint, tintA);
+        return glass;
+    }
+
+    /// <summary>Gives each piece of text on the glass the colour that reads best over the glass under it (w × h samples).</summary>
+    private void AdaptText(Rgb[] glass, int w, int h)
+    {
+        if (ActualWidth <= 0 || ActualHeight <= 0) return;
+        var area = new Rect(0, 0, ActualWidth, ActualHeight);
+        double cw = area.Width / w, ch = area.Height / h;
+        bool light = ThemeService.IsLight;
+        // The strength slider sets how soon text changes: standard (0.5) as soon as it misses the body-text contrast.
+        double k = Math.Clamp(ThemeService.Current?.LiquidGlassDimStrength ?? 0.42, 0, 1);
+        double target = PrimaryContrast * (k < 0.5 ? 0.55 + 0.9 * k : 1 + 1.8 * (k - 0.5));
+        int pass = ++_textPass;
+
+        foreach (var (element, r) in FindText(area, onGlassOnly: true))
+        {
+            if (element.GetAnimationBaseValue(TextElement.ForegroundProperty) is not SolidColorBrush own
+                || FlippedColor(own.Color, light) is not { } flipped)
+                continue;
+            _adapted.TryGetValue(element, out var state);
+            if (state != null) state.Pass = pass;
+
+            // How well a colour reads on average over the glass under the text (the worst spot alone made a label next
+            // to a bright edge give up on every colour).
+            int x0 = Math.Clamp((int)(r.Left / cw), 0, w - 1), x1 = Math.Clamp((int)Math.Ceiling(r.Right / cw) - 1, 0, w - 1);
+            int y0 = Math.Clamp((int)(r.Top / ch), 0, h - 1), y1 = Math.Clamp((int)Math.Ceiling(r.Bottom / ch) - 1, 0, h - 1);
+            double alpha = own.Color.A / 255.0 * own.Opacity;
+            double Reads(Color c)
+            {
+                var text = Rgb.From(c);
+                double sum = 0;
+                for (int y = y0; y <= y1; y++)
+                    for (int x = x0; x <= x1; x++)
+                    {
+                        var g = glass[y * w + x];
+                        sum += Contrast(g.Luminance, g.Toward(text, alpha).Luminance);
+                    }
+                return sum / ((x1 - x0 + 1) * (y1 - y0 + 1));
+            }
+
+            // Other colours to try: the other end of the grey scale, or (for secondary text) the full-strength text
+            // colour of its own side, which keeps a title and its subtitle alike over a mid-grey spot.
+            var strong = light ? Color.FromArgb(own.Color.A, 0x1C, 0x1C, 0x1E) : Color.FromArgb(own.Color.A, 0xFF, 0xFF, 0xFF);
+            double ownReads = Reads(own.Color), flippedReads = Reads(flipped), strongReads = Reads(strong);
+            var (best, bestReads) = flippedReads >= strongReads ? (flipped, flippedReads) : (strong, strongReads);
+
+            if (state?.Flipped == true)
+            {
+                // Stays changed until its own colour reads well again; moves to the other choice only if clearly better.
+                if (ownReads >= target * FlipMargin || ownReads >= bestReads) UnflipText(element, state, own.Color, animate: true);
+                else if (best != state.Target && bestReads > Reads(state.Target) * FlipMargin) ShowTextColor(element, state, own.Color, best, pass);
+            }
+            else if (ownReads < target && bestReads > ownReads * FlipMargin)
+                ShowTextColor(element, state, own.Color, best, pass);
+        }
+
+        // Text that has gone, is hidden or isn't grey any more: back to its own colour.
+        foreach (var (element, state) in _adapted.ToArray())
+            if (state.Pass != pass) UnflipText(element, state, null, animate: true);
+    }
+
+    /// <summary>The other end of the grey scale for the theme's text colour, keeping how strong it is (secondary text
+    /// stays lighter than primary); null for text that isn't grey or isn't on the theme's side.</summary>
+    private static Color? FlippedColor(Color c, bool light)
+    {
+        if (c.A < 90) return null;
+        int max = Math.Max(c.R, Math.Max(c.G, c.B)), min = Math.Min(c.R, Math.Min(c.G, c.B));
+        if (max - min > 40) return null;  // accent, error and other coloured text
+        int grey = (c.R + c.G + c.B) / 3;
+        if (light ? grey > 175 : grey < 90) return null;  // e.g. white text on a picture in light mode
+        byte v = (byte)(light ? 255 - grey / 2 : 28 + (255 - grey) / 2);
+        return Color.FromArgb(c.A, v, v, v);
+    }
+
+    private void ShowTextColor(FrameworkElement element, AdaptedText? state, Color own, Color target, int pass)
+    {
+        if (state == null)
+        {
+            state = new AdaptedText { Pass = pass, Target = own };
+            _adapted[element] = state;
+        }
+        state.Flipped = true;
+        if (state.Target == target) return;
+        FadeTextColor(element, state.Target, target, done: null);
+        state.Target = target;
+    }
+
+    /// <summary>Fades the text back to <paramref name="own"/> (null = just remove the animation once faded or at once).</summary>
+    private void UnflipText(FrameworkElement element, AdaptedText state, Color? own, bool animate)
+    {
+        state.Flipped = false;
+        void Release()
+        {
+            if (state.Flipped || !_adapted.TryGetValue(element, out var current) || current != state) return;
+            element.BeginAnimation(TextElement.ForegroundProperty, null);
+            _adapted.Remove(element);
+        }
+        var back = own ?? (element.GetAnimationBaseValue(TextElement.ForegroundProperty) as SolidColorBrush)?.Color;
+        if (!animate || back is not { } to || !element.IsVisible) { Release(); return; }
+        FadeTextColor(element, state.Target, to, done: Release);
+        state.Target = to;
+    }
+
+    /// <summary>Every adapted text back to its own colour (Text Color turned off, the panel going away).</summary>
+    private void RestoreText(bool animate)
+    {
+        if (_adapted.Count == 0) return;
+        foreach (var (element, state) in _adapted.ToArray())
+            UnflipText(element, state, null, animate);
+    }
+
+    private const int TextFadeSteps = 12;
+    private static readonly TimeSpan TextFadeDuration = TimeSpan.FromMilliseconds(350);
+
+    /// <summary>
+    /// Fades the element's text from <paramref name="from"/> to <paramref name="to"/> and holds it there. An animation
+    /// freezes the brushes it holds, so one brush whose colour is animated wouldn't reach the text: the fade is a run of
+    /// frozen brushes along the way instead.
+    /// </summary>
+    private static void FadeTextColor(FrameworkElement element, Color from, Color to, Action? done)
+    {
+        int steps = SettingsService.Current.EnablePerformanceMode || from == to ? 1 : TextFadeSteps;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var fade = new ObjectAnimationUsingKeyFrames();
+        for (int i = 1; i <= steps; i++)
+        {
+            double t = steps == 1 ? 1 : ease.Ease((double)i / steps);
+            var c = Color.FromArgb(Mix(from.A, to.A, t), Mix(from.R, to.R, t), Mix(from.G, to.G, t), Mix(from.B, to.B, t));
+            fade.KeyFrames.Add(new DiscreteObjectKeyFrame(Freeze(new SolidColorBrush(c)),
+                KeyTime.FromTimeSpan(steps == 1 ? TimeSpan.Zero : TextFadeDuration * ((double)i / steps))));
+        }
+        if (done != null) fade.Completed += (_, _) => done();
+        element.BeginAnimation(TextElement.ForegroundProperty, fade);
+    }
+
+    private static byte Mix(byte a, byte b, double t) => (byte)Math.Round(a + (b - a) * t);
 
     /// <summary>Where a TextBlock's text actually is: a stretched label is wider than its words.</summary>
     private static Rect TextExtent(TextBlock tb)

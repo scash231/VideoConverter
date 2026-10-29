@@ -646,6 +646,14 @@
     <sys:String x:Key="PrefGlassDimStrengthHelp">Stronger also darkens spots that are only slightly hard to read.</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnly">Only right behind text</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnlyHelp">Darkens just the spots where text sits and leaves the rest of the glass clear.</sys:String>
+    <sys:String x:Key="PrefGlassTextColor">Text Color</sys:String>
+    <sys:String x:Key="PrefGlassTextColorOn">On</sys:String>
+    <sys:String x:Key="PrefGlassTextColorSub">Changes the color of the text instead of darkening the glass.</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveText">Change text color instead of dimming</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Wherever text would be hard to read, it turns dark over a bright background (light over a dark one in light mode) and the glass stays clear. Colored text and text on buttons keep their color. Strength on the Auto Dim page sets how soon the text changes.</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewBright">Bright background</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewDark">Dark background</sys:String>
+    <sys:String x:Key="PrefTextColorPreviewSub">Readable on both</sys:String>
     <sys:String x:Key="PrefGlassSampling">Adapting</sys:String>
     <sys:String x:Key="PrefGlassSamplingRow">Checks the background</sys:String>
     <sys:String x:Key="PrefGlassSamplingTimer">Regularly</sys:String>
