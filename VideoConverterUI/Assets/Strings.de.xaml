@@ -631,6 +631,8 @@
     <sys:String x:Key="PrefGlassAutoDimHelp">Dunkelt das Glas nur dort ab, wo der Hintergrund Text schwer lesbar macht.</sys:String>
     <sys:String x:Key="PrefGlassReadability">Auto-Abdunkeln</sys:String>
     <sys:String x:Key="PrefGlassReadabilityOff">Aus</sys:String>
+    <sys:String x:Key="PrefGlassReadabilityHeader">Lesbarkeit von Text</sys:String>
+    <sys:String x:Key="PrefGlassAutoDimSub">Dunkelt das Glas hinter Text ab, wo der Hintergrund ihn schwer lesbar macht.</sys:String>
     <sys:String x:Key="PrefReadabilityPreviewTitle">Auf jedem Hintergrund gut lesbar</sys:String>
     <sys:String x:Key="PrefReadabilityPreviewSub">Bewege den Regler unten, um den Unterschied zu sehen</sys:String>
     <sys:String x:Key="PrefGlassDimStrength">Stärke</sys:String>
@@ -641,10 +643,10 @@
     <sys:String x:Key="PrefGlassDimTextOnly">Nur direkt hinter Text</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnlyHelp">Dunkelt nur die Stellen ab, an denen Text steht, und lässt den Rest des Glases klar.</sys:String>
     <sys:String x:Key="PrefGlassTextColor">Textfarbe</sys:String>
-    <sys:String x:Key="PrefGlassTextColorOn">Ein</sys:String>
-    <sys:String x:Key="PrefGlassTextColorSub">Ändert die Farbe des Textes, statt das Glas abzudunkeln.</sys:String>
-    <sys:String x:Key="PrefGlassAdaptiveText">Textfarbe ändern statt abdunkeln</sys:String>
-    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Wo Text schwer zu lesen wäre, wird er über hellem Hintergrund dunkel (im hellen Modus über dunklem hell), und das Glas bleibt klar. Farbiger Text und Text auf Schaltflächen behalten ihre Farbe. Die Stärke auf der Seite „Auto-Abdunkeln“ legt fest, wie früh sich der Text ändert.</sys:String>
+    <sys:String x:Key="PrefGlassTextColorSub">Ändert die Farbe des Textes selbst, sodass das Glas klar bleibt. Sind beide an, ändert sich die Textfarbe, wo das reicht, und hinter dem übrigen Text dunkelt das Glas ab.</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveText">Textfarbe automatisch ändern</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Wo der Hintergrund Text schwer lesbar macht, wird er über hellen Stellen dunkel (im hellen Modus über dunklen hell) oder über mittelgrauen kräftiger. Text, der zusammengehört, ändert sich gemeinsam. Farbiger Text und Text auf Schaltflächen behalten ihre Farbe.</sys:String>
+    <sys:String x:Key="PrefGlassTextColorStrengthHelp">Stärker ändert auch Text, der nur etwas schwer lesbar ist.</sys:String>
     <sys:String x:Key="PrefTextColorPreviewBright">Heller Hintergrund</sys:String>
     <sys:String x:Key="PrefTextColorPreviewDark">Dunkler Hintergrund</sys:String>
     <sys:String x:Key="PrefTextColorPreviewSub">Auf beiden lesbar</sys:String>

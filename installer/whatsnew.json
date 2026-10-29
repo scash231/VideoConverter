@@ -5,6 +5,28 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.28.1",
+          "date": "2026-10-29",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "Auto Dim and Text Color are now two separate options in Settings → Appearance → Liquid Glass, each with its own page, switch and Strength. They can be on together: text then changes colour where that is enough, and the glass dims only behind the text that still needs it.",
+                "Auto Dim draws one soft wash behind text that sits together, fading out around it, instead of blocky patches with stepped corners. It also dims only as much as that text needs: a lone title less than a grey line.",
+                "Text Color changes text that sits together in one go, so an icon, its title and its subtitle no longer end up in three different colours. Text that turns dark loses its dark shadow, which made it look blurry.",
+                "How often the glass checks the background is now on the Liquid Glass page, since it applies to both options."
+              ]
+            },
+            {
+              "title": "Fixed",
+              "items": [
+                "With Strength set to Stronger, Text Color turned all grey text white, even on dark glass where it was easy to read.",
+                "A text colour change that turned around halfway jumped instead of fading back."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.28",
           "date": "2026-10-29",
           "sections": [

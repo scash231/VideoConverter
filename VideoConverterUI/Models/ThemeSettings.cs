@@ -110,26 +110,33 @@ public sealed class ThemeSettings
     [JsonPropertyName("liquid_glass_tint")]
     public double LiquidGlassTint { get; set; } = 0.5;
 
-    /// <summary>Liquid Glass dims (or, in light mode, lightens) itself just where a bright or busy backdrop would make
-    /// the text on it hard to read (LiquidGlassPanel.AdaptiveContrast). Settings → Appearance → Liquid Glass.</summary>
+    /// <summary>Auto Dim: Liquid Glass dims (or, in light mode, lightens) itself just where a bright or busy backdrop
+    /// would make the text on it hard to read (LiquidGlassPanel.AdaptiveContrast). Settings → Appearance → Liquid Glass
+    /// → Auto Dim.</summary>
     [JsonPropertyName("liquid_glass_auto_dim")]
     public bool LiquidGlassAutoDim { get; set; } = true;
 
     /// <summary>How strongly the glass dims behind text: 0 = softer, 0.5 = standard, 1 = stronger (also dims spots the
-    /// standard leaves clear). Settings → Appearance → Liquid Glass → Text readability.</summary>
+    /// standard leaves clear). Settings → Appearance → Liquid Glass → Auto Dim.</summary>
     [JsonPropertyName("liquid_glass_dim_strength")]
     public double LiquidGlassDimStrength { get; set; } = 0.42;
 
     /// <summary>Dim only the spots of the glass where text sits on it (and leave empty parts of the glass clear),
-    /// instead of everywhere the background is too bright or busy. Settings → Appearance → Liquid Glass → Text readability.</summary>
+    /// instead of everywhere the background is too bright or busy. Settings → Appearance → Liquid Glass → Auto Dim.</summary>
     [JsonPropertyName("liquid_glass_dim_text_only")]
     public bool LiquidGlassDimTextOnly { get; set; } = true;
 
-    /// <summary>Instead of dimming the glass, text on it turns dark over a bright backdrop (light over a dark one in
-    /// light mode) wherever its usual colour would be hard to read. Settings → Appearance → Liquid Glass → Text
-    /// readability → Text Color.</summary>
+    /// <summary>Text Color: grey text on the glass turns dark over a bright backdrop (light over a dark one in light
+    /// mode), or brighter over a mid-grey one, wherever its usual colour would be hard to read. On its own or together
+    /// with Auto Dim (which then dims behind the text that still needs it). Settings → Appearance → Liquid Glass →
+    /// Text Color.</summary>
     [JsonPropertyName("liquid_glass_adaptive_text")]
     public bool LiquidGlassAdaptiveText { get; set; }
+
+    /// <summary>How soon Text Color changes text: 0 = softer (only text that is really hard to read), 0.5 = standard,
+    /// 1 = stronger (also text that is only slightly hard to read). Settings → Appearance → Liquid Glass → Text Color.</summary>
+    [JsonPropertyName("liquid_glass_text_color_strength")]
+    public double LiquidGlassTextColorStrength { get; set; } = 0.5;
 
     public ThemeSettings Clone()
     {

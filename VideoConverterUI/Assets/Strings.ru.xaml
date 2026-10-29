@@ -634,6 +634,8 @@
     <sys:String x:Key="PrefGlassAutoDimHelp">Затемняет стекло только там, где фон мешает читать текст.</sys:String>
     <sys:String x:Key="PrefGlassReadability">Автозатемнение</sys:String>
     <sys:String x:Key="PrefGlassReadabilityOff">Выкл.</sys:String>
+    <sys:String x:Key="PrefGlassReadabilityHeader">Читаемость текста</sys:String>
+    <sys:String x:Key="PrefGlassAutoDimSub">Затемняет стекло за текстом там, где фон мешает его читать.</sys:String>
     <sys:String x:Key="PrefReadabilityPreviewTitle">Легко читается на любом фоне</sys:String>
     <sys:String x:Key="PrefReadabilityPreviewSub">Подвигайте ползунок ниже, чтобы увидеть разницу</sys:String>
     <sys:String x:Key="PrefGlassDimStrength">Сила</sys:String>
@@ -644,10 +646,10 @@
     <sys:String x:Key="PrefGlassDimTextOnly">Только прямо под текстом</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnlyHelp">Затемняет только места, где стоит текст, а остальное стекло остаётся прозрачным.</sys:String>
     <sys:String x:Key="PrefGlassTextColor">Цвет текста</sys:String>
-    <sys:String x:Key="PrefGlassTextColorOn">Вкл.</sys:String>
-    <sys:String x:Key="PrefGlassTextColorSub">Меняет цвет текста вместо затемнения стекла.</sys:String>
-    <sys:String x:Key="PrefGlassAdaptiveText">Менять цвет текста вместо затемнения</sys:String>
-    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Там, где текст было бы трудно прочитать, он становится тёмным на светлом фоне (в светлом режиме — светлым на тёмном), а стекло остаётся прозрачным. Цветной текст и текст на кнопках сохраняют свой цвет. Сила на странице «Автозатемнение» задаёт, как рано меняется текст.</sys:String>
+    <sys:String x:Key="PrefGlassTextColorSub">Меняет цвет самого текста, и стекло остаётся прозрачным. Если включены обе функции, цвет текста меняется там, где этого достаточно, а за остальным текстом стекло затемняется.</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveText">Менять цвет текста автоматически</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Там, где фон мешает читать текст, он становится тёмным на светлых участках (в светлом режиме — светлым на тёмных) или ярче на серых. Текст, стоящий рядом, меняется вместе. Цветной текст и текст на кнопках сохраняют свой цвет.</sys:String>
+    <sys:String x:Key="PrefGlassTextColorStrengthHelp">«Сильнее» меняет и тот текст, который читается лишь немного хуже.</sys:String>
     <sys:String x:Key="PrefTextColorPreviewBright">Светлый фон</sys:String>
     <sys:String x:Key="PrefTextColorPreviewDark">Тёмный фон</sys:String>
     <sys:String x:Key="PrefTextColorPreviewSub">Читается на обоих</sys:String>
