@@ -637,6 +637,8 @@
     <sys:String x:Key="PrefGlassAutoDimHelp">Darkens the glass just where the background makes text hard to read.</sys:String>
     <sys:String x:Key="PrefGlassReadability">Auto Dim</sys:String>
     <sys:String x:Key="PrefGlassReadabilityOff">Off</sys:String>
+    <sys:String x:Key="PrefGlassReadabilityHeader">Text Readability</sys:String>
+    <sys:String x:Key="PrefGlassAutoDimSub">Darkens the glass behind text wherever the background makes it hard to read.</sys:String>
     <sys:String x:Key="PrefReadabilityPreviewTitle">Easy to read on any background</sys:String>
     <sys:String x:Key="PrefReadabilityPreviewSub">Move the slider below to see the difference</sys:String>
     <sys:String x:Key="PrefGlassDimStrength">Strength</sys:String>
@@ -647,10 +649,10 @@
     <sys:String x:Key="PrefGlassDimTextOnly">Only right behind text</sys:String>
     <sys:String x:Key="PrefGlassDimTextOnlyHelp">Darkens just the spots where text sits and leaves the rest of the glass clear.</sys:String>
     <sys:String x:Key="PrefGlassTextColor">Text Color</sys:String>
-    <sys:String x:Key="PrefGlassTextColorOn">On</sys:String>
-    <sys:String x:Key="PrefGlassTextColorSub">Changes the color of the text instead of darkening the glass.</sys:String>
-    <sys:String x:Key="PrefGlassAdaptiveText">Change text color instead of dimming</sys:String>
-    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Wherever text would be hard to read, it turns dark over a bright background (light over a dark one in light mode) and the glass stays clear. Colored text and text on buttons keep their color. Strength on the Auto Dim page sets how soon the text changes.</sys:String>
+    <sys:String x:Key="PrefGlassTextColorSub">Changes the color of the text itself, so the glass stays clear. With both on, text changes color where that is enough and the glass dims behind the rest.</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveText">Change text color automatically</sys:String>
+    <sys:String x:Key="PrefGlassAdaptiveTextHelp">Wherever the background makes text hard to read, it turns dark over bright spots (light over dark ones in light mode), or to full strength over mid-gray ones. Text that sits together changes together. Colored text and text on buttons keep their color.</sys:String>
+    <sys:String x:Key="PrefGlassTextColorStrengthHelp">Stronger also changes text that is only slightly hard to read.</sys:String>
     <sys:String x:Key="PrefTextColorPreviewBright">Bright background</sys:String>
     <sys:String x:Key="PrefTextColorPreviewDark">Dark background</sys:String>
     <sys:String x:Key="PrefTextColorPreviewSub">Readable on both</sys:String>

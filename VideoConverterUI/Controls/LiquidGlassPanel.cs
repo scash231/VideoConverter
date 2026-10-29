@@ -69,16 +69,15 @@ public class LiquidGlassPanel : Grid
     private RenderTargetBitmap? _sampleBitmap;
     private List<MediaElement> _videos = new();  // in the backdrop; refreshed now and then (SampleBackdrop)
     private int _sampleCount;
-    // The last sample's pixels and the map worked out from them: an unchanged backdrop skips the maths, and the timer
-    // backs off (SampleInterval … MaxSampleInterval) while nothing changes.
+    // The last sample's pixels and what was worked out from them (the glass colour per sample, the whole-glass map):
+    // an unchanged backdrop skips the maths, and the timer backs off (SampleInterval … MaxSampleInterval) while
+    // nothing changes.
     private byte[]? _lastPx;
+    private Rgb[]? _lastGlass;
     private double[]? _lastNeed;
     private int _dimVersion, _lastDimVersion = -1;  // bumped whenever what the map depends on (colours, strength) may have changed
     private readonly Dictionary<int, double> _needByColor = new();  // scrim per backdrop colour, for the current _dimVersion
-    // Text Color mode: the glass colour per sample, and the pixels and _dimVersion it was worked out from.
-    private Rgb[]? _lastGlass;
-    private byte[]? _lastGlassPx;
-    private int _lastGlassVersion = -1;
+    private readonly Dictionary<long, double> _needByText = new();  // scrim per backdrop colour and text colour (only behind text)
     // Keeping the backdrop aligned: a per-frame hook only while the panel moves (or may be about to), see ArmAlign.
     private bool _alignHooked;
     private int _alignIdleFrames;
@@ -183,12 +182,28 @@ public class LiquidGlassPanel : Grid
         nameof(AdaptiveContrast), typeof(bool), typeof(LiquidGlassPanel),
         new PropertyMetadata(true, (d, _) => ((LiquidGlassPanel)d).Rebuild()));
 
-    /// <summary>Fade in a soft wash when the backdrop gets too bright (dark mode) or too dark (light mode) for the
-    /// content to stay readable (on by default; panels too small to hold text never sample).</summary>
+    /// <summary>Keep the content readable over a backdrop that gets too bright (dark mode) or too dark (light mode):
+    /// the user's Auto Dim and Text Color (on by default; panels too small to hold text never sample).</summary>
     public bool AdaptiveContrast
     {
         get => (bool)GetValue(AdaptiveContrastProperty);
         set => SetValue(AdaptiveContrastProperty, value);
+    }
+
+    public static readonly DependencyProperty ReadabilityProperty = DependencyProperty.Register(
+        nameof(Readability), typeof(GlassReadability), typeof(LiquidGlassPanel),
+        new PropertyMetadata(GlassReadability.Settings, (d, _) =>
+        {
+            var panel = (LiquidGlassPanel)d;
+            if (panel._attached) panel.ApplyAutoDim();
+        }));
+
+    /// <summary>Which of the user's readability options this panel follows: both (default), or one alone (the
+    /// previews on the Auto Dim and Text Color pages each show their own).</summary>
+    public GlassReadability Readability
+    {
+        get => (GlassReadability)GetValue(ReadabilityProperty);
+        set => SetValue(ReadabilityProperty, value);
     }
 
     public static readonly DependencyProperty ReverseLArmsProperty = DependencyProperty.Register(
@@ -314,11 +329,12 @@ public class LiquidGlassPanel : Grid
     private bool IsLayer(UIElement e) => e == _host || e == _tint || e == _scrims[0] || e == _scrims[1] || e == _sheen || e == _rim || e == _outline
                                          || e == _shapeRim || e == _shapeOutline;
 
-    // Only content children, and only those without an effect of their own.
+    // Only content children, and only those without an effect of their own. A child with text that Text Color turned
+    // to the other end of the grey scale goes without for the time being (a dark shadow under dark text blurs it).
     private void ShadowContent(UIElement child)
     {
         if (IsLayer(child)) return;
-        if (TextShadow) { if (child.Effect == null) child.Effect = _textShadow; }
+        if (TextShadow && !_unshadowed.Contains(child)) { if (child.Effect == null) child.Effect = _textShadow; }
         else if (ReferenceEquals(child.Effect, _textShadow)) child.Effect = null;
     }
 
@@ -369,7 +385,7 @@ public class LiquidGlassPanel : Grid
         _changeSampler.Stop();
         UnwatchChanges();
         _sampledOnce = false;
-        _lastPx = _lastGlassPx = null;
+        _lastPx = null;
         ClearScrim(animate: false);
         RestoreText(animate: false);
         _brush = null;
@@ -389,7 +405,7 @@ public class LiquidGlassPanel : Grid
             _brush = new VisualBrush(source) { ViewboxUnits = BrushMappingMode.Absolute, Stretch = Stretch.Fill, TileMode = TileMode.None };
             _blur.Fill = _brush;
             StartTracking();
-            if (AutoDims)
+            if (Adapts)
             {
                 // The first sample (an off-screen render of the backdrop) waits until the window's opening animation is done.
                 var first = UsesTimer ? _sampler : _changeSampler;
@@ -461,24 +477,33 @@ public class LiquidGlassPanel : Grid
 
     // ── Adaptive contrast ──
     // A few times a second the area behind the panel is rendered into a tiny bitmap. For every sample the glass colour
-    // is worked out (backdrop through the shader's colour shift, under the material tint) and from it the least scrim
-    // that gives the content's text colours a readable contrast ratio there. The result is a map, not one number: a
-    // bright sidebar item behind one label of a dialog gets a wash right there while the rest stays clear.
+    // is worked out (backdrop through the shader's colour shift, under the material tint), and from it two things the
+    // user can turn on separately (Settings → Appearance → Liquid Glass):
+    //   Auto Dim: the least scrim that gives the text a readable contrast ratio there. The result is a map, not one
+    //     number: a bright sidebar item behind one label of a dialog gets a wash right there while the rest stays clear.
+    //   Text Color: grey text that would be hard to read turns to the other end of the grey scale (or full strength).
+    // With both on, dimming the whole glass comes first and text colours are chosen over the dimmed glass; dimming only
+    // behind text, text changes colour first where that is enough and the glass dims behind the rest.
 
     /// <summary>Whether this panel dims: <see cref="AdaptiveContrast"/>, the user's switch (Settings → Appearance →
-    /// Liquid Glass, <see cref="Models.ThemeSettings.LiquidGlassAutoDim"/>) and a live backdrop to sample.</summary>
-    private bool AutoDims => AdaptiveContrast && _brush != null && (ThemeService.Current?.LiquidGlassAutoDim ?? true);
+    /// Liquid Glass → Auto Dim, <see cref="Models.ThemeSettings.LiquidGlassAutoDim"/>) and a live backdrop to sample.</summary>
+    private bool DimsGlass => AdaptiveContrast && _brush != null && Readability != GlassReadability.TextColorOnly
+                              && (ThemeService.Current?.LiquidGlassAutoDim ?? true);
 
-    /// <summary>Whether the text changes colour instead of the glass dimming (Auto Dim → Text Color,
+    /// <summary>Whether text on the panel changes colour (Settings → Appearance → Liquid Glass → Text Color,
     /// <see cref="Models.ThemeSettings.LiquidGlassAdaptiveText"/>).</summary>
-    private bool AdaptsText => AutoDims && ThemeService.Current?.LiquidGlassAdaptiveText == true;
+    private bool AdaptsText => AdaptiveContrast && _brush != null && Readability != GlassReadability.AutoDimOnly
+                               && ThemeService.Current?.LiquidGlassAdaptiveText == true;
 
-    /// <summary>Starts or stops sampling for the user's switch and the sampling mode (called from <see cref="Apply"/>
+    /// <summary>Whether this panel samples its backdrop at all.</summary>
+    private bool Adapts => DimsGlass || AdaptsText;
+
+    /// <summary>Starts or stops sampling for the user's switches and the sampling mode (called from <see cref="Apply"/>
     /// and when settings change).</summary>
     private void ApplyAutoDim()
     {
         _dimVersion++;  // colours, strength or the text-only switch may have changed: the next sample works the map out afresh
-        if (!AutoDims)
+        if (!Adapts)
         {
             _sampler.Stop();
             _changeSampler.Stop();
@@ -510,7 +535,37 @@ public class LiquidGlassPanel : Grid
     private static readonly TimeSpan FirstSampleDelay = TimeSpan.FromMilliseconds(1200);
     private const double PrimaryContrast = 4.5;    // WCAG AA for body text (TextPrimary)
     private const double SecondaryContrast = 3.0;  // secondary labels (TextSec)
+    private const double DesignShare = 0.85;       // text is never asked for more than this share of its contrast on the plain window
     private const double MaxScrim = 0.92;
+
+    /// <summary>A strength slider (0 softer, 0.5 standard, 1 stronger) as a factor on the contrast text should reach:
+    /// 0.6 … 1 (WCAG AA) … 1.55 (about AAA).</summary>
+    private static double StrengthScale(double k)
+    {
+        k = Math.Clamp(k, 0, 1);
+        return k < 0.5 ? 0.6 + 0.8 * k : 1 + 1.1 * (k - 0.5);
+    }
+
+    /// <summary>
+    /// The contrast text of this colour should reach on the glass: the WCAG goal for body text (4.5:1), or for secondary
+    /// text (3:1; text that is weaker even on the plain window), times the strength, but never more than
+    /// <see cref="DesignShare"/> of what it has on the plain glass. A theme's grey label can't be asked for more than it
+    /// was made to have: without that cap, Stronger turned every grey label white, even on dark glass.
+    /// </summary>
+    private static double TargetFor(Rgb text, double alpha, Rgb plain, double scale)
+    {
+        double design = Contrast(plain.Luminance, plain.Toward(text, alpha).Luminance);
+        double goal = design >= 7 ? PrimaryContrast : SecondaryContrast;
+        return Math.Max(1.2, Math.Min(goal * scale, DesignShare * design));
+    }
+
+    /// <summary>The glass over the window's own colour: what the theme's text colours were made for.</summary>
+    private Rgb PlainGlass()
+    {
+        var bgColor = (_base.Background as SolidColorBrush)?.Color ?? (ThemeService.IsLight ? Colors.White : Colors.Black);
+        var tintColor = (_tint.Background as SolidColorBrush)?.Color ?? Colors.Transparent;
+        return Shade(Rgb.From(bgColor)).Toward(Rgb.From(tintColor), tintColor.A / 255.0);
+    }
 
     private static Brush Freeze(Brush b) { b.Freeze(); return b; }
 
@@ -526,7 +581,7 @@ public class LiquidGlassPanel : Grid
     {
         if (_source == null || !IsVisible || ActualWidth * ActualHeight < 4000)
         {
-            _lastPx = _lastGlassPx = null;
+            _lastPx = null;
             ClearScrim(animate: true);
             RestoreText(animate: true);
             return false;
@@ -584,43 +639,37 @@ public class LiquidGlassPanel : Grid
             var px = new byte[sw * sh * 4];
             _sampleBitmap.CopyPixels(px, sw * 4, 0);
 
-            // Text Color: the text changes colour where it would be hard to read, and the glass stays clear.
-            if (AdaptsText)
+            bool changed = _lastPx == null || _lastGlass == null || _lastDimVersion != _dimVersion
+                           || !px.AsSpan().SequenceEqual(_lastPx);
+            if (changed)
             {
-                ClearScrim(animate: true);
-                bool fresh = _lastGlass == null || _lastGlassPx == null || _lastGlassVersion != _dimVersion
-                             || !px.AsSpan().SequenceEqual(_lastGlassPx);
-                if (fresh)
-                {
-                    _lastGlass = GlassColors(px, sw * sh);
-                    _lastGlassPx = px;
-                    _lastGlassVersion = _dimVersion;
-                }
-                AdaptText(_lastGlass!, sw, sh);
-                return fresh;
-            }
-            RestoreText(animate: true);
-
-            bool textOnly = ThemeService.Current?.LiquidGlassDimTextOnly == true;
-
-            // Same pixels, same settings: the map is the same too. Only text-only mode still has work to do, since
-            // the text on the glass may have moved or changed.
-            bool changed = _lastPx == null || !px.AsSpan().SequenceEqual(_lastPx) || _lastDimVersion != _dimVersion;
-            if (!changed && !textOnly) return false;
-            if (changed || _lastNeed == null)
-            {
-                _lastNeed = ScrimNeeded(px, sw, sh);
                 _lastPx = px;
                 _lastDimVersion = _dimVersion;
+                _lastGlass = GlassColors(px, sw * sh);
+                _lastNeed = null;
+            }
+            bool dims = DimsGlass, adapts = AdaptsText;
+            bool textOnly = dims && ThemeService.Current?.LiquidGlassDimTextOnly == true;
+            // Same pixels, same settings: the whole-glass map is the same too. Text may have moved or changed, though.
+            if (!changed && !adapts && !textOnly) return false;
+
+            // Dimming the whole glass comes first: text colours are then chosen over the dimmed glass.
+            var glass = _lastGlass!;
+            double[]? wash = null;
+            if (dims && !textOnly)
+            {
+                wash = _lastNeed ??= ScrimNeeded(px, sw, sh);
+                if (adapts) glass = Dimmed(glass, wash);
             }
 
-            var need = _lastNeed;
-            if (textOnly)
-            {
-                need = (double[])need.Clone();
-                KeepOnlyBehindText(need, sw, sh);
-            }
-            ShowScrim(need, sw, sh);
+            // Text changes colour; dimming only behind text, only where that is enough (the wash takes the rest).
+            var texts = adapts || textOnly ? FindText(new Rect(0, 0, ActualWidth, ActualHeight)) : null;
+            if (adapts) AdaptText(texts!, glass, sw, sh, mustRead: textOnly);
+            else RestoreText(animate: true);
+
+            if (!dims) ClearScrim(animate: true);
+            else if (textOnly) ShowScrim(WashBehindText(texts!, px, _lastGlass!, sw, sh, out int mw, out int mh), mw, mh);
+            else ShowScrim(wash!, sw, sh);
             return changed;
         }
         catch (InvalidOperationException)
@@ -667,6 +716,24 @@ public class LiquidGlassPanel : Grid
 
     private Color ResourceColor(string key, Color fallback) => TryFindResource(key) is SolidColorBrush b ? b.Color : fallback;
 
+    /// <summary>Auto Dim's strength (Settings → Appearance → Liquid Glass → Auto Dim → Strength): standard (0.5) aims
+    /// for the contrast in <see cref="TargetFor"/>. Softer asks for less and washes less deeply; stronger asks for more,
+    /// so it also dims spots the standard leaves clear, and may wash a little deeper.</summary>
+    private static (double Scale, double Depth, double MaxScrim) DimStrength()
+    {
+        double k = Math.Clamp(ThemeService.Current?.LiquidGlassDimStrength ?? 0.42, 0, 1);
+        return (StrengthScale(k), k < 0.5 ? 0.5 + k : 1, k > 0.5 ? MaxScrim + 0.1 * (k - 0.5) : MaxScrim);
+    }
+
+    /// <summary>The glass under a wash (per sample).</summary>
+    private Rgb[] Dimmed(Rgb[] glass, double[] wash)
+    {
+        var bg = Rgb.From((_base.Background as SolidColorBrush)?.Color ?? Colors.Black);
+        var dimmed = new Rgb[glass.Length];
+        for (int i = 0; i < glass.Length; i++) dimmed[i] = glass[i].Toward(bg, wash[i]);
+        return dimmed;
+    }
+
     /// <summary>Per sample, the scrim opacity that keeps the content readable over the sampled backdrop (Pbgra32, opaque).</summary>
     private double[] ScrimNeeded(byte[] px, int w, int h)
     {
@@ -680,22 +747,15 @@ public class LiquidGlassPanel : Grid
         Rgb bg = Rgb.From(bgColor), tint = Rgb.From(tintColor), primary = Rgb.From(primaryColor), secondary = Rgb.From(secondaryColor);
         double tintA = tintColor.A / 255.0, primaryA = primaryColor.A / 255.0, secondaryA = secondaryColor.A / 255.0;
 
-        // The user's strength (Text readability → Strength): standard (0.5) aims for the contrast above. Softer asks for
-        // less and washes less deeply; stronger asks for more, so it also dims spots the standard leaves clear, and may
-        // wash a little deeper.
-        double k = Math.Clamp(ThemeService.Current?.LiquidGlassDimStrength ?? 0.42, 0, 1);
-        double targetScale = k < 0.5 ? 0.55 + 0.9 * k : 1 + 1.8 * (k - 0.5);   // 0.55 … 1 … 1.9
-        double depth = k < 0.5 ? 0.5 + k : 1;                                  // 0.5 … 1
-        double maxScrim = k > 0.5 ? MaxScrim + 0.1 * (k - 0.5) : MaxScrim;     // … 0.97
-
-        // A theme whose text never reaches the target even on the plain window shouldn't pin the scrim at its maximum.
-        double bgL = bg.Luminance;
-        double primaryTarget = Math.Min(PrimaryContrast * targetScale, 0.9 * Contrast(bgL, bg.Toward(primary, primaryA).Luminance));
-        double secondaryTarget = Math.Min(SecondaryContrast * targetScale, 0.9 * Contrast(bgL, bg.Toward(secondary, secondaryA).Luminance));
+        // Every spot of the glass may hold either kind of text, so it has to suit both.
+        var (scale, depth, maxScrim) = DimStrength();
+        var plain = PlainGlass();
+        double primaryTarget = TargetFor(primary, primaryA, plain, scale);
+        double secondaryTarget = TargetFor(secondary, secondaryA, plain, scale);
 
         // The answer depends only on the sample's colour (everything else is fixed until _dimVersion changes), and a
         // backdrop is mostly a few flat colours, so most samples are a lookup.
-        if (_lastDimVersion != _dimVersion || _needByColor.Count > 8192) _needByColor.Clear();
+        CheckScrimCaches();
 
         var need = new double[count];
         for (int i = 0; i < count; i++)
@@ -734,45 +794,40 @@ public class LiquidGlassPanel : Grid
         return spread;
     }
 
-    // ── Only behind text (ThemeSettings.LiquidGlassDimTextOnly) ──
-    // The map keeps its values only in the cells that text on the glass covers; empty glass stays clear. Text is what
-    // the content draws as TextBlocks (labels, icon glyphs, a text box's placeholder) and the text boxes themselves.
+    private int _scrimCacheVersion = -1;
+
+    /// <summary>Forgets the cached scrims when what they depend on (colours, strength) may have changed, or when they
+    /// have grown too big.</summary>
+    private void CheckScrimCaches()
+    {
+        if (_scrimCacheVersion == _dimVersion && _needByColor.Count <= 8192 && _needByText.Count <= 16384) return;
+        _scrimCacheVersion = _dimVersion;
+        _needByColor.Clear();
+        _needByText.Clear();
+    }
+
+    // ── The text on the glass ──
+    // What the content draws as TextBlocks (labels, icon glyphs, a text box's placeholder) and the text boxes themselves,
+    // on the glass itself: text on a fill of its own (an accent button) or on nested glass doesn't need the glass's help.
 
     private const double TextMargin = 3;  // around each piece of text, so its edges are covered too
 
-    /// <summary>Zeroes every cell of the map (w × h over the panel) that no text on the glass touches.</summary>
-    private void KeepOnlyBehindText(double[] need, int w, int h)
-    {
-        if (ActualWidth <= 0 || ActualHeight <= 0) return;
-        var covered = new bool[need.Length];
-        var area = new Rect(0, 0, ActualWidth, ActualHeight);
-        double cw = area.Width / w, ch = area.Height / h;
-        foreach (var (_, r) in FindText(area, onGlassOnly: false))
-        {
-            int x0 = Math.Clamp((int)(r.Left / cw), 0, w - 1), x1 = Math.Clamp((int)Math.Ceiling(r.Right / cw) - 1, 0, w - 1);
-            int y0 = Math.Clamp((int)(r.Top / ch), 0, h - 1), y1 = Math.Clamp((int)Math.Ceiling(r.Bottom / ch) - 1, 0, h - 1);
-            for (int y = y0; y <= y1; y++)
-                for (int x = x0; x <= x1; x++)
-                    covered[y * w + x] = true;
-        }
-        for (int i = 0; i < need.Length; i++)
-            if (!covered[i]) need[i] = 0;
-    }
+    /// <summary>A piece of text on the glass: where it is (in the panel, with <see cref="TextMargin"/> around it), and
+    /// the content child it is in (which carries the text shadow).</summary>
+    private readonly record struct GlassText(FrameworkElement Element, Rect Bounds, UIElement Root);
 
-    /// <summary>The text on the glass and where it is (in the panel, with <see cref="TextMargin"/> around it).
-    /// <paramref name="onGlassOnly"/> leaves out text on a surface of its own: a filled button, nested glass.</summary>
-    private List<(FrameworkElement Element, Rect Bounds)> FindText(Rect area, bool onGlassOnly)
+    private List<GlassText> FindText(Rect area)
     {
-        var found = new List<(FrameworkElement, Rect)>();
+        var found = new List<GlassText>();
         foreach (UIElement child in Children)
-            if (!IsLayer(child)) FindText(child, area, onGlassOnly, found);
+            if (!IsLayer(child)) FindText(child, child, area, found);
         return found;
     }
 
-    private void FindText(DependencyObject d, Rect area, bool onGlassOnly, List<(FrameworkElement, Rect)> into)
+    private void FindText(DependencyObject d, UIElement root, Rect area, List<GlassText> into)
     {
         if (d is UIElement { IsVisible: false }) return;
-        if (onGlassOnly && HasOwnSurface(d)) return;
+        if (HasOwnSurface(d)) return;
 
         Rect? text = d switch
         {
@@ -787,7 +842,7 @@ public class LiquidGlassPanel : Grid
                 var r = element.TransformToAncestor(this).TransformBounds(local);
                 r.Inflate(TextMargin, TextMargin);
                 r.Intersect(area);  // scrolled or clipped out of the panel
-                if (!r.IsEmpty) into.Add((element, r));
+                if (!r.IsEmpty) into.Add(new GlassText(element, r, root));
             }
             catch (InvalidOperationException)
             {
@@ -797,7 +852,7 @@ public class LiquidGlassPanel : Grid
         }
 
         for (int i = 0, n = VisualTreeHelper.GetChildrenCount(d); i < n; i++)
-            FindText(VisualTreeHelper.GetChild(d, i), area, onGlassOnly, into);
+            FindText(VisualTreeHelper.GetChild(d, i), root, area, into);
     }
 
     /// <summary>Whether <paramref name="d"/> draws a surface of its own that its text sits on instead of the glass:
@@ -820,24 +875,190 @@ public class LiquidGlassPanel : Grid
         };
     }
 
-    // ── Text Color instead of a wash (ThemeSettings.LiquidGlassAdaptiveText) ──
-    // Text whose colour would be hard to read where it sits (light text over a bright spot in dark mode, dark text
-    // over a dark spot in light mode) turns to the other end of the grey scale, or secondary text to full strength,
-    // whichever reads better, and the glass stays clear. Only grey
-    // text (labels, icon glyphs, text boxes) on the glass itself changes: coloured text and text on a fill of its own
-    // keep their colour. The new colour is an animation on the element, so its own value, style or binding is left
-    // as it was and comes back when the animation is removed.
+    /// <summary>The sample cells (of w × h over the panel) that a rectangle of the panel touches.</summary>
+    private (int X0, int Y0, int X1, int Y1) CellsUnder(Rect r, int w, int h)
+    {
+        double cw = ActualWidth / w, ch = ActualHeight / h;
+        return (Math.Clamp((int)(r.Left / cw), 0, w - 1), Math.Clamp((int)(r.Top / ch), 0, h - 1),
+                Math.Clamp((int)Math.Ceiling(r.Right / cw) - 1, 0, w - 1), Math.Clamp((int)Math.Ceiling(r.Bottom / ch) - 1, 0, h - 1));
+    }
+
+    private static Color? ShownColor(FrameworkElement element) =>
+        (element.GetValue(TextElement.ForegroundProperty) as SolidColorBrush)?.Color;
+
+    /// <summary>Whether a colour is at the other end of the grey scale from the theme's text (dark in dark mode).</summary>
+    private static bool IsOtherSide(Color c, bool light) => light ? c.R + c.G + c.B > 3 * 128 : c.R + c.G + c.B < 3 * 128;
+
+    // ── Auto Dim only behind text (ThemeSettings.LiquidGlassDimTextOnly) ──
+    // Empty glass stays clear. Text that sits together (an icon, a title and its subtitle) gets one soft wash, as deep as
+    // its most demanding colour needs over the glass there (a lone title less than a grey line, accent text its own
+    // amount), fading out around it. The mask is finer than the samples (MaskDetail per sample along each side), so its
+    // edge follows the text instead of the sample grid, which drew blocky patches with stairs at their corners.
+
+    private const int MaskDetail = 4;
+
+    /// <summary>The wash behind the text, as a map of mw × mh over the panel. Text that Text Color turned to the other
+    /// end of the grey scale gets none: a wash would only make it harder to read.</summary>
+    private double[] WashBehindText(List<GlassText> texts, byte[] px, Rgb[] glass, int w, int h, out int mw, out int mh)
+    {
+        mw = w * MaskDetail;
+        mh = h * MaskDetail;
+        var mask = new double[mw * mh];
+        if (ActualWidth <= 0 || ActualHeight <= 0) return mask;
+        CheckScrimCaches();
+
+        bool light = ThemeService.IsLight;
+        var (scale, depth, maxScrim) = DimStrength();
+        var plain = PlainGlass();
+        var bg = Rgb.From((_base.Background as SolidColorBrush)?.Color ?? (light ? Colors.White : Colors.Black));
+        var primary = ResourceColor("TextPrimary", light ? Colors.Black : Colors.White);
+
+        // The text to wash behind, in the colour it shows (or is fading to); other brushes count as body text.
+        var items = new List<(Rect Bounds, Rgb Color, double Alpha, double Target, long Key)>();
+        foreach (var t in texts)
+        {
+            _adapted.TryGetValue(t.Element, out var adapted);
+            if (adapted != null && IsOtherSide(adapted.Target, light)) continue;
+            var color = adapted?.Target ?? ShownColor(t.Element) ?? primary;
+            double opacity = t.Element.GetValue(TextElement.ForegroundProperty) is Brush brush ? brush.Opacity : 1;
+            double alpha = color.A / 255.0 * opacity;
+            if (alpha < 0.15) continue;
+            var rgb = Rgb.From(color);
+            items.Add((t.Bounds, rgb, alpha, TargetFor(rgb, alpha, plain, scale),
+                (long)((uint)ToByte(alpha * 255) << 24 | (uint)(color.R << 16 | color.G << 8 | color.B)) << 24));
+        }
+
+        double cw = ActualWidth / w, ch = ActualHeight / h, mcw = ActualWidth / mw, mch = ActualHeight / mh;
+        foreach (var group in GroupRects(items.ConvertAll(i => i.Bounds)))
+        {
+            var box = items[group[0]].Bounds;
+            foreach (int i in group) box.Union(items[i].Bounds);
+            var colors = group.Select(i => items[i]).DistinctBy(i => i.Key).ToList();
+
+            // The scrim per sample in the box and one ring around it (the frost spreads a bright spot over its
+            // neighbours), for the colour there that needs the most; then per sample in the box the most around it.
+            var (x0, y0, x1, y1) = CellsUnder(box, w, h);
+            int rx0 = Math.Max(0, x0 - 1), ry0 = Math.Max(0, y0 - 1), rx1 = Math.Min(w - 1, x1 + 1), ry1 = Math.Min(h - 1, y1 + 1);
+            int rw = rx1 - rx0 + 1;
+            var ring = new double[rw * (ry1 - ry0 + 1)];
+            for (int y = ry0; y <= ry1; y++)
+                for (int x = rx0; x <= rx1; x++)
+                {
+                    int i = y * w + x;
+                    uint backdrop = (uint)((px[i * 4 + 2] << 16) | (px[i * 4 + 1] << 8) | px[i * 4]);
+                    double s = 0;
+                    foreach (var c in colors)
+                    {
+                        if (!_needByText.TryGetValue(c.Key | backdrop, out var v))
+                            _needByText[c.Key | backdrop] = v = LeastScrim(glass[i], bg, c.Color, c.Alpha, c.Target, maxScrim) * depth;
+                        s = Math.Max(s, v);
+                    }
+                    ring[(y - ry0) * rw + (x - rx0)] = s;
+                }
+            int nw = x1 - x0 + 1, nh = y1 - y0 + 1;
+            var need = new double[nw * nh];
+            double most = 0;
+            for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
+                {
+                    double m = 0;
+                    for (int ny = Math.Max(ry0, y - 1); ny <= Math.Min(ry1, y + 1); ny++)
+                        for (int nx = Math.Max(rx0, x - 1); nx <= Math.Min(rx1, x + 1); nx++)
+                            m = Math.Max(m, ring[(ny - ry0) * rw + (nx - rx0)]);
+                    need[(y - y0) * nw + (x - x0)] = m;
+                    most = Math.Max(most, m);
+                }
+            if (most < 0.02) continue;
+
+            // Into the mask: in full over the box (between the samples there), fading out within the feather around it.
+            double feather = Math.Clamp(Math.Min(box.Width, box.Height) * 0.5, 6, 16);
+            int mx0 = Math.Max(0, (int)((box.Left - feather) / mcw)), mx1 = Math.Min(mw - 1, (int)((box.Right + feather) / mcw));
+            int my0 = Math.Max(0, (int)((box.Top - feather) / mch)), my1 = Math.Min(mh - 1, (int)((box.Bottom + feather) / mch));
+            for (int my = my0; my <= my1; my++)
+            {
+                double py = (my + 0.5) * mch, dy = Math.Max(Math.Max(box.Top - py, py - box.Bottom), 0);
+                double sy = Math.Clamp(py, box.Top, box.Bottom) / ch - 0.5 - y0;
+                for (int mx = mx0; mx <= mx1; mx++)
+                {
+                    double qx = (mx + 0.5) * mcw, dx = Math.Max(Math.Max(box.Left - qx, qx - box.Right), 0);
+                    double d = Math.Sqrt(dx * dx + dy * dy) / feather;
+                    if (d >= 1) continue;
+                    double v = (1 - d * d * (3 - 2 * d)) * Between(need, nw, nh, Math.Clamp(qx, box.Left, box.Right) / cw - 0.5 - x0, sy);
+                    int mi = my * mw + mx;
+                    if (v > mask[mi]) mask[mi] = v;
+                }
+            }
+        }
+        return mask;
+    }
+
+    /// <summary>The least scrim (in steps of 0.04, up to <paramref name="max"/>) that lets text of this colour reach the
+    /// target on this glass; 0 when it already does, or when a wash wouldn't help it (text on the wash's side).</summary>
+    private static double LeastScrim(Rgb glass, Rgb bg, Rgb text, double alpha, double target, double max)
+    {
+        double Reads(double s)
+        {
+            var c = glass.Toward(bg, s);
+            return Contrast(c.Luminance, c.Toward(text, alpha).Luminance);
+        }
+        double now = Reads(0);
+        if (now >= target || Reads(max) <= now) return 0;
+        double scrim = 0.04;
+        for (; scrim < max; scrim += 0.04)
+            if (Reads(scrim) >= target) break;
+        return Math.Min(scrim, max);
+    }
+
+    /// <summary>A value between the cells of a small map (nw × nh), at a point in cell units (kept on the map).</summary>
+    private static double Between(double[] map, int nw, int nh, double x, double y)
+    {
+        x = Math.Clamp(x, 0, nw - 1);
+        y = Math.Clamp(y, 0, nh - 1);
+        int ix = (int)x, iy = (int)y, jx = Math.Min(ix + 1, nw - 1), jy = Math.Min(iy + 1, nh - 1);
+        double fx = x - ix, fy = y - iy;
+        double top = map[iy * nw + ix] + (map[iy * nw + jx] - map[iy * nw + ix]) * fx;
+        double bottom = map[jy * nw + ix] + (map[jy * nw + jx] - map[jy * nw + ix]) * fx;
+        return top + (bottom - top) * fy;
+    }
+
+    // ── Text Color (ThemeSettings.LiquidGlassAdaptiveText) ──
+    // Grey text whose colour would be hard to read where it sits (light text over a bright spot in dark mode, dark text
+    // over a dark spot in light mode) changes: to the other end of the grey scale, keeping how strong it is (secondary
+    // text stays lighter than primary), or over a mid-grey spot to full strength on its own side, whichever lets all of
+    // it be read. Text that sits together (an icon and its label, a title and its subtitle) changes together, so a row
+    // never ends up in three colours. Only grey text on the glass itself changes: coloured text and text on a fill of
+    // its own keep their colour. The new colour is an animation on the element, so its own value, style or binding is
+    // left as it was and comes back when the animation is removed.
+
+    private enum TextScheme { Own, Flipped, Strong }
 
     private sealed class AdaptedText
     {
-        public bool Flipped;
-        public Color Target;  // the colour it shows, or fades to
-        public int Pass;      // the last AdaptText pass that found this text
+        public TextScheme Scheme;
+        public Color Target;     // the colour it shows, or fades to
+        public UIElement? Root;  // the content child it is in (UpdateTextShadows)
+        public int Pass;         // the last AdaptText pass that found this text
+    }
+
+    /// <summary>A piece of grey text Text Color may change: its colour in each scheme, the contrast it should reach and
+    /// the sample cells under it.</summary>
+    private sealed class TextChoice
+    {
+        public GlassText Text;
+        public Color Own, Flipped, Strong;
+        public double Alpha, Target;
+        public int X0, Y0, X1, Y1;
+        public AdaptedText? State;
+
+        public Color In(TextScheme s) => s switch { TextScheme.Flipped => Flipped, TextScheme.Strong => Strong, _ => Own };
     }
 
     private readonly Dictionary<FrameworkElement, AdaptedText> _adapted = new();
+    private readonly HashSet<UIElement> _unshadowed = new();  // content children without the text shadow for now (ShadowContent)
     private int _textPass;
-    private const double FlipMargin = 1.2;  // the other colour must read this much better before text changes (and back)
+    private const double FlipMargin = 1.2;        // a change must read this much better before text changes (and back)
+    private const double GroupGap = 4;            // text this close (past its TextMargin) belongs together…
+    private const double MaxGroupHeight = 56;     // … as long as the group stays about two lines tall (not a whole menu)
 
     /// <summary>Per sample, the colour of the glass (backdrop through the shader's colour shift, under the tint).</summary>
     private Rgb[] GlassColors(byte[] px, int count)
@@ -851,63 +1072,150 @@ public class LiquidGlassPanel : Grid
         return glass;
     }
 
-    /// <summary>Gives each piece of text on the glass the colour that reads best over the glass under it (w × h samples).</summary>
-    private void AdaptText(Rgb[] glass, int w, int h)
+    /// <summary>Gives each group of text on the glass the colours that read best over the glass under it (w × h samples).
+    /// <paramref name="mustRead"/>: Auto Dim washes behind whatever text keeps its colour, so text only changes when
+    /// that makes all of it readable.</summary>
+    private void AdaptText(List<GlassText> texts, Rgb[] glass, int w, int h, bool mustRead)
     {
         if (ActualWidth <= 0 || ActualHeight <= 0) return;
-        var area = new Rect(0, 0, ActualWidth, ActualHeight);
-        double cw = area.Width / w, ch = area.Height / h;
         bool light = ThemeService.IsLight;
-        // The strength slider sets how soon text changes: standard (0.5) as soon as it misses the body-text contrast.
-        double k = Math.Clamp(ThemeService.Current?.LiquidGlassDimStrength ?? 0.42, 0, 1);
-        double target = PrimaryContrast * (k < 0.5 ? 0.55 + 0.9 * k : 1 + 1.8 * (k - 0.5));
+        double scale = StrengthScale(ThemeService.Current?.LiquidGlassTextColorStrength ?? 0.5);
+        var plain = PlainGlass();
+        var primary = ResourceColor("TextPrimary", light ? Color.FromRgb(0x1D, 0x1D, 0x1F) : Color.FromRgb(0xF5, 0xF5, 0xF7));
         int pass = ++_textPass;
 
-        foreach (var (element, r) in FindText(area, onGlassOnly: true))
+        var choices = new List<TextChoice>();
+        foreach (var t in texts)
         {
-            if (element.GetAnimationBaseValue(TextElement.ForegroundProperty) is not SolidColorBrush own
+            if (t.Element.GetAnimationBaseValue(TextElement.ForegroundProperty) is not SolidColorBrush own
                 || FlippedColor(own.Color, light) is not { } flipped)
                 continue;
-            _adapted.TryGetValue(element, out var state);
-            if (state != null) state.Pass = pass;
-
-            // How well a colour reads on average over the glass under the text (the worst spot alone made a label next
-            // to a bright edge give up on every colour).
-            int x0 = Math.Clamp((int)(r.Left / cw), 0, w - 1), x1 = Math.Clamp((int)Math.Ceiling(r.Right / cw) - 1, 0, w - 1);
-            int y0 = Math.Clamp((int)(r.Top / ch), 0, h - 1), y1 = Math.Clamp((int)Math.Ceiling(r.Bottom / ch) - 1, 0, h - 1);
+            _adapted.TryGetValue(t.Element, out var state);
+            // Something else animates this text's colour (a hover fade): leave it to that.
+            if (state == null && !ReferenceEquals(t.Element.GetValue(TextElement.ForegroundProperty), own)) continue;
+            if (state != null)
+            {
+                state.Pass = pass;
+                state.Root = t.Root;
+            }
             double alpha = own.Color.A / 255.0 * own.Opacity;
-            double Reads(Color c)
+            var (x0, y0, x1, y1) = CellsUnder(t.Bounds, w, h);
+            choices.Add(new TextChoice
             {
-                var text = Rgb.From(c);
-                double sum = 0;
-                for (int y = y0; y <= y1; y++)
-                    for (int x = x0; x <= x1; x++)
-                    {
-                        var g = glass[y * w + x];
-                        sum += Contrast(g.Luminance, g.Toward(text, alpha).Luminance);
-                    }
-                return sum / ((x1 - x0 + 1) * (y1 - y0 + 1));
-            }
+                Text = t, Own = own.Color, Flipped = flipped, Strong = Color.FromArgb(own.Color.A, primary.R, primary.G, primary.B),
+                Alpha = alpha, Target = TargetFor(Rgb.From(own.Color), alpha, plain, scale),
+                X0 = x0, Y0 = y0, X1 = x1, Y1 = y1, State = state,
+            });
+        }
 
-            // Other colours to try: the other end of the grey scale, or (for secondary text) the full-strength text
-            // colour of its own side, which keeps a title and its subtitle alike over a mid-grey spot.
-            var strong = light ? Color.FromArgb(own.Color.A, 0x1C, 0x1C, 0x1E) : Color.FromArgb(own.Color.A, 0xFF, 0xFF, 0xFF);
-            double ownReads = Reads(own.Color), flippedReads = Reads(flipped), strongReads = Reads(strong);
-            var (best, bestReads) = flippedReads >= strongReads ? (flipped, flippedReads) : (strong, strongReads);
-
-            if (state?.Flipped == true)
+        foreach (var group in GroupRects(choices.ConvertAll(c => c.Text.Bounds)).Select(g => g.ConvertAll(i => choices[i])))
+        {
+            var next = ChooseScheme(group, glass, w, mustRead);
+            foreach (var c in group)
             {
-                // Stays changed until its own colour reads well again; moves to the other choice only if clearly better.
-                if (ownReads >= target * FlipMargin || ownReads >= bestReads) UnflipText(element, state, own.Color, animate: true);
-                else if (best != state.Target && bestReads > Reads(state.Target) * FlipMargin) ShowTextColor(element, state, own.Color, best, pass);
+                if (next != TextScheme.Own) ShowTextColor(c, next, pass);
+                else if (c.State != null) UnflipText(c.Text.Element, c.State, c.Own, animate: true);
             }
-            else if (ownReads < target && bestReads > ownReads * FlipMargin)
-                ShowTextColor(element, state, own.Color, best, pass);
         }
 
         // Text that has gone, is hidden or isn't grey any more: back to its own colour.
         foreach (var (element, state) in _adapted.ToArray())
             if (state.Pass != pass) UnflipText(element, state, null, animate: true);
+        UpdateTextShadows();
+    }
+
+    /// <summary>
+    /// The colours for a group: its own while all of it reads (back to them only with <see cref="FlipMargin"/> to
+    /// spare), otherwise the scheme with the fewest pieces that miss their target, then the best worst piece. A change
+    /// must read clearly better than its own colours, and holds while it does, so text doesn't flicker on the edge.
+    /// </summary>
+    private static TextScheme ChooseScheme(List<TextChoice> group, Rgb[] glass, int w, bool mustRead)
+    {
+        (int Misses, double Worst) Score(TextScheme s)
+        {
+            int misses = 0;
+            double worst = double.MaxValue;
+            foreach (var c in group)
+            {
+                double share = Reads(glass, w, c, c.In(s)) / c.Target;
+                if (share < 1) misses++;
+                worst = Math.Min(worst, share);
+            }
+            return (misses, worst);
+        }
+        static bool Better((int Misses, double Worst) a, (int Misses, double Worst) b, double margin)
+            => a.Misses < b.Misses || (a.Misses == b.Misses && a.Worst > b.Worst * margin);
+
+        var own = Score(TextScheme.Own);
+        var flipped = Score(TextScheme.Flipped);
+        // Full strength only changes secondary text; a group without any is the same as its own colours.
+        var strong = group.Any(c => c.Strong != c.Own) ? Score(TextScheme.Strong) : own;
+        var (best, bestScore) = Better(strong, flipped, 1) ? (TextScheme.Strong, strong) : (TextScheme.Flipped, flipped);
+        bool helps = mustRead ? bestScore.Misses == 0 : Better(bestScore, own, FlipMargin);
+
+        // What the group shows now (its pieces may have been found apart before).
+        var current = group.GroupBy(c => c.State?.Scheme ?? TextScheme.Own).OrderByDescending(g => g.Count()).First().Key;
+        if (current == TextScheme.Own)
+            return own.Misses > 0 && helps ? best : TextScheme.Own;
+
+        var now = current == TextScheme.Flipped ? flipped : strong;
+        if (own.Misses == 0 && own.Worst >= FlipMargin) return TextScheme.Own;     // reads well again as it is
+        if (mustRead ? now.Worst < 1 / FlipMargin : !Better(now, own, 1)) return helps ? best : TextScheme.Own;
+        return best != current && helps && Better(bestScore, now, FlipMargin) ? best : current;
+    }
+
+    /// <summary>How well a colour reads over the glass under a piece of text: the geometric mean of the contrast there
+    /// (the worst spot alone made a label next to a bright edge give up on every colour; a plain mean let a few very
+    /// dark spots hide a bright one).</summary>
+    private static double Reads(Rgb[] glass, int w, TextChoice c, Color color)
+    {
+        var text = Rgb.From(color);
+        double sum = 0;
+        int n = 0;
+        for (int y = c.Y0; y <= c.Y1; y++)
+            for (int x = c.X0; x <= c.X1; x++)
+            {
+                var g = glass[y * w + x];
+                sum += Math.Log(Contrast(g.Luminance, g.Toward(text, c.Alpha).Luminance));
+                n++;
+            }
+        return Math.Exp(sum / Math.Max(1, n));
+    }
+
+    /// <summary>Text that sits together: pieces closer than <see cref="GroupGap"/> (past their margins) join, as long as
+    /// the group stays within <see cref="MaxGroupHeight"/>: an icon and its label, a title and its subtitle, a line of
+    /// toolbar buttons, but not every row of a menu. The groups hold indices into <paramref name="rects"/>.</summary>
+    private static List<List<int>> GroupRects(List<Rect> rects)
+    {
+        var groups = rects.Select((_, i) => new List<int> { i }).ToList();
+        var bounds = new List<Rect>(rects);
+        bool Near(List<int> a, List<int> b)
+        {
+            foreach (int x in a)
+            {
+                var r = rects[x];
+                r.Inflate(GroupGap, GroupGap);
+                foreach (int y in b)
+                    if (r.IntersectsWith(rects[y])) return true;
+            }
+            return false;
+        }
+        for (bool merged = true; merged;)
+        {
+            merged = false;
+            for (int i = 0; i < groups.Count; i++)
+                for (int j = groups.Count - 1; j > i; j--)
+                {
+                    var union = Rect.Union(bounds[i], bounds[j]);
+                    if (union.Height > MaxGroupHeight || !Near(groups[i], groups[j])) continue;
+                    groups[i].AddRange(groups[j]);
+                    bounds[i] = union;
+                    groups.RemoveAt(j);
+                    bounds.RemoveAt(j);
+                    merged = true;
+                }
+        }
+        return groups;
     }
 
     /// <summary>The other end of the grey scale for the theme's text colour, keeping how strong it is (secondary text
@@ -923,32 +1231,40 @@ public class LiquidGlassPanel : Grid
         return Color.FromArgb(c.A, v, v, v);
     }
 
-    private void ShowTextColor(FrameworkElement element, AdaptedText? state, Color own, Color target, int pass)
+    private void ShowTextColor(TextChoice c, TextScheme scheme, int pass)
     {
+        var element = c.Text.Element;
+        var state = c.State;
         if (state == null)
         {
-            state = new AdaptedText { Pass = pass, Target = own };
+            state = new AdaptedText { Target = c.Own, Pass = pass, Root = c.Text.Root };
             _adapted[element] = state;
+            c.State = state;
         }
-        state.Flipped = true;
+        state.Scheme = scheme;
+        var target = c.In(scheme);
         if (state.Target == target) return;
-        FadeTextColor(element, state.Target, target, done: null);
+        FadeTextColor(element, ShownColor(element) ?? state.Target, target, done: null);
         state.Target = target;
     }
 
-    /// <summary>Fades the text back to <paramref name="own"/> (null = just remove the animation once faded or at once).</summary>
+    /// <summary>Fades the text back to <paramref name="own"/> (null = its own colour now) and then removes the
+    /// animation; at once when not animated or hidden.</summary>
     private void UnflipText(FrameworkElement element, AdaptedText state, Color? own, bool animate)
     {
-        state.Flipped = false;
+        bool returning = state.Scheme == TextScheme.Own;
+        state.Scheme = TextScheme.Own;
         void Release()
         {
-            if (state.Flipped || !_adapted.TryGetValue(element, out var current) || current != state) return;
+            if (state.Scheme != TextScheme.Own || !_adapted.TryGetValue(element, out var current) || current != state) return;
             element.BeginAnimation(TextElement.ForegroundProperty, null);
             _adapted.Remove(element);
+            UpdateTextShadows();
         }
         var back = own ?? (element.GetAnimationBaseValue(TextElement.ForegroundProperty) as SolidColorBrush)?.Color;
         if (!animate || back is not { } to || !element.IsVisible) { Release(); return; }
-        FadeTextColor(element, state.Target, to, done: Release);
+        if (returning && state.Target == to) return;  // already on its way back
+        FadeTextColor(element, ShownColor(element) ?? state.Target, to, done: Release);
         state.Target = to;
     }
 
@@ -960,24 +1276,44 @@ public class LiquidGlassPanel : Grid
             UnflipText(element, state, null, animate);
     }
 
-    private const int TextFadeSteps = 12;
+    /// <summary>A content child with text shown at the other end of the grey scale goes without the text shadow (a dark
+    /// shadow under dark text blurs it) until that text is back to its own colour.</summary>
+    private void UpdateTextShadows()
+    {
+        bool light = ThemeService.IsLight;
+        var other = new HashSet<UIElement>();
+        foreach (var (element, state) in _adapted)
+            if (state.Root != null && (IsOtherSide(state.Target, light) || ShownColor(element) is { } shown && IsOtherSide(shown, light)))
+                other.Add(state.Root);
+        if (other.SetEquals(_unshadowed)) return;
+        var changed = new HashSet<UIElement>(_unshadowed);
+        changed.SymmetricExceptWith(other);
+        _unshadowed.Clear();
+        _unshadowed.UnionWith(other);
+        foreach (var child in changed)
+            if (VisualTreeHelper.GetParent(child) == this) ShadowContent(child);
+    }
+
+    private const int TextFadeSteps = 16;
     private static readonly TimeSpan TextFadeDuration = TimeSpan.FromMilliseconds(350);
 
     /// <summary>
-    /// Fades the element's text from <paramref name="from"/> to <paramref name="to"/> and holds it there. An animation
-    /// freezes the brushes it holds, so one brush whose colour is animated wouldn't reach the text: the fade is a run of
-    /// frozen brushes along the way instead.
+    /// Fades the element's text from <paramref name="from"/> (what it shows now, so a fade that turns around halfway
+    /// doesn't jump) to <paramref name="to"/> and holds it there, in its own brush's opacity. An animation freezes the
+    /// brushes it holds, so one brush whose colour is animated wouldn't reach the text: the fade is a run of frozen
+    /// brushes along the way instead.
     /// </summary>
     private static void FadeTextColor(FrameworkElement element, Color from, Color to, Action? done)
     {
         int steps = SettingsService.Current.EnablePerformanceMode || from == to ? 1 : TextFadeSteps;
+        double opacity = (element.GetAnimationBaseValue(TextElement.ForegroundProperty) as Brush)?.Opacity ?? 1;
         var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
         var fade = new ObjectAnimationUsingKeyFrames();
         for (int i = 1; i <= steps; i++)
         {
             double t = steps == 1 ? 1 : ease.Ease((double)i / steps);
             var c = Color.FromArgb(Mix(from.A, to.A, t), Mix(from.R, to.R, t), Mix(from.G, to.G, t), Mix(from.B, to.B, t));
-            fade.KeyFrames.Add(new DiscreteObjectKeyFrame(Freeze(new SolidColorBrush(c)),
+            fade.KeyFrames.Add(new DiscreteObjectKeyFrame(Freeze(new SolidColorBrush(c) { Opacity = opacity }),
                 KeyTime.FromTimeSpan(steps == 1 ? TimeSpan.Zero : TextFadeDuration * ((double)i / steps))));
         }
         if (done != null) fade.Completed += (_, _) => done();
@@ -1428,3 +1764,6 @@ public class LiquidGlassPanel : Grid
 
     private static byte ToByte(double v) => (byte)Math.Clamp(Math.Round(v), 0, 255);
 }
+
+/// <summary>Which of the user's readability options a <see cref="LiquidGlassPanel"/> follows (<see cref="LiquidGlassPanel.Readability"/>).</summary>
+public enum GlassReadability { Settings, AutoDimOnly, TextColorOnly }

@@ -91,6 +91,15 @@
             </Setter>
         </Style>
 
+        <!-- Rows that only apply while a switch above them is on: faded while it is off -->
+        <Style x:Key="DimWhenDisabled" TargetType="StackPanel">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Highlight over the Software Update app icon (drawn on the accent fill, so a fixed white) -->
         <LinearGradientBrush x:Key="UpdateIconGloss" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#40FFFFFF" Offset="0"/>
@@ -631,8 +640,10 @@
                             <Button Style="{StaticResource Push}" HorizontalAlignment="Left" Margin="2,-10,0,0" Content="{DynamicResource PrefGlassResetDefault}"
                                     Click="ResetLiquidGlass_Click"/>
 
-                            <!-- Text readability: its own page (the wash that fades in behind text where the backdrop would wash it out) -->
-                            <Border Style="{StaticResource Group}" Margin="0,22,0,22">
+                            <!-- Text readability, two options with a page each: Auto Dim (a wash fades in behind text where the
+                                 backdrop would wash it out) and Text Color (the text itself changes colour); both can be on -->
+                            <TextBlock Style="{StaticResource Header}" Margin="2,22,0,8" Text="{DynamicResource PrefGlassReadabilityHeader}"/>
+                            <Border Style="{StaticResource Group}">
                                 <Button Style="{StaticResource NavRow}" Click="OpenGlassReadability_Click">
                                     <DockPanel Style="{StaticResource Row}">
                                         <ui:SymbolIcon Symbol="ChevronRight24" DockPanel.Dock="Right" FontSize="12" Margin="6,0,0,0"
@@ -648,6 +659,41 @@
                                     </DockPanel>
                                 </Button>
                             </Border>
+                            <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassAutoDimSub}"/>
+
+                            <Border Style="{StaticResource Group}">
+                                <Button Style="{StaticResource NavRow}" Click="OpenGlassTextColor_Click">
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <ui:SymbolIcon Symbol="ChevronRight24" DockPanel.Dock="Right" FontSize="12" Margin="6,0,0,0"
+                                                       Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TxtGlassTextColorValue" DockPanel.Dock="Right" Style="{StaticResource Value}"/>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Style="{StaticResource Label}" Margin="0" Text="{DynamicResource PrefGlassTextColor}"/>
+                                            <Border CornerRadius="4" Padding="4,0" Margin="6,1,0,0" VerticalAlignment="Center" BorderThickness="0.75"
+                                                    BorderBrush="{DynamicResource TextSec}" Opacity="0.6">
+                                                <TextBlock Text="{DynamicResource PrefBeta}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Button>
+                            </Border>
+                            <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassTextColorSub}"/>
+
+                            <!-- How often both look at the background: only while one of them is on -->
+                            <StackPanel x:Name="GlassSamplingSection" Style="{StaticResource DimWhenDisabled}">
+                                <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefGlassSampling}"/>
+                                <Border Style="{StaticResource Group}">
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <ComboBox x:Name="CmbGlassSampling" Width="200">
+                                            <ComboBoxItem Content="{DynamicResource PrefGlassSamplingTimer}" Tag="timer"/>
+                                            <ComboBoxItem Content="{DynamicResource PrefGlassSamplingChanges}" Tag="changes"/>
+                                            <ComboBoxItem Content="{DynamicResource PrefGlassSamplingBoth}" Tag="both"/>
+                                        </ComboBox>
+                                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefGlassSamplingRow}"/>
+                                    </DockPanel>
+                                </Border>
+                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassSamplingHelp}"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- ── Appearance → Liquid Glass → Text readability (sub-page of the sub-page) ── -->
@@ -694,6 +740,7 @@
                                         </StackPanel>
                                     </Grid>
                                     <controls:LiquidGlassPanel Surface="Popup" BackdropSource="{Binding ElementName=ReadabilityPreviewScene}"
+                                                               Readability="AutoDimOnly"
                                                                Height="62" CornerRadius="20" Margin="16,0,16,16" VerticalAlignment="Bottom">
                                         <StackPanel Margin="16,0" VerticalAlignment="Center">
                                             <TextBlock Text="{DynamicResource PrefReadabilityPreviewTitle}" FontSize="13" FontWeight="SemiBold"
@@ -713,36 +760,8 @@
                             </Border>
                             <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassAutoDimHelp}"/>
 
-                            <!-- Strength and how quickly it adapts: only while it is on -->
-                            <StackPanel IsEnabled="{Binding IsChecked, ElementName=ChkGlassAutoDim}">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.45"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <!-- Text Color: its own page (the text changes colour instead of the glass dimming) -->
-                                <Border Style="{StaticResource Group}" Margin="0,22,0,0">
-                                    <Button Style="{StaticResource NavRow}" Click="OpenGlassTextColor_Click">
-                                        <DockPanel Style="{StaticResource Row}">
-                                            <ui:SymbolIcon Symbol="ChevronRight24" DockPanel.Dock="Right" FontSize="12" Margin="6,0,0,0"
-                                                           Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtGlassTextColorValue" DockPanel.Dock="Right" Style="{StaticResource Value}"/>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock Style="{StaticResource Label}" Margin="0" Text="{DynamicResource PrefGlassTextColor}"/>
-                                                <Border CornerRadius="4" Padding="4,0" Margin="6,1,0,0" VerticalAlignment="Center" BorderThickness="0.75"
-                                                        BorderBrush="{DynamicResource TextSec}" Opacity="0.6">
-                                                    <TextBlock Text="{DynamicResource PrefBeta}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"/>
-                                                </Border>
-                                            </StackPanel>
-                                        </DockPanel>
-                                    </Button>
-                                </Border>
-                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassTextColorSub}"/>
-
+                            <!-- Strength and where it dims: only while it is on -->
+                            <StackPanel IsEnabled="{Binding IsChecked, ElementName=ChkGlassAutoDim}" Style="{StaticResource DimWhenDisabled}">
                                 <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefGlassDimStrength}"/>
                                 <Border Style="{StaticResource Group}">
                                     <StackPanel Margin="12,12,12,8">
@@ -764,23 +783,10 @@
                                     </DockPanel>
                                 </Border>
                                 <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassDimTextOnlyHelp}"/>
-
-                                <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefGlassSampling}"/>
-                                <Border Style="{StaticResource Group}">
-                                    <DockPanel Style="{StaticResource Row}">
-                                        <ComboBox x:Name="CmbGlassSampling" Width="200">
-                                            <ComboBoxItem Content="{DynamicResource PrefGlassSamplingTimer}" Tag="timer"/>
-                                            <ComboBoxItem Content="{DynamicResource PrefGlassSamplingChanges}" Tag="changes"/>
-                                            <ComboBoxItem Content="{DynamicResource PrefGlassSamplingBoth}" Tag="both"/>
-                                        </ComboBox>
-                                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefGlassSamplingRow}"/>
-                                    </DockPanel>
-                                </Border>
-                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassSamplingHelp}"/>
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- ── Liquid Glass → Auto Dim → Text Color (sub-page of Auto Dim) ── -->
+                        <!-- ── Appearance → Liquid Glass → Text Color (sub-page of the sub-page, next to Auto Dim) ── -->
                         <StackPanel x:Name="PaneGlassTextColor" Visibility="Collapsed">
                             <!-- Preview: one glass bar over a bright half and a dark half, a label over each, so the label
                                  over the half that washes it out changes colour while the other keeps its own -->
@@ -811,6 +817,7 @@
                                                  VerticalAlignment="Top" Margin="0,-55,0,0"/>
                                     </Grid>
                                     <controls:LiquidGlassPanel Surface="Popup" BackdropSource="{Binding ElementName=TextColorPreviewScene}"
+                                                               Readability="TextColorOnly"
                                                                Height="62" CornerRadius="20" Margin="16,0,16,16" VerticalAlignment="Bottom">
                                         <Grid Margin="16,0">
                                             <Grid.ColumnDefinitions>
@@ -841,6 +848,23 @@
                                 </DockPanel>
                             </Border>
                             <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassAdaptiveTextHelp}"/>
+
+                            <!-- How soon text changes: only while it is on -->
+                            <StackPanel IsEnabled="{Binding IsChecked, ElementName=ChkGlassAdaptiveText}" Style="{StaticResource DimWhenDisabled}">
+                                <TextBlock Style="{StaticResource Header}" Text="{DynamicResource PrefGlassDimStrength}"/>
+                                <Border Style="{StaticResource Group}">
+                                    <StackPanel Margin="12,12,12,8">
+                                        <Slider x:Name="SliderTextColorStrength" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                                VerticalAlignment="Center"/>
+                                        <Grid Margin="0,4,0,0">
+                                            <TextBlock Text="{DynamicResource PrefGlassDimSofter}" FontSize="11" Foreground="{DynamicResource TextSec}" HorizontalAlignment="Left"/>
+                                            <TextBlock x:Name="TxtTextColorStrengthState" FontSize="11" Foreground="{DynamicResource TextSec}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{DynamicResource PrefGlassDimStronger}" FontSize="11" Foreground="{DynamicResource TextSec}" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefGlassTextColorStrengthHelp}"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- ── Appearance → Colors (sub-page, opened from the row in Appearance) ── -->
