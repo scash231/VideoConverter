@@ -688,7 +688,6 @@
     <sys:String x:Key="PrefWhatsNewLoading">Загрузка новинок…</sys:String>
     <sys:String x:Key="PrefWhatsNewFailedTitle">Не удалось загрузить новинки</sys:String>
     <sys:String x:Key="PrefWhatsNewFailedDetail">Проверьте подключение к интернету и повторите попытку.</sys:String>
-    <sys:String x:Key="PrefWhatsNewOffline">Нет сети: показаны заметки с последней загрузки.</sys:String>
     <sys:String x:Key="PrefCurrentVersion">Текущая</sys:String>
 
     <!-- Обновление ПО -->

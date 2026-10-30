@@ -2061,8 +2061,6 @@
                                 <Button Style="{StaticResource Push}" HorizontalAlignment="Center" Margin="0,16,0,0"
                                         Content="{DynamicResource PrefUpdateTryAgain}" Click="WhatsNewRetry_Click"/>
                             </StackPanel>
-                            <TextBlock x:Name="TxtWhatsNewOffline" Style="{StaticResource Sub}" Margin="2,0,0,14" Visibility="Collapsed"
-                                       Text="{DynamicResource PrefWhatsNewOffline}"/>
                             <Border x:Name="WhatsNewList" Style="{StaticResource Group}" Visibility="Collapsed">
                                 <ItemsControl x:Name="VersionList" Focusable="False">
                                     <ItemsControl.ItemTemplate>

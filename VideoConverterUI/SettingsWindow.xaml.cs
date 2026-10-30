@@ -232,7 +232,7 @@ public partial class SettingsWindow : Window
 
     private ChangelogVersion? _openVersion;
 
-    /// <summary>Shows <see cref="WhatsNewService.Last"/>: loading (nothing yet), couldn't load, or the list (from the saved copy: noted).</summary>
+    /// <summary>Shows <see cref="WhatsNewService.Last"/>: loading (nothing yet), couldn't load, or the list.</summary>
     private void BindWhatsNew()
     {
         var result = WhatsNewService.Last;
@@ -241,7 +241,6 @@ public partial class SettingsWindow : Window
         WhatsNewLoading.Visibility = loading ? Visibility.Visible : Visibility.Collapsed;
         SetWhatsNewSpinner(loading && _activePane == PaneWhatsNew);
         WhatsNewFailed.Visibility = failed ? Visibility.Visible : Visibility.Collapsed;
-        TxtWhatsNewOffline.Visibility = result is { FromCache: true } ? Visibility.Visible : Visibility.Collapsed;
         WhatsNewList.Visibility = loading || failed ? Visibility.Collapsed : Visibility.Visible;
         VersionList.ItemsSource = result?.Versions
             .Select(v => new WhatsNewVersionRow(v, ReleaseCount(v.Releases.Count)))
