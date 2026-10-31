@@ -39,14 +39,6 @@ public sealed class LiquidGlassEffect : ShaderEffect
         float  reflectWidth : register(c12);
         float2 arms       : register(c13);   // backwards-L shape: right arm width, bottom arm height (0 = rounded rect)
 
-        // Poisson disc for the frost, unit radius.
-        static const float2 taps[12] =
-        {
-            float2(-0.326, -0.406), float2(-0.840, -0.074), float2(-0.696, 0.457), float2(-0.203, 0.621),
-            float2( 0.962, -0.195), float2( 0.473, -0.480), float2( 0.519, 0.767), float2( 0.185, -0.893),
-            float2( 0.507, 0.064), float2( 0.896, 0.412), float2(-0.322, -0.933), float2(-0.792, -0.598)
-        };
-
         // Rounded rect with superellipse (n = 4) corners like SquircleBorder: 0 on the edge, negative inside.
         // Fully rounded (r = half the short side) it is a circle / capsule (n = 2), also like SquircleBorder.
         // Not an exact distance in the corners, close enough for a few pixels around the edge.
@@ -92,8 +84,10 @@ public sealed class LiquidGlassEffect : ShaderEffect
             n = n / max(length(n), 0.0001);
 
             // Convex bevel (quarter circle): flat in the middle, steepest at the edge. Sampling outward squeezes the
-            // backdrop from just beyond the edge into the rim, the way a glass lens wraps its surroundings.
-            float b = max(bevel, 1);
+            // backdrop from just beyond the edge into the rim, the way a glass lens wraps its surroundings. Like
+            // Apple's, the lens is about as wide as the corner is round (at least about half the radius), so a
+            // round button bends most of its face and the bend runs out gently instead of streaking in a hairline.
+            float b = max(bevel, min(r, min(h.x, h.y)) * 0.55);
             float t = saturate(1 + d / b);
             float bend = 1 - sqrt(saturate(1 - t * t));
             float2 shift = n * refraction * bend / s;
@@ -115,13 +109,22 @@ public sealed class LiquidGlassEffect : ShaderEffect
             }
             rim /= 5;
 
+            // Frost: 16 taps on a golden-angle spiral with Gaussian weights, a smooth blur rather than the stairs and
+            // ghost copies of a few even disc taps (a bright line behind the glass showed as two or three).
             float4 frosted = 0;
-            for (int i = 0; i < 12; i++)
-                frosted += tex2D(input, at + taps[i] * frost / s);
-            frosted /= 12;
+            float weights = 0;
+            for (int i = 0; i < 16; i++)
+            {
+                float rr = sqrt((i + 0.5) / 16);
+                float w = exp(-2.2 * rr * rr);
+                frosted += w * tex2D(input, at + float2(cos(i * 2.39996), sin(i * 2.39996)) * rr * frost / s);
+                weights += w;
+            }
+            frosted /= weights;
 
-            // Frosted to clear across the whole bevel, so where the bend begins doesn't show as a line.
-            float4 c = lerp(frosted, rim, smoothstep(0.0, 1.0, t));
+            // Frosted to clear towards the edge, so where the bend begins doesn't show as a line; the outer part of
+            // the (now wider) bevel stays sharp so the bend reads.
+            float4 c = lerp(frosted, rim, smoothstep(0.25, 1.0, t));
 
             // Reflection: the colour of what lies beyond the edge (from 40 % to 100 % of reflectReach out) spills into
             // a soft band inside it, like bright surroundings mirrored in thick glass. It reaches across gaps the lens
@@ -140,11 +143,16 @@ public sealed class LiquidGlassEffect : ShaderEffect
             float l = dot(c.rgb, float3(0.2126, 0.7152, 0.0722));
             c.rgb = lerp(l.xxx, c.rgb, saturation) * brightness;
 
-            // Rim light: key light from the top-left, a weaker reflection on the opposite side.
-            float facing = dot(n, float2(-0.51, -0.86));
-            float lit = facing * facing * lerp(0.55, 1.0, step(0, facing));
-            float edgeLine = saturate(1 - abs(d + 1.0) / 1.2);
-            c.rgb += highlight * (edgeLine * (0.3 + 0.7 * lit) + 0.45 * t * t * t * lit) * c.a;
+            // Specular rim like iOS: a crisp hairline right inside the edge with a soft glow under it, bright towards
+            // the top-left and bottom-right corners and fading to a faint line towards the other two. Where along the
+            // edge a point lies counts as much as which way the edge faces, so a straight edge fades along its length
+            // (bright at the lit corner, dim at the far one) the way Apple's does; on a circle both are the normal.
+            float2 dir = normalize(n + 0.8 * p / max(h, 1));
+            float facing = dot(dir, float2(-0.7071, -0.7071));
+            float lit = pow(saturate(facing), 2.5) + 0.8 * pow(saturate(-facing), 2.5);
+            float edgeLine = saturate(1 - abs(d + 0.75) / 0.85);
+            float glow = exp(min(d, 0) / 3.0) * (1 - edgeLine);
+            c.rgb += highlight * (edgeLine * (0.2 + 1.5 * lit) + 0.5 * glow * lit) * c.a;
             c.rgb = min(c.rgb, c.a);
             return c;
         }

@@ -59,6 +59,7 @@ public class LiquidGlassPanel : Grid
     private int _frontScrim;
     private double[]? _shownNeed;  // the mask the front scrim shows, per sample (null = no scrim)
     private double _glassSaturation = 1, _glassBrightness = 1;  // what the shader does to the backdrop's colours
+    private bool _liquidOn;  // the shader draws the glass (and its rim)
     private readonly DispatcherTimer _sampler = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(400) };
     // Sampling on changes (Settings → Developer, AppSettings.GlassSamplingMode): a one-shot that a scroll, a resize or
     // the panel moving arms; while changes keep coming it samples about every ChangeDelay.
@@ -130,9 +131,10 @@ public class LiquidGlassPanel : Grid
         nameof(OutlineBrush), typeof(Brush), typeof(LiquidGlassPanel),
         new PropertyMetadata(null, (d, e) =>
         {
-            var outline = ((LiquidGlassPanel)d)._outline;
-            if (e.NewValue is Brush brush) outline.BorderBrush = brush;
-            else outline.SetResourceReference(SquircleBorder.BorderBrushProperty, "Tint1F");
+            var panel = (LiquidGlassPanel)d;
+            if (e.NewValue is Brush brush) panel._outline.BorderBrush = brush;
+            else panel._outline.SetResourceReference(SquircleBorder.BorderBrushProperty, "Tint1F");
+            panel.UpdateOutlineOpacity();
         }));
 
     /// <summary>Tuning set in <see cref="GlassTuning"/> (see <see cref="GlassSurfaces"/>).</summary>
@@ -1690,6 +1692,8 @@ public class LiquidGlassPanel : Grid
             _picture.Visibility = Visibility.Collapsed;
             _overlayHost.Visibility = Visibility.Collapsed;
             _rim.Visibility = Visibility.Collapsed;
+            _liquidOn = false;
+            UpdateOutlineOpacity();
             _tint.SetResourceReference(Border.BackgroundProperty, "PopupBg");
             return;
         }
@@ -1736,11 +1740,26 @@ public class LiquidGlassPanel : Grid
 
         UpdateClip(EffectiveRadius(p));
 
+        _liquidOn = liquid;
+        UpdateOutlineOpacity();
+
         // Liquid glass needs only a whisper of tint; the frosted fallback needs a denser one to stay legible.
         var alpha = ToByte(liquid ? p.TintAlpha : p.FallbackTintAlpha);
         _tint.Background = new SolidColorBrush(light
             ? Color.FromArgb(alpha, 0xF8, 0xF8, 0xFA)
             : Color.FromArgb(alpha, 0x1C, 0x1C, 0x20));
+    }
+
+    /// <summary>
+    /// On Liquid glass the shader draws the rim the way iOS does (bright towards two corners, faint between), and an
+    /// even grey outline over it flattened that into a plain ring. So a neutral outline (the default, or a border's
+    /// white/black tint) goes in dark mode and stays only faintly in light mode, where it keeps white glass apart
+    /// from a white background. A coloured one (hover accent, error red) means something and stays.
+    /// </summary>
+    private void UpdateOutlineOpacity()
+    {
+        bool neutral = OutlineBrush == null || OutlineBrush is SolidColorBrush { Color: var c } && c.R == c.G && c.G == c.B;
+        _outline.Opacity = !_liquidOn || !neutral ? 1 : ThemeService.IsLight ? 0.5 : 0;
     }
 
     /// <summary>

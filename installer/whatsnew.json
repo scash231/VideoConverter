@@ -5,6 +5,20 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.28.2",
+          "date": "2026-11-01",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "Liquid Glass edges look like iOS now: a thin, bright line towards the top-left and bottom-right corners that fades almost away towards the other two, instead of an even grey ring all the way round. Coloured outlines, like the accent outline on a clickable notification, stay as they were.",
+                "The glass bends the background more like Apple's: the curve near the edge is wider and smoother, so round buttons bend most of their face, instead of squeezing it into a streak right at the edge.",
+                "The frosted middle of the glass is a smooth blur. Something sharp behind it, like a bright line, no longer shows as two or three stepped copies."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.28.1",
           "date": "2026-10-29",
           "sections": [
