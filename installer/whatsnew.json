@@ -5,6 +5,24 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.28.3",
+          "date": "2026-11-01",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "Settings → Glass & Layout → Toolbar buttons now previews the real thing: Liquid Glass capsules like the main window's header, with minimize and close on a capsule of their own, instead of the old flat pills. (27H1.28.2.1)"
+              ]
+            },
+            {
+              "title": "Fixed",
+              "items": [
+                "When graphics rendering failed, \"Notification Window Exception Error\" dialogs kept opening and the app stopped working. It now restarts by itself and tells you; if rendering fails again right away, it runs that session without graphics acceleration."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.28.2",
           "date": "2026-11-01",
           "sections": [

@@ -511,6 +511,7 @@ public partial class NotificationWindow : Window
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error showing custom notification window: {ex}");
+                    if (RenderRecovery.TryRecover(ex)) return;
                     FallbackToMessageBox(message, ex, type);
                 }
             });
@@ -522,8 +523,14 @@ public partial class NotificationWindow : Window
         }
     }
 
+    private static bool _fallbackShown;
+
     private static void FallbackToMessageBox(string originalNotificationMessage, Exception ex, NotificationType type)
     {
+        // Whatever stopped this banner probably stops the next one too: one dialog is enough, not one per banner.
+        if (_fallbackShown) return;
+        _fallbackShown = true;
+
         try
         {
             var title = "Notification Window Exception Error";

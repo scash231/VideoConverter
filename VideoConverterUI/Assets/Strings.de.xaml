@@ -841,5 +841,6 @@
     <sys:String x:Key="PrefBannerSampleInfoMsg">So sehen Info-Banner aus.</sys:String>
     <sys:String x:Key="PrefBannerSampleErrorMsg">So sehen Fehler aus.</sys:String>
     <sys:String x:Key="PrefBannerSampleDoneMsg">So sehen fertige Downloads aus.</sys:String>
+    <sys:String x:Key="RenderRestarted">VideoConverter wurde nach einem Grafikfehler neu gestartet. Laufende Downloads wurden abgebrochen.</sys:String>
 </ResourceDictionary>
 

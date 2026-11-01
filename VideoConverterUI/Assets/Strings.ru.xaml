@@ -844,4 +844,5 @@
     <sys:String x:Key="PrefBannerSampleInfoMsg">Так выглядят информационные баннеры.</sys:String>
     <sys:String x:Key="PrefBannerSampleErrorMsg">Так выглядят ошибки.</sys:String>
     <sys:String x:Key="PrefBannerSampleDoneMsg">Так выглядят завершённые загрузки.</sys:String>
+    <sys:String x:Key="RenderRestarted">VideoConverter перезапущен после ошибки графики. Текущие загрузки остановлены.</sys:String>
 </ResourceDictionary>

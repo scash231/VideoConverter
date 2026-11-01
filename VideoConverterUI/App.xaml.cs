@@ -13,8 +13,10 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        // Enforce WPF DirectX hardware rendering acceleration
-        System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
+        // Enforce WPF DirectX hardware rendering acceleration (software once it has failed twice in a row)
+        System.Windows.Media.RenderOptions.ProcessRenderMode = RenderRecovery.UseSoftwareRendering
+            ? System.Windows.Interop.RenderMode.SoftwareOnly
+            : System.Windows.Interop.RenderMode.Default;
         // Load (or, the very first time, compile) the Liquid Glass shader in the background, so the first glass
         // window doesn't stall its opening animation for it.
         Controls.LiquidGlassEffect.Warmup();
@@ -25,6 +27,7 @@ public partial class App : Application
         Controls.GlassContextMenus.Register();
         Animations.ScrollBarAutoHide.Register();
         base.OnStartup(e);
+        RenderRecovery.AnnounceRestart();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -36,10 +39,12 @@ public partial class App : Application
 
     private void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        e.Handled = true;
+        if (RenderRecovery.TryRecover(e.Exception)) return;
+
         var msg = e.Exception.ToString();
         if (e.Exception.InnerException is not null)
             msg = e.Exception.InnerException.ToString() + "\n\n" + msg;
         NotificationWindow.Show(msg, null, NotificationType.Error);
-        e.Handled = true;
     }
 }
