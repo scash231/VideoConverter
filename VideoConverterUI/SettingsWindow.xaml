@@ -187,11 +187,9 @@
             <!-- ═══ Sidebar ═══ -->
             <!-- Liquid Glass (surface "Sidebar") floating over the content: the content area runs on underneath it
                  (ContentHost spans both columns), so pages sliding left during a push/pop pass under the glass, and the
-                 lensing rim catches the colour and light of the cards next to it. The Border carries the shadow. -->
+                 lensing rim catches the colour and light of the cards next to it. The GlassShadow draws its shadow. -->
             <Border Grid.Column="0" Margin="8" Panel.ZIndex="1">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.14"/>
-                </Border.Effect>
+            <controls:GlassShadow>
             <controls:LiquidGlassPanel Surface="Sidebar" BackdropSource="{Binding ElementName=ContentLayer}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,12,0,12">
                     <StackPanel x:Name="NavList">
@@ -281,6 +279,7 @@
                     </StackPanel>
                 </ScrollViewer>
             </controls:LiquidGlassPanel>
+            </controls:GlassShadow>
             </Border>
 
             <!-- ═══ Pane ═══ -->
@@ -294,33 +293,31 @@
 
                 <!-- Close button: a small Liquid Glass circle (surface "Button") floating over the content, top right.
                      Its backdrop is the scroll area under it; the content also gets a round hole behind it
-                     (ClipContentAroundClose), so only the glass's copy of it shows there. The Border carries the shadow. -->
+                     (ClipContentAroundClose), so only the glass's copy of it shows there. The GlassShadow draws its shadow. -->
                 <Border x:Name="CloseGlass" Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="5" Width="28" Height="28"
                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,14,0">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
-                    </Border.Effect>
+                    <controls:GlassShadow>
                     <controls:LiquidGlassPanel Surface="Button" CornerRadius="14" BackdropSource="{Binding ElementName=ContentLayer}">
                         <Button Style="{StaticResource IconBtn}" Width="28" Height="28" Padding="0"
                                 ToolTip="{DynamicResource PrefClose}" Click="Close_Click">
                             <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource TextPrimary}"/>
                         </Button>
                     </controls:LiquidGlassPanel>
+                    </controls:GlassShadow>
                 </Border>
 
                 <!-- Back button of a sub-page (e.g. Appearance → Liquid Glass): the close button's twin on the left,
                      with a round hole behind it in the content too (ClipContentAroundClose). -->
                 <Border x:Name="BackGlass" Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="5" Width="28" Height="28"
                         HorizontalAlignment="Left" VerticalAlignment="Top" Margin="214,12,0,0" Visibility="Collapsed">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
-                    </Border.Effect>
+                    <controls:GlassShadow>
                     <controls:LiquidGlassPanel Surface="Button" CornerRadius="14" BackdropSource="{Binding ElementName=ContentLayer}">
                         <Button Style="{StaticResource IconBtn}" Width="28" Height="28" Padding="0"
                                 ToolTip="{DynamicResource PrefBack}" Click="Back_Click">
                             <ui:SymbolIcon Symbol="ChevronLeft24" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
                         </Button>
                     </controls:LiquidGlassPanel>
+                    </controls:GlassShadow>
                 </Border>
                 <!-- Title of the pane shown (the sidebar name, or a sub-page's own title); set in ShowPane / OpenSubPage -->
                 <TextBlock x:Name="TxtPaneTitle" Grid.Row="0" Panel.ZIndex="5" IsHitTestVisible="False" Text="{DynamicResource PrefGeneral}"

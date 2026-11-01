@@ -31,10 +31,8 @@
                 </TransformGroup>
             </services:SquircleBorder.RenderTransform>
 
-            <services:SquircleBorder.Effect>
-                <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.18"/>
-            </services:SquircleBorder.Effect>
 
+            <controls:GlassShadow>
             <controls:LiquidGlassPanel x:Name="CardGrid" Surface="Notification">
                 <!-- Main Content Area (sharpens out of a blur during the fly-in) -->
                 <Grid x:Name="ContentArea" Margin="16,12,14,18">
@@ -77,6 +75,7 @@
                 </Border>
 
             </controls:LiquidGlassPanel>
+            </controls:GlassShadow>
         </services:SquircleBorder>
     </Grid>
 </Window>

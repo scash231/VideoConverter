@@ -200,12 +200,14 @@
                                 <Grid x:Name="PopupHost">
                                     <Border Style="{StaticResource ComboMenuSurface}"
                                         MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                        <controls:GlassShadow>
                                         <controls:LiquidGlassPanel Surface="Dropdown">
                                             <ScrollViewer Margin="5" SnapsToDevicePixels="True" VerticalScrollBarVisibility="Auto">
                                                 <StackPanel IsItemsHost="True"
                                                             KeyboardNavigation.DirectionalNavigation="Contained"/>
                                             </ScrollViewer>
                                         </controls:LiquidGlassPanel>
+                                        </controls:GlassShadow>
                                     </Border>
                                 </Grid>
                             </Popup>
@@ -654,9 +656,7 @@
                         <!-- Add links: a pill that grows to the left into a link field when clicked and folds back once the
                              links are loaded (or on Esc / clicking away while empty): SetLinkFieldOpen -->
                         <Border x:Name="AddLinksGlass" Height="32" Margin="0,0,8,0">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
-                            </Border.Effect>
+                            <controls:GlassShadow>
                             <controls:LiquidGlassPanel Surface="Button" CornerRadius="16" BackdropSource="{Binding ElementName=TitleBackdrop}">
                                 <StackPanel Orientation="Horizontal" Margin="2,0">
                                     <Button x:Name="BtnAddLinks" Style="{StaticResource TitlePillBtn}" Click="AddLinks_Click"
@@ -702,13 +702,12 @@
                                     </Canvas>
                                 </StackPanel>
                             </controls:LiquidGlassPanel>
+                            </controls:GlassShadow>
                         </Border>
 
                         <!-- Queue Options (its glass capsule springs open with the popup: AnimateOptionsPillOpen) -->
                         <Border x:Name="OptionsGlass" Height="32" Margin="0,0,8,0">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
-                            </Border.Effect>
+                            <controls:GlassShadow>
                             <controls:LiquidGlassPanel Surface="TitleButton" CornerRadius="16" BackdropSource="{Binding ElementName=TitleReflections}">
                                 <Button x:Name="BtnBatchOptions" Style="{StaticResource TitlePillBtn}" Margin="2" Click="BatchOptions_Click"
                                         ToolTip="Queue options: parallel downloads, cloud upload, automation">
@@ -718,13 +717,12 @@
                                     </StackPanel>
                                 </Button>
                             </controls:LiquidGlassPanel>
+                            </controls:GlassShadow>
                         </Border>
 
                         <!-- Save & exit -->
                         <Border Height="32" Margin="0,0,10,0">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
-                            </Border.Effect>
+                            <controls:GlassShadow>
                             <controls:LiquidGlassPanel Surface="TitleButton" CornerRadius="16" BackdropSource="{Binding ElementName=TitleReflections}">
                                 <Button x:Name="BtnSaveAndExit" Style="{StaticResource TitlePillBtn}" Margin="2" Click="SaveAndExit_Click"
                                         ToolTip="Save the queue and close (restored next time)">
@@ -734,13 +732,12 @@
                                     </StackPanel>
                                 </Button>
                             </controls:LiquidGlassPanel>
+                            </controls:GlassShadow>
                         </Border>
 
                         <!-- Window controls -->
                         <Border Height="32">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
-                            </Border.Effect>
+                            <controls:GlassShadow>
                             <controls:LiquidGlassPanel Surface="TitleButton" CornerRadius="16" BackdropSource="{Binding ElementName=TitleReflections}">
                                 <StackPanel Orientation="Horizontal" Margin="2,0" VerticalAlignment="Center">
                                     <Button Style="{StaticResource GlassRoundBtn}" Click="Minimize_Click" ToolTip="{DynamicResource TipMinimize}">
@@ -751,6 +748,7 @@
                                     </Button>
                                 </StackPanel>
                             </controls:LiquidGlassPanel>
+                            </controls:GlassShadow>
                         </Border>
                     </StackPanel>
                 </Grid>
@@ -777,15 +775,11 @@
                     </Grid.RowDefinitions>
 
                     <!-- ═══════════ FLOATING HEADER: toolbar on Liquid Glass (surface "Toolbar") ═══════════
-                         Same layering as the footer; the queue scrolls underneath both. The Border carries the shadow. -->
+                         Same layering as the footer; the queue scrolls underneath both. -->
                     <Grid x:Name="HeaderHost" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Top" Margin="18,6,18,0" Panel.ZIndex="5">
                         <!-- The shadow comes from a plain shape under the glass: as the parent's effect it was redrawn every time
                              the queue behind the glass moved (a large share of the scrolling cost) -->
-                        <Border CornerRadius="20" Background="{DynamicResource BgDeep}" IsHitTestVisible="False">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.22"/>
-                            </Border.Effect>
-                        </Border>
+                        <controls:GlassShadow CornerRadius="20" BlurRadius="24" ShadowDepth="4" ShadowOpacity="0.22"/>
                     <controls:LiquidGlassPanel Surface="Toolbar" CornerRadius="20" BackdropSource="{Binding ElementName=QueueSection}">
                         <StackPanel Margin="7">
                             <!-- ═══════════ TOOLBAR: SELECTION, QUALITY, CLOUD, SAVE FOLDER ═══════════ -->
@@ -1431,15 +1425,11 @@
                     </Grid>
 
                     <!-- ═══════════ FLOATING FOOTER: Liquid Glass bar (surface "Toolbar") over the queue ═══════════
-                         The glass shows a live copy of the queue scrolling behind it. The Border carries the shadow. -->
+                         The glass shows a live copy of the queue scrolling behind it. -->
                     <Grid x:Name="FooterHost" Grid.Row="0" Grid.RowSpan="4" VerticalAlignment="Bottom" Margin="18,0,18,18" Panel.ZIndex="5">
                         <!-- The shadow comes from a plain shape under the glass: as the parent's effect it was redrawn every time
                              the queue behind the glass moved (a large share of the scrolling cost) -->
-                        <Border CornerRadius="24" Background="{DynamicResource BgDeep}" IsHitTestVisible="False">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.22"/>
-                            </Border.Effect>
-                        </Border>
+                        <controls:GlassShadow CornerRadius="24" BlurRadius="24" ShadowDepth="4" ShadowOpacity="0.22"/>
                     <controls:LiquidGlassPanel Surface="Toolbar" CornerRadius="24" BackdropSource="{Binding ElementName=QueueSection}">
                         <Grid Margin="16,8,8,8">
                             <Grid.ColumnDefinitions>

@@ -29,8 +29,8 @@ namespace VideoConverterUI.Controls;
 /// the owner's content. A panel inside the window it should show needs an explicit BackdropSource that does not
 /// contain the panel (a VisualBrush can't show itself). <see cref="BackdropOverlay"/> adds something of the panel's
 /// own behind the glass, over that backdrop. <see cref="LiquidGlass"/> turns an existing Border into one.
-/// The panel also drives its parent's drop shadow (ShadowBlur/Depth/Opacity), so a parent that clips nothing can
-/// carry the shadow the clipped panel can't.
+/// The panel also drives a parent <see cref="GlassShadow"/> (ShadowBlur/Depth/Opacity, outline), which draws the shadow
+/// the clipped panel can't.
 /// </summary>
 public class LiquidGlassPanel : Grid
 {
@@ -1630,6 +1630,11 @@ public class LiquidGlassPanel : Grid
     {
         if (ActualWidth <= 0 || ActualHeight <= 0) return;
         bool l = IsLShape;
+        if (VisualTreeHelper.GetParent(this) is GlassShadow shadow)
+        {
+            shadow.CornerRadius = radius;
+            shadow.ReverseLArms = l ? ReverseLArms : Size.Empty;
+        }
         if (l)
         {
             var shape = BuildLShape(radius);
@@ -1677,13 +1682,12 @@ public class LiquidGlassPanel : Grid
             _scrims[0].Background = _scrims[1].Background = _base.Background;
         }
 
-        // Style setters freeze their effects, so the parent's shadow is replaced rather than edited.
-        if (VisualTreeHelper.GetParent(this) is UIElement { Effect: DropShadowEffect } parent)
-            parent.Effect = new DropShadowEffect
-            {
-                BlurRadius = p.ShadowBlur, ShadowDepth = p.ShadowDepth, Direction = 270,
-                Color = Colors.Black, Opacity = p.ShadowOpacity
-            };
+        if (VisualTreeHelper.GetParent(this) is GlassShadow shadow)
+        {
+            shadow.BlurRadius = p.ShadowBlur;
+            shadow.ShadowDepth = p.ShadowDepth;
+            shadow.ShadowOpacity = p.ShadowOpacity;
+        }
 
         if (SettingsService.Current.EnablePerformanceMode)
         {

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using VideoConverterUI.Services;
 
 namespace VideoConverterUI.Controls;
@@ -11,7 +12,7 @@ namespace VideoConverterUI.Controls;
 /// Turns an existing surface (a <see cref="Border"/> or <see cref="SquircleBorder"/>, e.g. a popup's or a dialog's
 /// root) into Liquid Glass without restructuring its XAML: <c>controls:LiquidGlass.Surface="Popup"</c>.
 /// The border's child moves into a <see cref="LiquidGlassPanel"/>; the border keeps its size, transforms,
-/// animations and shadow (which the panel then drives) but stops painting itself: its padding becomes the
+/// animations and shadow (a DropShadowEffect on it becomes a <see cref="GlassShadow"/>, which the panel then drives) but stops painting itself: its padding becomes the
 /// child's margin, its brush the glass outline, its corner radius (also while animated) the glass's.
 /// <see cref="BackdropProperty"/> sets what shows through when the panel can't find it by itself (an overlay
 /// inside the same window, like an alert sheet); see <see cref="LiquidGlassPanel"/>.
@@ -45,7 +46,8 @@ public static class LiquidGlass
     public static void SetBackdropOverlay(DependencyObject d, UIElement? value) => d.SetValue(BackdropOverlayProperty, value);
 
     /// <summary>The glass created for a converted surface (null until it is initialized).</summary>
-    public static LiquidGlassPanel? GetPanel(Decorator host) => host.Child as LiquidGlassPanel;
+    public static LiquidGlassPanel? GetPanel(Decorator host)
+        => host.Child as LiquidGlassPanel ?? (host.Child as GlassShadow)?.Child as LiquidGlassPanel;
 
     private static readonly DependencyProperty ContentProperty = DependencyProperty.RegisterAttached(
         "Content", typeof(UIElement), typeof(LiquidGlass), new PropertyMetadata(null));
@@ -115,7 +117,14 @@ public static class LiquidGlass
                 break;
         }
 
-        host.Child = panel;
+        // The surface's shadow is drawn under the glass rather than blurred off the whole surface (GlassShadow).
+        if (host.Effect is DropShadowEffect)
+        {
+            host.Effect = null;
+            host.Child = new GlassShadow { Child = panel };
+        }
+        else
+            host.Child = panel;
     }
 
     /// <summary>Keeps the glass's corner radius on the border's, including corner animations.</summary>

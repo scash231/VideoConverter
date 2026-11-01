@@ -192,15 +192,14 @@
                     </StackPanel>
                     <!-- Close button: a small Liquid Glass circle (surface "Button"), as in Settings -->
                     <Border Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,4,10,0">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
-                        </Border.Effect>
+                        <controls:GlassShadow>
                         <controls:LiquidGlassPanel Surface="Button" CornerRadius="12" BackdropSource="{Binding ElementName=ContentLayer}">
                             <Button Style="{StaticResource IconBtn}" Width="24" Height="24" Padding="0"
                                     ToolTip="{DynamicResource PrefClose}" Click="Close_Click">
                                 <ui:SymbolIcon Symbol="Dismiss24" FontSize="10" Foreground="{DynamicResource TextPrimary}"/>
                             </Button>
                         </controls:LiquidGlassPanel>
+                        </controls:GlassShadow>
                     </Border>
                 </Grid>
             </Border>
@@ -269,11 +268,9 @@
 
                 <!-- ═══════ INSPECTOR + TIMELINE: one backwards-L Liquid Glass platform (surface "Inspector") ═══════
                      The inspector is its right arm, the timeline its bottom arm; the preview sits in the cut-out.
-                     Outside ContentLayer (a glass can't show itself). The Border carries the shadow, which follows the L. -->
+                     Outside ContentLayer (a glass can't show itself). The GlassShadow draws its shadow, which follows the L. -->
                 <Border>
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.14"/>
-                    </Border.Effect>
+                    <controls:GlassShadow>
                     <controls:LiquidGlassPanel Surface="Inspector" ReverseLArms="280,86" BackdropSource="{Binding ElementName=ContentLayer}">
                         <controls:LiquidGlassPanel.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -553,6 +550,7 @@
                             </DockPanel>
                         </Grid>
                     </controls:LiquidGlassPanel>
+                    </controls:GlassShadow>
                 </Border>
             </Grid>
 

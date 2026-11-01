@@ -1184,7 +1184,7 @@
             <!-- ══════ Dropdown Menu Surface (shared by every ComboBox popup) ══════
                  The margin leaves room for the shadow inside the popup window; DropdownAnimBehavior
                  accounts for it when it lines the selected item up over the box. The menu itself is a
-                 LiquidGlassPanel (surface "Dropdown") inside this border, which only carries the shadow
+                 LiquidGlassPanel (surface "Dropdown", in a GlassShadow) inside this border, which only keeps its place
                  (driven by the panel's tuning) and the open animation. -->
             <Style x:Key="ComboMenuSurface" TargetType="Border">
                 <Setter Property="Background" Value="Transparent"/>
@@ -1192,11 +1192,6 @@
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="14"/>
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
-                <Setter Property="Effect">
-                    <Setter.Value>
-                        <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Color="Black" Opacity="0.28"/>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
             <!-- Selected value in the closed box: one line, ellipsis instead of running under the chevron -->
@@ -1250,12 +1245,14 @@
                                     <Grid x:Name="PopupHost">
                                         <Border Style="{StaticResource ComboMenuSurface}"
                                                 MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                            <controls:GlassShadow>
                                             <controls:LiquidGlassPanel Surface="Dropdown">
                                                 <ScrollViewer Margin="5" SnapsToDevicePixels="True" VerticalScrollBarVisibility="Auto">
                                                     <StackPanel IsItemsHost="True"
                                                                 KeyboardNavigation.DirectionalNavigation="Contained"/>
                                                 </ScrollViewer>
                                             </controls:LiquidGlassPanel>
+                                            </controls:GlassShadow>
                                         </Border>
                                     </Grid>
                                 </Popup>
@@ -1321,7 +1318,7 @@
             </Style>
 
             <!-- ══════ Global ContextMenu / MenuItem (Liquid Glass, like the drop-downs) ══════
-                 Same surface as a ComboBox popup: a shadow-carrying border (ComboMenuSurface, whose 14 px margin the
+                 Same surface as a ComboBox popup: a border (ComboMenuSurface, whose 14 px margin the
                  offsets below cancel so the menu still opens at the pointer) around a LiquidGlassPanel "Dropdown".
                  Rows match ComboBoxItem: check gutter, accent fill on the highlighted row only. Submenus open in the
                  same glass beside their row. Open animation: MenuAnimBehavior. -->
@@ -1339,9 +1336,11 @@
                             <!-- Host keeps the popup window still while the surface scales in -->
                             <Grid>
                                 <Border x:Name="MenuSurface" Style="{StaticResource ComboMenuSurface}" MinWidth="180">
+                                    <controls:GlassShadow>
                                     <controls:LiquidGlassPanel Surface="Dropdown">
                                         <StackPanel Margin="5" IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
                                     </controls:LiquidGlassPanel>
+                                    </controls:GlassShadow>
                                 </Border>
                             </Grid>
                         </ControlTemplate>
@@ -1404,10 +1403,12 @@
                                            AllowsTransparency="True" Focusable="False" PopupAnimation="None">
                                         <Grid>
                                             <Border x:Name="SubMenuSurface" Style="{StaticResource ComboMenuSurface}" MinWidth="170">
+                                                <controls:GlassShadow>
                                                 <controls:LiquidGlassPanel Surface="Dropdown">
                                                     <StackPanel Margin="5" IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"
                                                                 Grid.IsSharedSizeScope="True"/>
                                                 </controls:LiquidGlassPanel>
+                                                </controls:GlassShadow>
                                             </Border>
                                         </Grid>
                                     </Popup>
