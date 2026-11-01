@@ -5,19 +5,38 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.28.4",
+          "date": "2026-11-01",
+          "sections": [
+            {
+              "title": "Performance",
+              "items": [
+                "Liquid Glass uses less processing power when something on it changes.",
+                "Glass animations are smoother when the app has been idle."
+              ]
+            },
+            {
+              "title": "Changed",
+              "items": [
+                "Release notes are now shorter and easier to read."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.28.3",
           "date": "2026-11-01",
           "sections": [
             {
               "title": "Changed",
               "items": [
-                "Settings → Glass & Layout → Toolbar buttons now previews the real thing: Liquid Glass capsules like the main window's header, with minimize and close on a capsule of their own, instead of the old flat pills. (27H1.28.2.1)"
+                "The Toolbar buttons preview now matches the main window's header."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "When graphics rendering failed, \"Notification Window Exception Error\" dialogs kept opening and the app stopped working. It now restarts by itself and tells you; if rendering fails again right away, it runs that session without graphics acceleration."
+                "VideoConverter now restarts on its own after a graphics failure, instead of showing repeated error dialogs."
               ]
             }
           ]
@@ -29,9 +48,9 @@
             {
               "title": "Changed",
               "items": [
-                "Liquid Glass edges look like iOS now: a thin, bright line towards the top-left and bottom-right corners that fades almost away towards the other two, instead of an even grey ring all the way round. Coloured outlines, like the accent outline on a clickable notification, stay as they were.",
-                "The glass bends the background more like Apple's: the curve near the edge is wider and smoother, so round buttons bend most of their face, instead of squeezing it into a streak right at the edge.",
-                "The frosted middle of the glass is a smooth blur. Something sharp behind it, like a bright line, no longer shows as two or three stepped copies."
+                "Liquid Glass edges now catch the light like iOS.",
+                "Glass bends the background more smoothly near its edges.",
+                "The frosted middle of the glass is now a smooth blur."
               ]
             }
           ]
@@ -43,17 +62,17 @@
             {
               "title": "Changed",
               "items": [
-                "Auto Dim and Text Color are now two separate options in Settings → Appearance → Liquid Glass, each with its own page, switch and Strength. They can be on together: text then changes colour where that is enough, and the glass dims only behind the text that still needs it.",
-                "Auto Dim draws one soft wash behind text that sits together, fading out around it, instead of blocky patches with stepped corners. It also dims only as much as that text needs: a lone title less than a grey line.",
-                "Text Color changes text that sits together in one go, so an icon, its title and its subtitle no longer end up in three different colours. Text that turns dark loses its dark shadow, which made it look blurry.",
-                "How often the glass checks the background is now on the Liquid Glass page, since it applies to both options."
+                "Auto Dim and Text Color are now separate options that work together.",
+                "Auto Dim draws one soft wash behind text and dims only as much as needed.",
+                "Text Color changes grouped text together, so icons and labels stay matched.",
+                "Background check frequency moved to the Liquid Glass page."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "With Strength set to Stronger, Text Color turned all grey text white, even on dark glass where it was easy to read.",
-                "A text colour change that turned around halfway jumped instead of fading back."
+                "Text Color no longer turns all grey text white at the Stronger setting.",
+                "Text color changes now fade back smoothly when reversed."
               ]
             }
           ]
@@ -65,21 +84,21 @@
             {
               "title": "New",
               "items": [
-                "Text Color (beta) in Settings → Appearance → Liquid Glass → Auto Dim: the text changes colour instead of the glass dimming. Where text would be hard to read, it turns dark over a bright background (light over a dark one in light mode), and the glass stays clear. Coloured text and text on buttons keep their colour, and Strength sets how soon the text changes."
+                "Text Color (beta) changes the text color instead of dimming the glass."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "The Upload / Download switcher's track is Liquid Glass again, with a small shadow like the header pills. It still wraps snugly around the selected side.",
-                "New installs start with the Native engine, the developer console off, the help pill hidden and no gradient effect.",
-                "Liquid Glass looks as tuned by default again, and Reset goes back to that. Auto Dim is a little softer by default and only dims right behind text."
+                "The Upload / Download switcher track is Liquid Glass again.",
+                "New installs start with the Native engine, the developer console off and the help pill hidden.",
+                "Liquid Glass and its Reset now use the tuned look, with a softer Auto Dim."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "The selected side of the Upload / Download switcher now follows the track's round ends instead of looking off at both ends."
+                "The Upload / Download selection now follows the track's rounded ends."
               ]
             }
           ]
@@ -91,17 +110,17 @@
             {
               "title": "Changed",
               "items": [
-                "The Upload / Download switcher in the main window wraps snugly around the selected side again, in the window's own colour, like before Liquid Glass.",
-                "Cloud → Configuration lists Google Drive, Dropbox, OneDrive and Discord one below the other. \"In Use\" marks the service picked under Cloud → Service, and a Setup button scrolls straight to its service. Dropbox's token, test and synced folder are now in one group.",
-                "Liquid Glass is clear by default, and Reset in Settings → Appearance → Liquid Glass goes back to clear.",
-                "Liquid motion: windows open a little quicker, and buttons no longer grow when you hover over them.",
-                "New installs start with Ferrite as the engine, shorter notifications, icon labels shown, and the Multi Downloader running 5 downloads at once with automatic retry."
+                "The Upload / Download switcher wraps snugly around the selected side again.",
+                "Cloud Configuration now lists all services on one page.",
+                "Liquid Glass is clear by default.",
+                "Windows open a little faster, and buttons no longer grow on hover.",
+                "New defaults for new installs, including the Ferrite engine and 5 simultaneous downloads."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "Multi Downloader: the glass bars showed the queue behind them shifted to the right. It now lines up."
+                "Multi Downloader glass bars now line up with the queue behind them."
               ]
             }
           ]
@@ -113,8 +132,8 @@
             {
               "title": "Changed",
               "items": [
-                "Cloud setup moved into Settings → Cloud → Configuration: Google Drive, Dropbox, OneDrive and Discord each have their page there, in the same look as the rest of Settings, and changes apply right away. The Setup buttons in the main window and the Multi Downloader open it.",
-                "Cloud → Configuration shows the service in use, or \"Not set up\" while it still needs a folder, token or webhook."
+                "Cloud setup moved to Settings → Cloud → Configuration.",
+                "Configuration shows the service in use, or \"Not set up\"."
               ]
             }
           ]
@@ -126,8 +145,8 @@
             {
               "title": "Changed",
               "items": [
-                "What's New in Settings → About is now one button. It loads the release notes from the website when you open it, so they stay up to date without an update, and the app got smaller.",
-                "Offline, What's New shows the notes from the last time it loaded."
+                "What's New now loads from the website, so notes stay up to date.",
+                "What's New shows the last loaded notes when you're offline."
               ]
             }
           ]
@@ -139,13 +158,13 @@
             {
               "title": "Fixed",
               "items": [
-                "Reduce visual effects: the selected item in the Settings sidebar, buttons like Download and Try me, checkmarks and switches no longer turn into blank white shapes. The accent colour in this mode is now a grey that white text shows up on."
+                "Reduce visual effects no longer turns selected items and buttons into blank white shapes."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "Settings → General: the note under \"Show error details automatically\" is gone."
+                "Removed the note under \"Show error details automatically\"."
               ]
             }
           ]
@@ -157,8 +176,8 @@
             {
               "title": "New",
               "items": [
-                "Software Update in Settings: see whether you have the newest VideoConverter, read what's new in an update before you install it, and install it with Update Now. VideoConverter closes, updates and opens again by itself.",
-                "Automatic updates: VideoConverter looks for a new version when it starts and shows a notification when there is one (Settings → General → Software Update, on by default)."
+                "Software Update: see what's new and install updates right from Settings.",
+                "Automatic updates: get notified when a new version is available."
               ]
             }
           ]
@@ -170,7 +189,7 @@
             {
               "title": "Fixed",
               "items": [
-                "The glass around the preview picks up the thumbnail's colours softly: the bottom edge of the Upload / Download switch no longer shows a band that stops at a hard line where the thumbnail ends."
+                "Glass around the preview now picks up thumbnail colors without a hard line."
               ]
             }
           ]
@@ -182,7 +201,7 @@
             {
               "title": "Performance",
               "items": [
-                "Settings opens without the app freezing for a moment first: the window is prepared in the background while the app is idle, so clicking the button only has to show it. Most noticeable the first time you open it."
+                "Settings opens without the app freezing first."
               ]
             }
           ]
@@ -194,8 +213,8 @@
             {
               "title": "Performance",
               "items": [
-                "Menus, pop-ups, dialogs and notifications no longer draw the window behind them again on every frame: their glass keeps a picture of it and only redraws it when something back there changes. They open more smoothly, and a notification's countdown line costs a fraction of what it did.",
-                "When a new notification arrives, the ones below slide down inside their own windows instead of moving the windows, which made the whole app stutter for a moment."
+                "Menus, pop-ups, dialogs and notifications open more smoothly.",
+                "New notifications no longer make the app stutter."
               ]
             }
           ]
@@ -207,24 +226,24 @@
             {
               "title": "New",
               "items": [
-                "The main window is Liquid Glass throughout: header pills, the link field, the Upload / Download switch, the cards and Start. Header pills come and go like drops.",
-                "The preview card reflects the thumbnail: its glass shows a soft, drawn-out mirror image right below it, and the glass around it (the switch above, the settings card beside it) picks up its colours at the edges.",
-                "Settings → Notifications: a switch for the \"Playlist detected\" banner."
+                "The main window is now Liquid Glass throughout.",
+                "The preview card reflects its thumbnail, and nearby glass picks up its colors.",
+                "A new switch for the \"Playlist detected\" banner."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "The Upload / Download switch's thumb takes on the window's tint.",
-                "The main window waits until it can draw smoothly before it opens, instead of starting frozen and then jumping.",
-                "Liquid Glass edges bend what lies beyond them smoothly to the very edge, instead of ending in streaks and a hard line."
+                "The Upload / Download thumb takes on the window's tint.",
+                "The main window now waits until it can open smoothly.",
+                "Glass edges bend the background smoothly, without streaks."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "The thumbnail fills the preview card's corners.",
-                "The quick actions under the preview (Title, URL, Browser, Save) are readable again."
+                "Thumbnails now fill the preview card's corners.",
+                "Quick actions under the preview are readable again."
               ]
             }
           ]
@@ -236,24 +255,24 @@
             {
               "title": "New",
               "items": [
-                "Liquid, a new motion style (Settings → Animations → Motion): everything moves on real springs that keep their momentum when you change your mind, so nothing jumps or stops dead. New installs start with it.",
-                "With Liquid, windows grow out of the button that opened them, spreading wide first and then to full height, and pour back into it when they close (Customize → Opening → Liquid).",
-                "The Upload / Download switch stretches and turns clear while it slides; flick it and it carries on with your speed.",
-                "Notifications bloom in like the Dynamic Island and fly back up into a pill; the banners below glide out of the way.",
-                "Drop-down lists animate closed when you pick something, click elsewhere or press Esc, instead of vanishing."
+                "Liquid: a new motion style where everything moves on real springs.",
+                "Windows grow out of the button that opened them and pour back when closed.",
+                "The Upload / Download switch stretches as it slides and follows your flick.",
+                "Notifications bloom in like the Dynamic Island.",
+                "Drop-down lists now animate closed."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "Help and the other header bubbles, and drop-down lists, keep their bubble opening with Liquid too."
+                "Header bubbles and drop-down lists keep their bubble opening with Liquid."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "Switching quickly between Upload and Download no longer leaves both panels hidden.",
-                "Opening a window with animations turned off no longer throws an error."
+                "Switching quickly between Upload and Download no longer hides both panels.",
+                "Opening a window with animations off no longer causes an error."
               ]
             }
           ]
@@ -265,8 +284,8 @@
             {
               "title": "Fixed",
               "items": [
-                "Video Editor: videos Windows can't play itself (such as VP9 WebM) no longer leave the preview blank. The editor makes a copy for the preview and shows how far along it is; export still uses the original file.",
-                "Video Editor: a video that can't be opened at all says so and shows the Open Video button again."
+                "Video Editor now previews videos Windows can't play on its own.",
+                "Video Editor now tells you when a video can't be opened."
               ]
             }
           ]
@@ -278,9 +297,9 @@
             {
               "title": "Performance",
               "items": [
-                "Liquid Glass no longer keeps the app redrawing 60 times a second: it follows what lies behind it only while something moves, so open menus, dialogs and Settings cost next to nothing at rest.",
-                "Auto Dim checks less often while nothing behind the glass changes, pauses for minimized windows and slows down while the app is in the background.",
-                "Auto Dim's contrast maths is much cheaper, and small glass surfaces blur only the area they need."
+                "Liquid Glass now uses almost no power at rest.",
+                "Auto Dim checks less often when nothing changes or the app is in the background.",
+                "Auto Dim and small glass surfaces are more efficient."
               ]
             }
           ]
@@ -292,13 +311,13 @@
             {
               "title": "New",
               "items": [
-                "Auto Dim: \"Only right behind text\" darkens just the spots where text sits and leaves the rest of the glass clear."
+                "Auto Dim can now darken only right behind text."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "Text readability is now called Auto Dim and is marked as beta."
+                "Text readability is now called Auto Dim (beta)."
               ]
             }
           ]
@@ -310,14 +329,13 @@
             {
               "title": "New",
               "items": [
-                "Settings → Appearance → Liquid Glass → Text readability: a page of its own with a live preview, the on/off switch, a strength slider (softer, standard, stronger) and how quickly the glass adapts.",
-                "Stronger also darkens spots that the standard setting leaves clear; softer darkens less."
+                "Text readability now has its own page, with a live preview and a strength slider."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "\"Glass readability check\" moved from Developer to the Text readability page, in plainer words: Regularly, When something moves, or Both."
+                "The readability check moved from Developer to the new page, with simpler options."
               ]
             }
           ]
@@ -329,7 +347,7 @@
             {
               "title": "New",
               "items": [
-                "Settings → Developer: \"Glass readability check\" picks when Liquid Glass checks whether text on it needs dimming: on a timer, after changes (scrolling, resizing, moving), or both."
+                "Developer setting to choose when Liquid Glass checks text readability."
               ]
             }
           ]
@@ -341,13 +359,13 @@
             {
               "title": "New",
               "items": [
-                "Settings → Appearance → Liquid Glass: \"Dim behind text automatically\" turns the glass's automatic dimming on or off."
+                "A switch to turn automatic dimming behind text on or off."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "The Liquid Glass page is shorter: the explanation under the Clear ↔ Tinted slider is gone."
+                "A simpler Liquid Glass page."
               ]
             }
           ]
@@ -359,20 +377,20 @@
             {
               "title": "New",
               "items": [
-                "Multi Downloader: \"Add links\" sits in the title bar as a glass pill. Click it and it slides open into the link field; while the links load it shrinks to a loading capsule, then folds away.",
-                "Right-click menus are Liquid Glass, also the Cut / Copy / Paste menu of every text box."
+                "Multi Downloader: Add links is now a glass pill that opens into the link field.",
+                "Right-click menus are now Liquid Glass."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "Multi Downloader: the title-bar buttons are ordered Add links, Options, Save & Exit, and their labels follow \"Show icon labels\". The capsules next to the Fetch button catch its blue."
+                "Multi Downloader title-bar buttons are reordered, and their labels follow \"Show icon labels\"."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "Text on Liquid Glass stays readable over busy or bright backgrounds: the glass now dims just the spots that would wash the text out."
+                "Text on Liquid Glass stays readable over bright or busy backgrounds."
               ]
             }
           ]
@@ -384,7 +402,7 @@
             {
               "title": "Fixed",
               "items": [
-                "Settings: the shade behind the page title fades in or out after switching pages, instead of cutting in."
+                "The shade behind the Settings page title now fades smoothly between pages."
               ]
             }
           ]
@@ -396,22 +414,22 @@
             {
               "title": "New",
               "items": [
-                "What's New is sorted by version: 27H1, 26H2, v3, v2 and v1, each with its releases, back to the first console app.",
-                "Multi Downloader: one circle selects all or none, the footer shows the total length and roughly how much the downloads take at the chosen quality, and the storage bin sits next to Cloud."
+                "What's New is now sorted by version, all the way back to the first release.",
+                "Multi Downloader: select all with one circle, and see the total length and estimated size."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "Multi Downloader: tidier toolbar, smaller cards with a soft shadow, and the overall progress bar only shows while downloading.",
-                "New installs start with the Smooth Liquid animations."
+                "Multi Downloader has a tidier toolbar and smaller cards.",
+                "New installs start with Smooth Liquid animations."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "The Multi Downloader no longer lags: progress bars ran an endless animation that kept the window redrawing, even when idle.",
-                "Scrolling a long queue is smoother."
+                "Multi Downloader no longer lags when idle.",
+                "Long queues scroll more smoothly."
               ]
             }
           ]
@@ -423,21 +441,21 @@
             {
               "title": "New",
               "items": [
-                "Video Editor: after resizing, the window snaps to the video's shape, so there are no black bars.",
-                "Settings: the page title gets a soft shade behind it while you scroll, so it stays readable.",
-                "Windows are fully opaque by default (Glass & Layout → Window glass)."
+                "Video Editor snaps to the video's shape after resizing.",
+                "The Settings page title stays readable while you scroll.",
+                "Windows are fully opaque by default."
               ]
             },
             {
               "title": "Changed",
               "items": [
-                "Removed the blur behind windows: it didn't work reliably on Windows 11."
+                "Removed the blur behind windows, which was unreliable on Windows 11."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "The Video Editor and Log Viewer borders are visible all the way around again."
+                "Video Editor and Log Viewer borders are fully visible again."
               ]
             }
           ]
@@ -449,17 +467,17 @@
             {
               "title": "New",
               "items": [
-                "Video Editor redesign in the Liquid Glass style of Settings: the inspector and the timeline form one glass platform around the preview.",
-                "Play, stop and mute sit under the timeline, so nothing covers the video. \"Remove audio\" moved to the Audio tab. Space plays or pauses, Esc closes.",
-                "The editor window takes the shape of the video, so 16:9 and vertical videos show without black bars.",
-                "Multi Downloader: the link bar, toolbar, footer and title-bar buttons are Liquid Glass.",
-                "Glass stays readable on bright backgrounds: a soft shade fades in under the text, and text on glass has a slight shadow."
+                "Video Editor redesign with a single Liquid Glass platform.",
+                "New editor controls under the timeline, plus Space to play or pause and Esc to close.",
+                "The editor window takes the video's shape, with no black bars.",
+                "Multi Downloader bars and title-bar buttons are now Liquid Glass.",
+                "Glass stays readable on bright backgrounds."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "The first Liquid Glass window no longer hangs for a second while opening: the effect is prepared at startup and kept for later launches."
+                "The first Liquid Glass window no longer pauses while opening."
               ]
             }
           ]
@@ -471,14 +489,14 @@
             {
               "title": "New",
               "items": [
-                "New installer: VideoConverterSetup.exe from scash.uk/vc sets up everything the app needs (.NET, FFmpeg, yt-dlp, Ferrite). Run it again to update.",
-                "The Legacy (Python) engine is no longer supported or installed; it stays available as a manual download."
+                "A new installer that sets up everything VideoConverter needs.",
+                "The Legacy engine is no longer supported, and is available as a manual download."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "\"Ferrite engine not found\" after installing: the app looked for ferrite.exe in a temporary folder."
+                "Fixed \"Ferrite engine not found\" after installing."
               ]
             }
           ]
@@ -490,12 +508,12 @@
             {
               "title": "New",
               "items": [
-                "Liquid Glass: notifications and menus are made of glass like Apple's, frosted in the middle and bending the content behind them at the edges.",
-                "All drop-down menus open as Liquid Glass, everywhere in the app.",
-                "Pop-ups and dialogs are Liquid Glass too: the Tools menu, help, error details, language picker, Queue Options, Cloud Upload, the FFmpeg installer, \"Save batch?\" and the confirmation sheets.",
-                "Settings → Appearance → Liquid Glass: choose from Clear to Tinted, with a live preview. Sub-pages in Settings have a back button.",
-                "Glass Tuner (developer tool): adjust the glass live per surface and theme mode, then save the values or copy them as code. Open it in Settings → Developer or with \"debug glass\".",
-                "Without hardware graphics acceleration, the glass falls back to classic frosted glass."
+                "Liquid Glass: notifications and menus now look like real glass.",
+                "All drop-down menus are now Liquid Glass.",
+                "Pop-ups and dialogs are now Liquid Glass.",
+                "Choose from Clear to Tinted glass, with a live preview.",
+                "Glass Tuner: a developer tool to adjust glass live.",
+                "Classic frosted glass without hardware graphics acceleration."
               ]
             }
           ]
@@ -507,25 +525,25 @@
             {
               "title": "New",
               "items": [
-                "Ferrite: a new media engine written in Rust. Same results as Native, but it runs as its own process, so a crash can't take the window down. Choose it in Settings → Advanced → Engine.",
-                "Ferrite can upload to YouTube, using the same client_secret.json and token.json as the Legacy engine.",
-                "Three engines: Native (download and cloud upload), Ferrite (everything, in its own process) and Legacy (download and YouTube upload). The help bubble explains each one.",
-                "Settings → Info shows the active engine next to the build number.",
-                "New error window: what went wrong, why, the steps to fix it and the real error message, plus a button for the most likely fix.",
-                "When a job or the engine fails, a notification names the problem; click it (or the red header pill) for details, or let the error window open automatically (Settings → General). Errors are understood in English, German and Russian.",
-                "Multi Downloader: failed items show what went wrong and the first thing to try; hover for all steps.",
-                "Slim scroll bars that only appear while you scroll or hover over a list."
+                "Ferrite: a new engine that runs in its own process, so a crash can't close the window.",
+                "Ferrite can upload to YouTube.",
+                "Choose between three engines: Native, Ferrite and Legacy.",
+                "Settings → Info shows the active engine.",
+                "A new error window explains what went wrong and how to fix it.",
+                "Error notifications name the problem and link to details.",
+                "Multi Downloader shows what went wrong and what to try.",
+                "Slim scroll bars that appear only when needed."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "Switching the engine during a download or upload no longer cancels it; the switch waits until it is done.",
-                "The Multi Downloader keeps working after the engine was switched.",
-                "Legacy engine: cloud upload jobs fail with a clear message instead of silently not uploading.",
-                "Native engine: the upload message points to Ferrite or Legacy.",
-                "\"Error loading metadata\" keeps the actual reason, and an empty result shows the error window.",
-                "Errors are judged by the line where yt-dlp actually stopped, not by earlier warnings (an age-restricted video no longer shows an upload error)."
+                "Switching engines no longer cancels a running job.",
+                "Multi Downloader keeps working after an engine switch.",
+                "Legacy cloud uploads now fail with a clear message.",
+                "The Native upload message now points to Ferrite or Legacy.",
+                "Metadata errors now show the actual reason.",
+                "Errors now reflect where a download actually stopped."
               ]
             }
           ]
@@ -537,45 +555,45 @@
             {
               "title": "New",
               "items": [
-                "Smooth scrolling: the mouse wheel glides instead of jumping (Theme Designer → Layout).",
-                "Multi Downloader: middle-click a list to autoscroll like in a browser.",
-                "Expandable sections in Settings and the Theme Designer share one design and slide open smoothly.",
-                "The Theme Designer uses the same glass toggle switches as Settings.",
-                "Download mode: the buttons shown after a download fill their card and shrink smoothly when the cloud options open."
+                "Smooth scrolling with the mouse wheel.",
+                "Middle-click autoscroll in Multi Downloader.",
+                "Expandable sections share one design and slide open smoothly.",
+                "Theme Designer now uses glass toggle switches.",
+                "After-download buttons fill their card and resize smoothly."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "Jobs no longer freeze when FFmpeg or yt-dlp print a lot of output.",
-                "GPU acceleration tests the encoder first (NVENC → QSV → AMF) and falls back to the CPU, so it works on AMD and Intel graphics.",
-                "Stopping a Multi Downloader batch really stops the running downloads.",
+                "Jobs no longer freeze on heavy FFmpeg or yt-dlp output.",
+                "GPU acceleration now works on AMD and Intel graphics, with a CPU fallback.",
+                "Stopping a batch now stops its running downloads.",
                 "Closing an old progress window no longer cancels a newer job.",
-                "Subtitle (.srt) files no longer contain log lines.",
-                "Saving Settings keeps the Theme Designer's custom colours, and a cancelled language change is reverted.",
-                "The \"Disabled (Static)\" preset and Performance Mode really turn animations off.",
-                "The drop zone's Cancel button closes it again.",
-                "Switching Settings tabs while scrolled down no longer jumps.",
-                "Fixed a crash when resizing with a monitor left of or above the main display.",
-                "Fixed a crash in the developer console when restarting the engine.",
-                "Legacy engine: \"&list=\" links are no longer treated as YouTube Music, M4A/FLAC work and queued jobs can be cancelled."
+                "Subtitle files no longer contain log lines.",
+                "Saving Settings keeps custom theme colors, and cancelled language changes are reverted.",
+                "The Disabled preset and Performance Mode now turn animations off.",
+                "The drop zone's Cancel button works again.",
+                "Switching Settings tabs no longer jumps.",
+                "Fixed a crash when resizing with certain monitor layouts.",
+                "Fixed a crash when restarting the engine from the developer console.",
+                "Legacy engine fixes for playlist links, M4A/FLAC and cancelling queued jobs."
               ]
             },
             {
               "title": "Performance",
               "items": [
-                "The media engine starts in the background instead of blocking the window.",
-                "Theme Designer: colour sliders no longer save on every step, and theme changes no longer rebuild every window.",
-                "Logs are written in batches and stay size-limited, so they don't slow down over time.",
-                "Cloud uploads report progress per percent; cloud folder detection only runs when needed and is cached.",
-                "Multi Downloader: single links skip the playlist check, and metadata loads three links at a time.",
+                "The engine now starts in the background.",
+                "Theme Designer changes are faster.",
+                "Logs no longer slow down over time.",
+                "Cloud uploads and folder detection are more efficient.",
+                "Multi Downloader loads links faster.",
                 "The performance overlay shows real CPU usage and UI latency."
               ]
             },
             {
               "title": "Cleanup",
               "items": [
-                "Removed about 1,200 lines of unused code, styles and translation strings."
+                "Removed about 1,200 lines of unused code."
               ]
             }
           ]
@@ -587,19 +605,19 @@
             {
               "title": "New",
               "items": [
-                "Multi Downloader: a batch queue for playlists and managed downloading.",
-                "Up to 30 simultaneous downloads, depending on your system.",
+                "Multi Downloader: a batch queue for playlists.",
+                "Up to 30 simultaneous downloads.",
                 "Cloud upload.",
-                "Build Info tab in Settings.",
-                "Cookies file option for private or members-only videos and to avoid platform limits."
+                "Build Info in Settings.",
+                "Cookies file support for private or members-only videos."
               ]
             },
             {
               "title": "Improved",
               "items": [
-                "Better organised Advanced tab.",
-                "Overhauled notifications.",
-                "Overhauled presets.",
+                "A better organized Advanced tab.",
+                "Redesigned notifications.",
+                "Redesigned presets.",
                 "Stability and performance improvements."
               ]
             }
@@ -612,27 +630,27 @@
             {
               "title": "New",
               "items": [
-                "Native C# engine (YouTube upload still needs the Legacy engine).",
+                "A native C# engine.",
                 "Performance Mode.",
                 "Dynamic layout.",
-                "New theme manager."
+                "A new theme manager."
               ]
             },
             {
               "title": "Improved",
               "items": [
-                "Better design language.",
-                "Loading bar.",
-                "Download and upload fields.",
-                "The thumbnail preview scales properly when resizing.",
-                "The Customize tab works as it should."
+                "A refined design.",
+                "Improved loading bar.",
+                "Improved download and upload fields.",
+                "Thumbnail previews scale when resizing.",
+                "The Customize tab works as expected."
               ]
             },
             {
               "title": "Misc",
               "items": [
-                "FFmpeg installs automatically the first time the Native engine is used.",
-                "FFmpeg is added to PATH if you allow admin access (optional).",
+                "FFmpeg installs automatically on first use.",
+                "FFmpeg can be added to PATH with admin access.",
                 "Upgraded to .NET 10.",
                 "Upgraded WPF-UI."
               ]
@@ -652,27 +670,27 @@
             {
               "title": "New",
               "items": [
-                "YouTube Music: download tracks at up to 320 kbps, with artist, album, year and track number from the metadata.",
+                "YouTube Music downloads at up to 320 kbps, with full metadata.",
                 "Five new languages: Spanish, French, Italian, Japanese and Chinese.",
-                "The progress window shows each phase (download, fingerprint, upload) with its own progress, speed and time left.",
-                "Notifications when a job succeeds or fails, with an optional sound.",
-                "Every window can be resized with a corner grip.",
-                "Redesigned Designer window with Layout and Animations tabs, gradient controls and collapsible colour groups."
+                "The progress window shows each phase with speed and time left.",
+                "Notifications when a job succeeds or fails.",
+                "Resize any window with a corner grip.",
+                "A redesigned Designer window."
               ]
             },
             {
               "title": "Improved",
               "items": [
-                "Rounded window corners are clipped properly, without square edges behind them.",
+                "Cleaner rounded window corners.",
                 "Blur is on by default for the Log Viewer, Developer Console and Description Editor.",
-                "Fixed the Sandstone theme preset; pop-ups are cleaner and more opaque.",
-                "Reworked animations: easing, springs and staggering."
+                "A fixed Sandstone preset and cleaner pop-ups.",
+                "Reworked animations."
               ]
             },
             {
               "title": "Misc",
               "items": [
-                "Console log filters (System, Backend, FFmpeg) and a compact mode."
+                "Console log filters and a compact mode."
               ]
             }
           ]
@@ -690,17 +708,17 @@
             {
               "title": "New",
               "items": [
-                "Choose whether the progress window opens by itself or only a bar shows at the top.",
+                "Choose between the progress window and a progress bar.",
                 "Scroll bars can be turned off.",
-                "Animation level: None, Reduced or Standard.",
-                "An \"+ Add New\" preset card and an inline save overlay."
+                "Animation levels: None, Reduced and Standard.",
+                "A new way to add and save presets."
               ]
             },
             {
               "title": "Fixed",
               "items": [
-                "Windows no longer flicker or stretch when they open.",
-                "Better contrast in the light theme, and a subtler Beta tag next to the Video Editor."
+                "Windows no longer flicker or stretch when opening.",
+                "Better contrast in the light theme, and a subtler Beta tag."
               ]
             }
           ]
@@ -712,19 +730,19 @@
             {
               "title": "New",
               "items": [
-                "Video Editor with Whisper subtitles built in.",
+                "Video Editor with built-in Whisper subtitles.",
                 "Design Editor and a better Settings window.",
                 "GPU acceleration for NVIDIA graphics cards.",
-                "Better logging, and a console to help when something goes wrong.",
-                "Video or audio in 4K, 2K, 1080p, 720p, 480p or audio only.",
-                "Metadata and video/audio changes to avoid automatic duplicate detection.",
-                "Automatic YouTube upload (needs your own API key)."
+                "Better logging and a troubleshooting console.",
+                "Download video in up to 4K, or audio only.",
+                "Metadata and media changes to avoid duplicate detection.",
+                "Automatic YouTube upload with your own API key."
               ]
             },
             {
               "title": "Improved",
               "items": [
-                "Design overhaul and better performance."
+                "A new design and better performance."
               ]
             }
           ]
@@ -742,16 +760,16 @@
             {
               "title": "New",
               "items": [
-                "Settings window: language, privacy defaults, fingerprint bypass, backend address and timeout are kept between sessions.",
-                "Quick actions once the metadata is loaded: copy title, description or tags, open in the browser, reset the form.",
-                "DE / EN switch in the title bar; the workflow guide moved to the ? button."
+                "A Settings window that remembers your preferences.",
+                "Quick actions for loaded metadata.",
+                "A DE / EN switch, and the workflow guide moved to the ? button."
               ]
             },
             {
               "title": "Improved",
               "items": [
-                "Clean log output, a smooth opening animation for Settings and a left panel that scrolls when it is full.",
-                "Shorter German button labels that fit."
+                "Cleaner logs, a smooth Settings animation and a scrolling left panel.",
+                "Shorter German button labels."
               ]
             }
           ]
@@ -763,10 +781,10 @@
             {
               "title": "New",
               "items": [
-                "Standalone app (.NET 8, no install) with a Python backend, set up once with pip.",
-                "FFmpeg downloads by itself on the first start.",
-                "YouTube upload with a client_secret.json from Google Cloud.",
-                "Fingerprint bypass methods: metadata, light, standard and strong."
+                "A standalone app with a Python backend.",
+                "FFmpeg downloads automatically on first start.",
+                "YouTube upload with your own Google Cloud credentials.",
+                "Fingerprint bypass options: metadata, light, standard and strong."
               ]
             }
           ]
@@ -784,12 +802,12 @@
             {
               "title": "New",
               "items": [
-                "Where it all began: Python console scripts that download an Instagram Reel and upload it to YouTube as a Short by themselves.",
-                "Fingerprint bypass: a slight zoom, brightness, saturation and audio-tempo change plus a re-encode, invisible to viewers.",
-                "AI titles: a frame from the middle of the video goes to OpenAI, which writes the YouTube title.",
-                "The Reel's caption and hashtags become the description and tags; #Shorts is added automatically.",
-                "A recurring mode, and a compilation script that joins many Reels into one video.",
-                "yt-dlp, the Python libraries and FFmpeg install themselves on the first start."
+                "Where it all began: console scripts that turn an Instagram Reel into a YouTube Short.",
+                "Fingerprint bypass with changes invisible to viewers.",
+                "AI-written YouTube titles from OpenAI.",
+                "Captions and hashtags become the description and tags.",
+                "A recurring mode and a compilation script.",
+                "Dependencies install automatically on first start."
               ]
             }
           ]
