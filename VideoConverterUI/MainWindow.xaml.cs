@@ -1466,7 +1466,8 @@ public partial class MainWindow : Window
     // window's glass, and the progress bar moves on every frame.
     private const double StartReflectionStep = 16;
     private const double StartBackdropBlur = 8;
-    private const double StartProgressReflectionOpacity = 0.55;
+    private const double StartReflectionOpacity = 0.4;  // a hint of its colour on the rims, not a glow
+    private const double StartProgressReflectionOpacity = 0.25;
 
     /// <summary>
     /// The window's glass backdrop gets a copy of the Start button's fill where it is on screen, so the rims of the cards
@@ -1504,7 +1505,7 @@ public partial class MainWindow : Window
             Canvas.SetTop(onBackdrop, at.Y);
             onBackdrop.Height = at.Height;
             onBackdrop.CornerRadius = new CornerRadius(at.Height / 2);
-            onBackdrop.Opacity = running ? StartProgressFill.Opacity * StartProgressReflectionOpacity : StartIdleBg.Opacity;
+            onBackdrop.Opacity = running ? StartProgressFill.Opacity * StartProgressReflectionOpacity : StartIdleBg.Opacity * StartReflectionOpacity;
             onBackdrop.Visibility = Visibility.Visible;
         }
 
@@ -3295,47 +3296,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ToolsCollapsed_Click(object sender, RoutedEventArgs e)
-    {
-        if (PopupToolsMenu == null || ToolsPopupBorder == null) return;
-        PopupToolsMenu.PlacementTarget = (UIElement)sender;
+    private void ToolsCollapsed_Click(object sender, RoutedEventArgs e) => ToolsMenu.Toggle(BtnToolsCollapsed, PillToolsGroup);
 
-        if (!PopupToolsMenu.IsOpen)
-        {
-            PopupToolsMenu.IsOpen = true;
-            AnimatePopupIn(ToolsPopupBorder);
-        }
-        else
-        {
-            AnimatePopupOut(ToolsPopupBorder, () => PopupToolsMenu.IsOpen = false);
-        }
-    }
-
-    private void EditorFromMenu_Click(object sender, RoutedEventArgs e)
-    {
-        if (PopupToolsMenu != null && ToolsPopupBorder != null)
-        {
-            AnimatePopupOut(ToolsPopupBorder, () =>
-            {
-                PopupToolsMenu.IsOpen = false;
-                Editor_Click(sender, e);
-            });
-        }
-        else Editor_Click(sender, e);
-    }
-
-    private void SettingsFromMenu_Click(object sender, RoutedEventArgs e)
-    {
-        if (PopupToolsMenu != null && ToolsPopupBorder != null)
-        {
-            AnimatePopupOut(ToolsPopupBorder, () =>
-            {
-                PopupToolsMenu.IsOpen = false;
-                Settings_Click(sender, e);
-            });
-        }
-        else Settings_Click(sender, e);
-    }
+    // The menu is on its way back into the ••• button, so that is where the windows open from.
+    private void EditorFromMenu_Click(object sender, RoutedEventArgs e) => Editor_Click(BtnToolsCollapsed, e);
+    private void SettingsFromMenu_Click(object sender, RoutedEventArgs e) => Settings_Click(BtnToolsCollapsed, e);
+    private void BatchQueueFromMenu_Click(object sender, RoutedEventArgs e) => BatchQueue_Click(BtnToolsCollapsed, e);
 
     public void OpenBatchQueue(string? url = null, Rect originRect = default)
     {
@@ -3372,19 +3338,6 @@ public partial class MainWindow : Window
     {
         Rect origin = sender is UIElement el ? GetBtnRect(el) : (BtnBatchQueue != null && BtnBatchQueue.IsVisible ? GetBtnRect(BtnBatchQueue) : GetBtnRect(TxtUrl));
         OpenBatchQueue(TxtUrl.Text.Trim(), origin);
-    }
-
-    private void BatchQueueFromMenu_Click(object sender, RoutedEventArgs e)
-    {
-        if (PopupToolsMenu != null && ToolsPopupBorder != null)
-        {
-            AnimatePopupOut(ToolsPopupBorder, () =>
-            {
-                PopupToolsMenu.IsOpen = false;
-                BatchQueue_Click(sender, e);
-            });
-        }
-        else BatchQueue_Click(sender, e);
     }
 
     private TimeSpan _lastCpuTime;

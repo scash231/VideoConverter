@@ -379,24 +379,19 @@
             <!-- ══════ Glass Pill TextBox (URL Input) ══════ -->
 
             <!-- ══════ ComboBox Toggle Button (macOS pop-up button) ══════ -->
+            <!-- The box is glisse's input surface, like the text boxes beside it: lit while hovered or open -->
             <ControlTemplate x:Key="ComboToggle" TargetType="ToggleButton">
-                <Border x:Name="Bd" CornerRadius="15"
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        SnapsToDevicePixels="True">
+                <controls:GlassChrome IsHovered="{TemplateBinding IsMouseOver}" IsHeld="{TemplateBinding IsChecked}">
                     <ui:SymbolIcon x:Name="ArrowIcon" Symbol="ChevronUpDown16" FontSize="12"
                                    Foreground="{DynamicResource TextSec}"
                                    HorizontalAlignment="Right" VerticalAlignment="Center"
                                    Margin="0,0,10,0" IsHitTestVisible="False"/>
-                </Border>
+                </controls:GlassChrome>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
                         <Setter TargetName="ArrowIcon" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                     </Trigger>
                     <Trigger Property="IsChecked" Value="True">
-                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
                         <Setter TargetName="ArrowIcon" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
@@ -734,14 +729,15 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TextBox">
-                            <controls:GlassChrome x:Name="Chrome" Padding="{TemplateBinding Padding}"
+                            <controls:GlassChrome x:Name="Chrome"
                                                   IsHovered="{TemplateBinding IsMouseOver}" IsHeld="{TemplateBinding IsKeyboardFocusWithin}">
                                 <Grid>
+                                    <!-- The text box applies its Padding to this host itself -->
                                     <ScrollViewer x:Name="PART_ContentHost" Focusable="False" VerticalAlignment="Center"
                                                   HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                                     <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}" Foreground="{DynamicResource TextSec}" Opacity="0.75"
                                                FontSize="{TemplateBinding FontSize}" VerticalAlignment="Center" IsHitTestVisible="False"
-                                               TextTrimming="CharacterEllipsis" Margin="2,0,0,0" Visibility="Collapsed"/>
+                                               TextTrimming="CharacterEllipsis" Padding="2,0,0,0" Margin="{TemplateBinding Padding}" Visibility="Collapsed"/>
                                 </Grid>
                             </controls:GlassChrome>
                             <ControlTemplate.Triggers>
@@ -760,6 +756,32 @@
                 </Setter>
             </Style>
 
+            <!-- ══════ The same surface for several lines of text: rounded rather than a capsule, and it scrolls ══════ -->
+            <Style x:Key="GlassTextArea" TargetType="TextBox" BasedOn="{StaticResource GlassInput}">
+                <Setter Property="Height" Value="Auto"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+                <Setter Property="VerticalContentAlignment" Value="Top"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <controls:GlassChrome x:Name="Chrome" CornerRadius="14"
+                                                  IsHovered="{TemplateBinding IsMouseOver}" IsHeld="{TemplateBinding IsKeyboardFocusWithin}">
+                                <!-- The text box applies its Padding to this host itself -->
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="False" Margin="2,4,4,4" HorizontalScrollBarVisibility="Disabled"
+                                              VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"/>
+                            </controls:GlassChrome>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.35"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- ══════ glisse's search field: no surface of its own (it lies on a Liquid Glass capsule), a glyph before the text
                  (controls:GlassField.Icon), a clear button once there is text, and the glass brightens while focused ══════ -->
             <Style x:Key="GlassSearchField" TargetType="TextBox">
@@ -769,7 +791,7 @@
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="FontSize" Value="12.5"/>
-                <Setter Property="Padding" Value="14,0,6,0"/>
+                <Setter Property="Padding" Value="0"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                 <Setter Property="Template">
@@ -777,7 +799,7 @@
                         <ControlTemplate TargetType="TextBox">
                             <Grid Background="Transparent">
                                 <Border x:Name="Lit" CornerRadius="30" Background="{DynamicResource Tint0A}" Opacity="0" IsHitTestVisible="False"/>
-                                <Grid Margin="{TemplateBinding Padding}">
+                                <Grid Margin="{Binding (controls:GlassField.Inset), RelativeSource={RelativeSource TemplatedParent}}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>

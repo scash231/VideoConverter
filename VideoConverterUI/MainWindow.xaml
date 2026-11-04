@@ -119,8 +119,6 @@
         </Style>
         <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Height" Value="30"/>
-            <Setter Property="Background" Value="{DynamicResource GlassFill}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlassEdge}"/>
         </Style>
 
         <!-- Buttons on the header's glass pills: IconBtn with a capsule hover that follows the pill's shape -->
@@ -539,50 +537,12 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Collapsed Tools Popup Menu -->
-                            <Popup x:Name="PopupToolsMenu"
-                                    Placement="Bottom"
-                                    VerticalOffset="4"
-                                    StaysOpen="False"
-                                    AllowsTransparency="True"
-                                    PopupAnimation="None">
-                                <Border x:Name="ToolsPopupBorder" controls:LiquidGlass.Surface="Popup"
-                                         Background="{DynamicResource PopupBg}"
-                                         BorderBrush="{DynamicResource PopupBorder}" BorderThickness="1"
-                                         anim:FluidMotion.CornerRadiusValue="55"
-                                         Padding="8,6" MinWidth="160"
-                                         Opacity="0" RenderTransformOrigin="0.5,0">
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="22" ShadowDepth="2" Color="#000000" Opacity="0.3"/>
-                                    </Border.Effect>
-                                    <Border.RenderTransform>
-                                        <TransformGroup>
-                                            <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
-                                            <TranslateTransform Y="-4"/>
-                                        </TransformGroup>
-                                    </Border.RenderTransform>
-                                    <StackPanel>
-                                        <Button Style="{StaticResource GlassPillBtn}" Height="28" Margin="0,0,0,3" Click="EditorFromMenu_Click">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="VideoClip24" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{DynamicResource EditorTitle}" FontSize="11" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Style="{StaticResource GlassPillBtn}" Height="28" Margin="0,0,0,3" Click="BatchQueueFromMenu_Click">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Collections24" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{DynamicResource BatchQueueTitle}" FontSize="11" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Style="{StaticResource GlassPillBtn}" Height="28" Click="SettingsFromMenu_Click">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Settings24" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{DynamicResource SettingsTitle}" FontSize="11" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </Border>
-                            </Popup>
+                            <!-- The tools, when they are folded into ••• : glisse's menu, growing out of the button -->
+                            <controls:GlassMenu x:Name="ToolsMenu">
+                                <controls:GlassMenuItem Icon="VideoClip24" Label="{DynamicResource EditorTitle}" Click="EditorFromMenu_Click"/>
+                                <controls:GlassMenuItem Icon="Collections24" Label="{DynamicResource BatchQueueTitle}" Click="BatchQueueFromMenu_Click"/>
+                                <controls:GlassMenuItem Icon="Settings24" Label="{DynamicResource SettingsTitle}" Click="SettingsFromMenu_Click"/>
+                            </controls:GlassMenu>
 
                             <!-- Language Toggle Pill Button -->
                             <Border x:Name="LangPillGlass"
@@ -1391,12 +1351,8 @@
                                 </StackPanel>
 
                                 <!-- Description Box stretches to fill available middle height -->
-                                <TextBox x:Name="TxtDescription" IsReadOnly="True" Background="{DynamicResource GlassFill}"
-                                             TextWrapping="Wrap" MinHeight="60"
-                                             VerticalAlignment="Stretch"
-                                             Margin="0,0,0,8" Padding="10,8"
-                                             BorderBrush="{DynamicResource GlassEdge}"
-                                             VerticalScrollBarVisibility="Auto"
+                                <TextBox x:Name="TxtDescription" IsReadOnly="True" Style="{StaticResource GlassTextArea}"
+                                             MinHeight="60" VerticalAlignment="Stretch" Margin="0,0,0,8"
                                              ToolTip="{DynamicResource TipDescBox}"
                                              MouseDoubleClick="EditDescription_Click"/>
                             </DockPanel>

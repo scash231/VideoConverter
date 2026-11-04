@@ -254,6 +254,7 @@ public static class ThemeService
         SetColor(res, "GlassFill", light ? Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
         SetColor(res, "GlassFillLit", light ? Color.FromArgb(0xD9, 0xEC, 0xEC, 0xF0) : Color.FromArgb(0x24, 0xFF, 0xFF, 0xFF));
         SetColor(res, "GlassEdge", light ? Color.FromArgb(0x14, 0, 0, 0) : Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
+        SetColor(res, "GlassHighlight", light ? Color.FromArgb(0x17, 0x3C, 0x3C, 0x43) : Color.FromArgb(0x21, 0xEB, 0xEB, 0xF5));
         SetColor(res, "SliderRail", light ? Color.FromArgb(0x1A, 0, 0, 0) : Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
         SetColor(res, "SegmentThumb", light ? Colors.White : Color.FromArgb(0x4D, 0xEB, 0xEB, 0xF5));
         SetColor(res, "SegmentTrackFill", light ? Color.FromArgb(0x1F, 0x76, 0x76, 0x80) : Colors.Transparent);

@@ -574,7 +574,7 @@
                                         <TextBox x:Name="TxtPlaylistUrl" Grid.Column="0"
                                                  Style="{StaticResource GlassSearchField}"
                                                  controls:GlassField.Icon="Link24"
-                                                 Padding="11,0,2,0" FontSize="12"
+                                                 controls:GlassField.Inset="11,0,2,0" FontSize="12"
                                                  Tag="{DynamicResource BatchQueuePlaceholder}"
                                                  KeyDown="TxtPlaylistUrl_KeyDown"/>
                                         <Button x:Name="BtnPasteLinks" Grid.Column="1" Style="{StaticResource GlassRoundBtn}" Margin="0,0,2,0" Focusable="False"

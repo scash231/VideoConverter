@@ -71,6 +71,8 @@ public static class GlassSurfaces
 {
     public const string Notification = "Notification";
     public const string Dropdown = "Dropdown";
+    /// <summary>glisse's menu (GlassMenu), growing out of its button.</summary>
+    public const string Menu = "Menu";
     /// <summary>Flyouts in popups: Tools menu, help, error details, language picker, Queue Options.</summary>
     public const string Popup = "Popup";
     /// <summary>Dialog windows over their owner (Cloud Setup, FFmpeg installer, …) and alert sheets.</summary>
@@ -222,6 +224,35 @@ public static class GlassTuning
                 ShadowBlur = 22,
                 ShadowDepth = 2,
                 ShadowOpacity = 0.2,
+            }),
+        // glisse's menu card: blur 22 and saturate 1.9 under a nearly solid surface colour, a wide soft shadow.
+        [GlassSurfaces.Menu] = new("glisse's menu (the main window's folded tools)",
+            () => new GlassParams
+            {
+                CornerRadius = 20,
+                Saturation = 1.9,
+                Frost = 18,
+                Reflection = 0,
+                BackdropBlur = 8,
+                TintAlpha = 0xC0,
+                FallbackTintAlpha = 0xE8,
+                ShadowBlur = 40,
+                ShadowDepth = 12,
+                ShadowOpacity = 0.38,
+            },
+            () => new GlassParams
+            {
+                CornerRadius = 20,
+                Saturation = 1.9,
+                Brightness = 1.04,
+                Frost = 18,
+                Reflection = 0,
+                BackdropBlur = 8,
+                TintAlpha = 0xD0,
+                FallbackTintAlpha = 0xF0,
+                ShadowBlur = 40,
+                ShadowDepth = 12,
+                ShadowOpacity = 0.12,
             }),
         // Dialogs are large and full of controls: the most frost and tint.
         [GlassSurfaces.Dialog] = new("Dialogs and alert sheets",
