@@ -1,55 +1,66 @@
-# MediaConverter - VideoConverter
+# VideoConverter
 
-Alpha - https://github.com/scash231/VideoConverter/releases/tag/27H1
+A Windows desktop app for downloading video and audio from YouTube, YouTube Music, Instagram and TikTok.
 
-Modern C# WPF desktop application with a high-performance Python backend for downloading, converting, and auto-uploading media across YouTube Music, YouTube Shorts, Instagram Reels, TikTok, and universal web sources with built-in anti-detection video fingerprinting.
+<p align="center">
+  <img src="docs/images/video-preview.png" width="640" alt="VideoConverter showing a video preview with download options">
+</p>
 
-## Install
+## Download
 
-Download and run **[VideoConverterSetup.exe](https://scash.uk/vc)**. Nothing else is needed: setup downloads the app, the Ferrite engine, the .NET runtime (if missing), FFmpeg and yt-dlp. It installs for your Windows user only (no admin rights, except Windows asks once if .NET has to be installed). Run it again to update; uninstall in Windows Settings → Apps.
+Get **[VideoConverterSetup.exe](https://scash.uk/vc)** and run it.
 
-The Python (Legacy) engine is no longer supported and is not part of the installer. If you still need it, get [VideoConverter-Legacy-Python.zip](https://scash.uk/vc/VideoConverter-Legacy-Python.zip) and follow its README.
+Setup installs the app for your Windows user and fetches what it needs, including FFmpeg and yt-dlp. It only asks for administrator rights if the .NET runtime has to be installed. Run it again to reinstall, or update from inside the app under Settings > General > Software Update.
 
-Releasing (maintainer): `.\installer\build_release.ps1 -Upload` builds everything into `dist\vc` and uploads it to scash.uk.
+The setup is not code-signed, so Windows SmartScreen may warn you the first time. Choose **More info**, then **Run anyway**.
 
-# 26H2 Beta
+Requires Windows 10 version 1903 or later, or Windows 11 (64-bit).
 
-## New
+## Features
 
-- **YouTube Music support** — download YT Music tracks up to 320 kbps, with artist/album/year/track count pulled from metadata
-- **5 new languages** — Spanish, French, Italian, Japanese, Chinese
-- **Phased progress window** — download / fingerprint-bypass / upload, each with its own progress and live speed + ETA
-- **Success/failure notifications** with optional sound
-- **Window resize grip** — every window is resizable and remembers its last size
-- **Designer window redesign** — new Layout and Animations tabs, gradient controls, collapsible color categories
+- **Video:** up to 4K, down to 480p
+- **Audio:** MP3, M4A and FLAC, with artist, album and year from YouTube Music
+- **Multi Downloader:** queue playlists or lists of links, with a quality setting per item
+- **Editor:** trim, crop, speed and volume, plus generated subtitles
+- **Fingerprinting:** optionally re-encode a video or rewrite its metadata
+- **Cloud:** send finished files to Google Drive, Dropbox, OneDrive or a Discord webhook
+- **YouTube upload:** publish directly with your own Google API credentials
+- **Languages:** English, German and Russian
 
-## Improved
+## Screenshots
 
-- Rounded window corners now clip properly at the OS level (no more square edges under the rounded XAML)
-- Blur enabled by default on LogViewer, DevConsole, DescEditor
-- Sandstone theme preset fixed for proper glassmorphism
-- Popup backgrounds cleaner and more opaque
-- Animation system reworked (easing, spring dynamics, staggering)
+<p align="center">
+  <img src="docs/images/multi-downloader.png" width="640" alt="Multi Downloader with a queue of five videos">
+</p>
 
-## Misc
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/main-window.png" alt="Main window ready for a link"></td>
+    <td width="50%"><img src="docs/images/settings.png" alt="Appearance settings"></td>
+  </tr>
+</table>
 
-- `mutagen` dependency for YT Music metadata
-- New endpoint: `POST /api/ytmusic/metadata`
-- 18 new theme settings fields
-- Console log filters (System / Backend / FFmpeg)
-- Compact mode toggle
+## Build from source
 
----
-*Note: build artifacts are not the same as release assets — release assets can be modified after the fact.*
-#
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and a [Rust toolchain](https://rustup.rs/).
 
-- YoutubeMusic support - Lossless/Mp3
-- Audio/Video support
-- 4k/2k/1080p/720p/480p/Audio Only
-- Metadata and Video/Audio Changer Option to avoid automaitc Heuristic Detections from Several Plattoforms.
-- Fully Automatic Uploud function to Youtube (You need your API Key for that - Requirments)
+```bash
+git clone https://github.com/scash231/VideoConverter.git
+cd VideoConverter
+dotnet run --project VideoConverterUI
+```
 
-26H2 Beta <img width="764" height="562" alt="image" src="https://github.com/user-attachments/assets/372b9f46-8634-4f2d-a26a-5fa01657ee86" />
+Subtitles also need Python with the packages from `backend/requirements.txt`.
 
-27H1 Canary<img width="755" height="555" alt="image" src="https://github.com/user-attachments/assets/10c36ef0-e062-47cb-b0df-5c30fe8a91ee" />
+## Project layout
 
+| Path | Contents |
+| --- | --- |
+| `VideoConverterUI/` | The WPF app (C#) |
+| `backend-ferrite/` | Ferrite download engine (Rust) |
+| `backend/` | Subtitle generation and the legacy Python engine |
+| `VideoConverterSetup/` | Web installer |
+
+## Legal
+
+Only download content you own or have permission to use, and follow the terms of the platform it comes from.
