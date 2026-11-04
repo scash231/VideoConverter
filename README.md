@@ -1,6 +1,6 @@
 # VideoConverter
 
-A Windows desktop app for downloading video and audio from YouTube, YouTube Music, Instagram and TikTok.
+A Windows desktop app for downloading video and audio from YouTube, YouTube Music, Instagram and TikTok and others.
 
 <p align="center">
   <img src="docs/images/video-preview.png" width="640" alt="VideoConverter showing a video preview with download options">
@@ -8,7 +8,7 @@ A Windows desktop app for downloading video and audio from YouTube, YouTube Musi
 
 ## Download
 
-Get **[VideoConverterSetup.exe](https://scash.uk/vc)** and run it.
+Get **[VideoConverterSetup.exe]([https://scash.uk/vc](https://github.com/scash231/VideoConverter/releases/download/27H1/VideoConverterSetup.exe))** and run it.
 
 Setup installs the app for your Windows user and fetches what it needs, including FFmpeg and yt-dlp. It only asks for administrator rights if the .NET runtime has to be installed. Run it again to reinstall, or update from inside the app under Settings > General > Software Update.
 
