@@ -56,3 +56,5 @@ scratch/
 
 # Ferrite (Rust) build output
 backend-ferrite/target/
+
+CLAUDE.md
