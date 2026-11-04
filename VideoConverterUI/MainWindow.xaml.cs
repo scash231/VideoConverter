@@ -556,12 +556,14 @@ public partial class MainWindow : Window
     // (Controls/GlassSwitch): pressed, it lifts into a lens and goes to the pressed side; it follows a drag; let go, it
     // slides to the nearest side and turns back into the thumb only once it is there.
 
-    // glisse's springs (stiffness, damping) as response and damping ratio: 2500, 94 and 576, 44.2 while held, 1024, 58.9
-    // and 676, 47.8 at rest.
+    // glisse's springs (stiffness, damping) as response and damping ratio: 2500, 94 while following a drag, 576, 44.2 and
+    // 676, 47.8 for the lift. Going from side to side has its own: glisse's thumb travels 84 px, this one about 360, and
+    // on glisse's spring it covered that in 100 ms, up to a third of the way per frame, which reads as a jump.
     private static readonly Spring PillSlideDrag = new(0.1257, 0.94);
+    private static readonly Spring PillSlideTravel = new(0.5, 0.95);
     private static readonly Spring PillLiftDrag = new(0.2618, 0.921);
-    private static readonly Spring PillSlideRest = new(0.2454, 0.92);  // a little slower than glisse's, like the switches
     private static readonly Spring PillLiftRest = new(0.2417, 0.919);
+    private const double PillFollowRange = 40;  // further than this from the pointer, the thumb travels instead of following
 
     private static readonly DependencyProperty PillXProperty = DependencyProperty.Register("PillX", typeof(double), typeof(MainWindow),
         new PropertyMetadata(0.0, (d, _) => ((MainWindow)d).PaintPill()));
@@ -622,11 +624,11 @@ public partial class MainWindow : Window
         void Land() => Liquid.To(this, PillLiftProperty, 0, PillLiftRest);
         if (Math.Abs((double)GetValue(PillXProperty) - target) < 0.3)
         {
-            Liquid.To(this, PillXProperty, target, PillSlideRest, min: 0, max: colW);
+            Liquid.To(this, PillXProperty, target, PillSlideTravel, min: 0, max: colW);
             Land();
             return;
         }
-        Liquid.To(this, PillXProperty, target, PillSlideRest, min: 0, max: colW, precision: 0.003, done: Land);
+        Liquid.To(this, PillXProperty, target, PillSlideTravel, min: 0, max: colW, precision: 0.003, done: Land);
     }
 
     private void Segment_LostMouseCapture(object sender, MouseEventArgs e)
@@ -651,7 +653,7 @@ public partial class MainWindow : Window
             _pillAnchorX = _pillDownX < colW ? 0 : colW;
             TakeOverPill();
             ((UIElement)sender).CaptureMouse();  // a button under it takes this over, and hands it back for a drag
-            Liquid.To(this, PillXProperty, _pillAnchorX, PillSlideDrag, min: 0, max: colW);
+            Liquid.To(this, PillXProperty, _pillAnchorX, PillSlideTravel, min: 0, max: colW);
             Liquid.To(this, PillLiftProperty, 1, PillLiftDrag);
             return;
         }
@@ -677,7 +679,9 @@ public partial class MainWindow : Window
                 _pillMoved = true;
                 ((UIElement)sender).CaptureMouse();
             }
-            Liquid.To(this, PillXProperty, Math.Clamp(_pillAnchorX + dx, 0, slot), PillSlideDrag, min: 0, max: slot);
+            double goal = Math.Clamp(_pillAnchorX + dx, 0, slot);
+            bool close = Math.Abs(goal - (double)GetValue(PillXProperty)) <= PillFollowRange;
+            Liquid.To(this, PillXProperty, goal, close ? PillSlideDrag : PillSlideTravel, min: 0, max: slot);
             return;
         }
         if (_isUploadDisabledForYtMusic || !_pillDragPending) return;

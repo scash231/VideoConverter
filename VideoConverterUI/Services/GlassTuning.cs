@@ -33,7 +33,7 @@ public sealed class GlassParams
     // Sizes are shares of the surface's shorter side, so one set fits a 30 px button and a 600 px panel alike.
     /// <summary>0 = rim squeeze (Refraction, Bevel, Dispersion, Highlight); 1 = glisse dome lens + rim; between blends.</summary>
     public double LensStyle { get; set; } = 1;
-    public double LensStrength { get; set; } = 0.40;
+    public double LensStrength { get; set; } = 0.38;
     public double LensDepth { get; set; } = 0.25;
     public double LensDome { get; set; } = 0.5;
     public double LensDispersion { get; set; } = 0.4;
@@ -573,7 +573,7 @@ public static class GlassTuning
                 Frost = 0,
                 Inset = 12,
                 Reflection = 0,
-                LensStrength = 0.3,
+                LensStrength = 0.285,
                 LensDepth = 0.06,
                 LensDome = 0.02,
                 LensDispersion = 0.1,
@@ -593,7 +593,7 @@ public static class GlassTuning
                 Frost = 0,
                 Inset = 12,
                 Reflection = 0,
-                LensStrength = 0.3,
+                LensStrength = 0.285,
                 LensDepth = 0.06,
                 LensDome = 0.02,
                 LensDispersion = 0.1,

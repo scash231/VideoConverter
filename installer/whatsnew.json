@@ -5,6 +5,20 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.29.3",
+          "date": "2026-11-04",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "The Upload and Download toggle slides smoothly between sides.",
+                "Switches respond more quickly.",
+                "The Liquid Glass lens is slightly more subtle."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.29.2",
           "date": "2026-11-04",
           "sections": [

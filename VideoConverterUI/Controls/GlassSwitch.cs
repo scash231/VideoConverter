@@ -21,8 +21,8 @@ public sealed class GlassSwitch : Grid
     // glisse's springs (stiffness, damping) as response and damping ratio.
     private static readonly Spring TravelSpring = FromStiffness(1000, 80);
     private static readonly Spring LiftSpring = FromStiffness(2000, 80);
-    // Going to a new state, a little slower than glisse's, so the trip is seen in the lens.
-    private static readonly Spring SettleSpring = TravelSpring.Slower(1.25);
+    // Going to a new state: quick, without glisse's overdamped tail, which only kept the thumb creeping in the lens.
+    private static readonly Spring SettleSpring = new(0.24, 1);
 
     private const double RestScale = 0.65, LiftScaleGain = 0.25;
     private const double TravelUnits = 57.9, ThumbLeftUnits = -21.95, ThumbWidthUnits = 146, ThumbHeightUnits = 92;
@@ -151,7 +151,7 @@ public sealed class GlassSwitch : Grid
         fx.CornerRadius = _thumb.Height / 2;
         fx.Inset = 0;
         fx.LensStyle = 1;
-        fx.LensStrength = 0.45;
+        fx.LensStrength = 0.43;
         fx.LensDepth = 2 / 34.5;
         fx.LensDome = 6 / 34.5;
         fx.LensDispersion = 1;
