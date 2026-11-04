@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Media3D;
 
 namespace VideoConverterUI.Controls;
 
@@ -19,6 +20,11 @@ namespace VideoConverterUI.Controls;
 /// close to a second, so <see cref="Warmup"/> does it on a background thread at startup, and the bytecode is cached in
 /// %LOCALAPPDATA%\VideoConverter\cache (keyed by a hash of the HLSL) so later launches only read a file.
 /// <see cref="TryCreate"/> returns null when the shader can't run (software rendering, compile failure).
+/// <para>That rim-squeeze lens is <see cref="LensStyle"/> 0. Style 1 (the default) is glisse's
+/// (github.com/0kzh/glisse): a dome lens that shows the backdrop from further in, so the rim magnifies and wraps what is
+/// under the glass, with glisse's colour split and its thin iOS rim line over a 0.5 DIP edge line. Its sizes are shares
+/// of the shorter side (<see cref="LensStrength"/>, <see cref="LensDepth"/>, <see cref="LensDome"/>), so one setting
+/// fits every surface.</para>
 /// </summary>
 public sealed class LiquidGlassEffect : ShaderEffect
 {
@@ -38,6 +44,15 @@ public sealed class LiquidGlassEffect : ShaderEffect
         float  reflectReach : register(c11);
         float  reflectWidth : register(c12);
         float2 arms       : register(c13);   // backwards-L shape: right arm width, bottom arm height (0 = rounded rect)
+        float  lensStyle  : register(c14);   // 0 = rim squeeze (outward), 1 = glisse dome lens (inward); between blends
+        float  lensStrength   : register(c15);
+        float  lensDepth      : register(c16);
+        float  lensDome       : register(c17);
+        float  lensDispersion : register(c18);
+        float  rimShine   : register(c19);
+        float  rimEdge    : register(c20);   // the 0.5 px edge line: > 0 white, < 0 black, its size the alpha
+        float3 domeScale  : register(c21);   // the dome arcs' slope scales (across, down, along an L's arms), from C#
+        float  lensBlur   : register(c22);   // glisse lens: how far (DIPs) the rim's samples spread, its softness
 
         // Rounded rect with superellipse (n = 4) corners like SquircleBorder: 0 on the edge, negative inside.
         // Fully rounded (r = half the short side) it is a circle / capsule (n = 2), also like SquircleBorder.
@@ -71,6 +86,53 @@ public sealed class LiquidGlassEffect : ShaderEffect
             return min(right, bottom);
         }
 
+        // The shorter side the lens is sized by: the card's, or an L's narrower arm.
+        float domeSide(float2 h)
+        {
+            float2 a = min(arms, h * 2);
+            return lerp(2 * min(h.x, h.y), max(min(a.x, a.y), 1), step(0.5, arms.x) * step(0.5, arms.y));
+        }
+
+        // How far into the dome's band a point is: 0 in the flat middle, 0.5 on the band's inner edge, about 0.84 at
+        // the rim. glisse measures from an inner rounded rect (circular corners, the card's radius); an L from its
+        // own outline moved in.
+        float domeBand(float2 p, float2 h, float r, float d)
+        {
+            float depth = max(lensDepth * domeSide(h), 0.5);
+            float2 ih = max(h - depth, 0);
+            float ir = clamp(r, 0, min(ih.x, ih.y));
+            float2 q = abs(p) - ih + ir;
+            float inner = length(max(q, 0)) + min(max(q.x, q.y), 0) - ir;
+            inner = lerp(inner, d + depth, step(0.5, arms.x) * step(0.5, arms.y));
+            return 0.5 + 0.5 * tanh(1.7724539 * inner / (depth * 1.4142136));
+        }
+
+        // The glisse lens (github.com/0kzh/glisse, after Aave's web glass): within a band lensDepth of the shorter side
+        // wide around the rim, each point shows the backdrop from further in, by the slope of a dome that sags
+        // lensDome of the shorter side, so the rim magnifies and wraps what is under the glass instead of pulling the
+        // surroundings in. Across and down are separate arcs over the half width and half height (glisse's splay 1),
+        // each scaled so its slope averages one half, and the band fades in with an erf ramp. The pull is at most half
+        // of lensStrength of the shorter side, as glisse's 8-bit map holds. A backwards L has no one centre: there the
+        // pull follows the edge's normal, with the dome across the arms. Returns the offset in DIPs.
+        float2 domeShift(float2 p, float2 h, float f, float d, float2 n)
+        {
+            float m = domeSide(h);
+            float sag = max(0.01, min(lensDome * m, m * 0.5 - 1));
+
+            // Each arc's scale (its mean slope made one half) is worked out in C# the way glisse does it (DomeScale).
+            float2 R = (h * h + sag * sag) / (2 * sag);
+            float2 ax = min(abs(p), 0.999 * R);
+            float2 slopes = sign(p) * ax / sqrt(R * R - ax * ax) * domeScale.xy;
+
+            float hm = m * 0.5;
+            float RL = (hm * hm + sag * sag) / (2 * sag);
+            float xL = clamp(hm + d, 0, 0.999 * RL);
+            float slopeL = xL / sqrt(RL * RL - xL * xL) * domeScale.z;
+
+            float2 pull = lerp(slopes, n * slopeL, step(0.5, arms.x) * step(0.5, arms.y));
+            return -0.5 * lensStrength * m * clamp(pull * f, -1, 1);
+        }
+
         float4 main(float2 uv : TEXCOORD) : COLOR
         {
             float2 s = max(size, 1);
@@ -90,22 +152,30 @@ public sealed class LiquidGlassEffect : ShaderEffect
             float b = max(bevel, min(r, min(h.x, h.y)) * 0.55);
             float t = saturate(1 + d / b);
             float bend = 1 - sqrt(saturate(1 - t * t));
-            float2 shift = n * refraction * bend / s;
+            float band = domeBand(p, h, r, d);
+            float2 dome = domeShift(p, h, band, d, n);
+            float2 shift = lerp(n * refraction * bend, dome, lensStyle) / s;
             float2 at = uv + shift;
 
             // The rim stays sharp (and splits colour) so the lensing reads; the flat middle is frosted for legibility.
             // Towards the edge the bevel squeezes many pixels of backdrop into each one, and a single sample per pixel
             // turned that into streaks and a hard stop. Five samples across the pixel's width (±1 px of bevel) average
             // what it covers, so the bend runs out smoothly.
+            // The glisse lens splits colour the way glisse does: red bends 0.2 x lensDispersion further than blue, green
+            // halfway. glisse bends a backdrop blurred by 3 px; here the five samples sit on a small square lensBlur
+            // across (one in the middle, four on the diagonals) and spread the pull by +-12 %, which softens the band
+            // as much and smooths where the dome folds the backdrop over.
+            float3 spectrum = lerp(float3(1 + dispersion, 1, 1 - dispersion),
+                                   float3(1 + 0.2 * lensDispersion, 1 + 0.1 * lensDispersion, 1), lensStyle);
             float4 rim = 0;
             for (int k = -2; k <= 2; k++)
             {
                 float tk = saturate(t + k * 0.5 / b);
-                float2 sk = n * refraction * (1 - sqrt(saturate(1 - tk * tk))) / s;
-                float2 split = sk * dispersion;
-                rim.r  += tex2D(input, uv + sk + split).r;
-                rim.ga += tex2D(input, uv + sk).ga;
-                rim.b  += tex2D(input, uv + sk - split).b;
+                float2 soft = float2(2 * abs(k) - 3, -sign(k)) * (0.7071 * lensBlur * abs(sign(k)));
+                float2 sk = lerp(n * refraction * (1 - sqrt(saturate(1 - tk * tk))), dome * (1 + 0.06 * k) + soft, lensStyle) / s;
+                rim.r  += tex2D(input, uv + sk * spectrum.r).r;
+                rim.ga += tex2D(input, uv + sk * spectrum.g).ga;
+                rim.b  += tex2D(input, uv + sk * spectrum.b).b;
             }
             rim /= 5;
 
@@ -123,8 +193,9 @@ public sealed class LiquidGlassEffect : ShaderEffect
             frosted /= weights;
 
             // Frosted to clear towards the edge, so where the bend begins doesn't show as a line; the outer part of
-            // the (now wider) bevel stays sharp so the bend reads.
-            float4 c = lerp(frosted, rim, smoothstep(0.25, 1.0, t));
+            // the (now wider) bevel stays sharp so the bend reads. The glisse lens: frosted in the flat middle, the
+            // bent (and split) backdrop across its band.
+            float4 c = lerp(frosted, rim, lerp(smoothstep(0.25, 1.0, t), smoothstep(0.1, 0.6, band), lensStyle));
 
             // Reflection: the colour of what lies beyond the edge (from 40 % to 100 % of reflectReach out) spills into
             // a soft band inside it, like bright surroundings mirrored in thick glass. It reaches across gaps the lens
@@ -152,7 +223,20 @@ public sealed class LiquidGlassEffect : ShaderEffect
             float lit = pow(saturate(facing), 2.5) + 0.8 * pow(saturate(-facing), 2.5);
             float edgeLine = saturate(1 - abs(d + 0.75) / 0.85);
             float glow = exp(min(d, 0) / 3.0) * (1 - edgeLine);
-            c.rgb += highlight * (edgeLine * (0.2 + 1.5 * lit) + 0.5 * glow * lit) * c.a;
+            c.rgb += (1 - lensStyle) * highlight * (edgeLine * (0.2 + 1.5 * lit) + 0.5 * glow * lit) * c.a;
+
+            // glisse's rim, as iOS 26.1 draws it: a white line brightest at the very edge and gone 1.22 DIPs in. A
+            // light from the top left lights the left side and top, its reflection the right side and bottom; it fades
+            // out over the two corners between and is a little wider on the two it faces. Under it the 0.5 DIP edge
+            // line (white in dark mode, black in light mode).
+            float inside = -d;
+            float faces = abs(n.x + n.y);   // 1 along the sides, sqrt 2 on the lit corners, 0 on the others
+            float alongRim = max(inside, 0) / (1.22 * sqrt(max(1, faces)));
+            float shine = alongRim < 1 ? rimShine * pow(min(1, faces), 1.5) * (1 - pow(saturate(alongRim), 1.5)) : 0;
+            shine *= step(-0.5, inside) * lensStyle;
+            float edgeMark = abs(rimEdge) * saturate((0.75 - inside) / 0.5) * step(-0.5, inside) * (1 - shine) * lensStyle;
+            c.rgb = c.rgb * (1 - shine - edgeMark) + (shine + edgeMark * step(0, rimEdge)) * c.a;
+
             c.rgb = min(c.rgb, c.a);
             return c;
         }
@@ -167,7 +251,7 @@ public sealed class LiquidGlassEffect : ShaderEffect
         RegisterPixelShaderSamplerProperty(nameof(Input), typeof(LiquidGlassEffect), 0);
 
     public static readonly DependencyProperty SizeProperty = DependencyProperty.Register(nameof(Size), typeof(Size),
-        typeof(LiquidGlassEffect), new UIPropertyMetadata(new Size(1, 1), PixelShaderConstantCallback(0)));
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(new Size(1, 1), ShapeChanged(0)));
 
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(nameof(CornerRadius), typeof(double),
         typeof(LiquidGlassEffect), new UIPropertyMetadata(16.0, PixelShaderConstantCallback(1)));
@@ -194,7 +278,7 @@ public sealed class LiquidGlassEffect : ShaderEffect
         typeof(LiquidGlassEffect), new UIPropertyMetadata(10.0, PixelShaderConstantCallback(9)));
 
     public static readonly DependencyProperty InsetProperty = DependencyProperty.Register(nameof(Inset), typeof(double),
-        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.0, PixelShaderConstantCallback(8)));
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.0, ShapeChanged(8)));
 
     public static readonly DependencyProperty ReflectionProperty = DependencyProperty.Register(nameof(Reflection), typeof(double),
         typeof(LiquidGlassEffect), new UIPropertyMetadata(0.0, PixelShaderConstantCallback(10)));
@@ -206,7 +290,76 @@ public sealed class LiquidGlassEffect : ShaderEffect
         typeof(LiquidGlassEffect), new UIPropertyMetadata(24.0, PixelShaderConstantCallback(12)));
 
     public static readonly DependencyProperty ArmsProperty = DependencyProperty.Register(nameof(Arms), typeof(Size),
-        typeof(LiquidGlassEffect), new UIPropertyMetadata(new Size(0, 0), PixelShaderConstantCallback(13)));
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(new Size(0, 0), ShapeChanged(13)));
+
+    public static readonly DependencyProperty LensStyleProperty = DependencyProperty.Register(nameof(LensStyle), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(1.0, PixelShaderConstantCallback(14)));
+
+    public static readonly DependencyProperty LensStrengthProperty = DependencyProperty.Register(nameof(LensStrength), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.45, PixelShaderConstantCallback(15)));
+
+    public static readonly DependencyProperty LensDepthProperty = DependencyProperty.Register(nameof(LensDepth), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.25, PixelShaderConstantCallback(16)));
+
+    public static readonly DependencyProperty LensDomeProperty = DependencyProperty.Register(nameof(LensDome), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.5, ShapeChanged(17)));
+
+    public static readonly DependencyProperty LensBlurProperty = DependencyProperty.Register(nameof(LensBlur), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(3.0, PixelShaderConstantCallback(22)));
+
+    private static readonly DependencyProperty DomeScaleProperty = DependencyProperty.Register("DomeScale", typeof(Point3D),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(new Point3D(1, 1, 1), PixelShaderConstantCallback(21)));
+
+    /// <summary>Sets the shader constant, then works out the dome's scales again for the new shape.</summary>
+    private static PropertyChangedCallback ShapeChanged(int register)
+    {
+        var constant = PixelShaderConstantCallback(register);
+        return (d, e) =>
+        {
+            constant(d, e);
+            ((LiquidGlassEffect)d).UpdateDomeScale();
+        };
+    }
+
+    /// <summary>
+    /// The glisse lens's arcs, scaled so their slope averages one half over the half width or height (glisse's
+    /// <c>arc</c>, the same 200-step trapezoid, so the bend matches glisse's to the pixel: near a hemisphere its last,
+    /// steep sample weighs in far more than in the integral, which softens the short side's bend). The shader needs one
+    /// scale per arc, across, down and across an L's arms; they change only with the shape.
+    /// </summary>
+    private void UpdateDomeScale()
+    {
+        var s = Size;
+        double hx = Math.Max(s.Width * 0.5 - Inset, 1), hy = Math.Max(s.Height * 0.5 - Inset, 1);
+        var arms = Arms;
+        bool l = arms.Width >= 0.5 && arms.Height >= 0.5;
+        double m = l ? Math.Max(Math.Min(Math.Min(arms.Width, hx * 2), Math.Min(arms.Height, hy * 2)), 1) : 2 * Math.Min(hx, hy);
+        double sag = Math.Max(0.01, Math.Min(LensDome * m, m * 0.5 - 1));
+        SetValue(DomeScaleProperty, new Point3D(ArcScale(sag, hx), ArcScale(sag, hy), ArcScale(sag, m * 0.5)));
+    }
+
+    private static double ArcScale(double sag, double half)
+    {
+        double radius = (half * half + sag * sag) / (2 * sag);
+        double sum = 0;
+        for (int i = 0; i <= 200; i++)
+        {
+            double x = i / 200.0 * half;
+            double slope = x / Math.Sqrt(Math.Max(radius * radius - x * x, 1e-9));
+            sum += i == 0 || i == 200 ? slope / 2 : slope;
+        }
+        double mean = sum / 200;
+        return mean > 0 ? 0.5 / mean : 1;
+    }
+
+    public static readonly DependencyProperty LensDispersionProperty = DependencyProperty.Register(nameof(LensDispersion), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.4, PixelShaderConstantCallback(18)));
+
+    public static readonly DependencyProperty RimShineProperty = DependencyProperty.Register(nameof(RimShine), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.13, PixelShaderConstantCallback(19)));
+
+    public static readonly DependencyProperty RimEdgeProperty = DependencyProperty.Register(nameof(RimEdge), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.08, PixelShaderConstantCallback(20)));
 
     public Brush Input { get => (Brush)GetValue(InputProperty); set => SetValue(InputProperty, value); }
     /// <summary>Size of the effect's element in DIPs (the card plus <see cref="Inset"/> on every side).</summary>
@@ -236,6 +389,23 @@ public sealed class LiquidGlassEffect : ShaderEffect
     /// <summary>Backwards-L outline (see <see cref="LiquidGlassPanel.ReverseLArms"/>): right arm width and bottom arm
     /// height in DIPs; 0×0 = the rounded rectangle.</summary>
     public Size Arms { get => (Size)GetValue(ArmsProperty); set => SetValue(ArmsProperty, value); }
+    /// <summary>0 = the rim squeezes in the surroundings (Refraction, Bevel, Dispersion, Highlight); 1 = glisse's dome
+    /// lens and rim (the Lens* and Rim* values); values between blend the two.</summary>
+    public double LensStyle { get => (double)GetValue(LensStyleProperty); set => SetValue(LensStyleProperty, value); }
+    /// <summary>glisse lens: how far in the rim reaches for what it shows, as a share of the shorter side (0.45).</summary>
+    public double LensStrength { get => (double)GetValue(LensStrengthProperty); set => SetValue(LensStrengthProperty, value); }
+    /// <summary>glisse lens: width of the band around the rim that bends, as a share of the shorter side (0.25).</summary>
+    public double LensDepth { get => (double)GetValue(LensDepthProperty); set => SetValue(LensDepthProperty, value); }
+    /// <summary>glisse lens: sag of the dome whose slope sets the bend, as a share of the shorter side (0.5).</summary>
+    public double LensDome { get => (double)GetValue(LensDomeProperty); set => SetValue(LensDomeProperty, value); }
+    /// <summary>glisse lens: how much further red bends than blue (at 1, a fifth further; glisse uses 0.4).</summary>
+    public double LensDispersion { get => (double)GetValue(LensDispersionProperty); set => SetValue(LensDispersionProperty, value); }
+    /// <summary>glisse lens: how far (DIPs) the rim's samples spread, so the bent band is as soft as glisse's (3).</summary>
+    public double LensBlur { get => (double)GetValue(LensBlurProperty); set => SetValue(LensBlurProperty, value); }
+    /// <summary>glisse rim: alpha of the white line along the lit edges (glisse: 0.13 dark, 0.3 light).</summary>
+    public double RimShine { get => (double)GetValue(RimShineProperty); set => SetValue(RimShineProperty, value); }
+    /// <summary>glisse rim: the 0.5 DIP edge line's alpha; positive draws it white, negative black.</summary>
+    public double RimEdge { get => (double)GetValue(RimEdgeProperty); set => SetValue(RimEdgeProperty, value); }
 
     private LiquidGlassEffect(PixelShader shader)
     {
@@ -255,6 +425,16 @@ public sealed class LiquidGlassEffect : ShaderEffect
         UpdateShaderValue(ReflectionReachProperty);
         UpdateShaderValue(ReflectionWidthProperty);
         UpdateShaderValue(ArmsProperty);
+        UpdateShaderValue(LensStyleProperty);
+        UpdateShaderValue(LensStrengthProperty);
+        UpdateShaderValue(LensDepthProperty);
+        UpdateShaderValue(LensDomeProperty);
+        UpdateShaderValue(LensDispersionProperty);
+        UpdateShaderValue(RimShineProperty);
+        UpdateShaderValue(RimEdgeProperty);
+        UpdateShaderValue(LensBlurProperty);
+        UpdateDomeScale();
+        UpdateShaderValue(DomeScaleProperty);
     }
 
     public static LiquidGlassEffect? TryCreate()

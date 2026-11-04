@@ -34,6 +34,16 @@ public partial class GlassTunerWindow : Window
             new("Reflection reach", "How far (DIPs) beyond the edge the reflection looks.", 0, 96, 1, p => p.ReflectionReach, (p, v) => p.ReflectionReach = v),
             new("Reflection width", "Width (DIPs) of the band inside the edge the reflection shows in.", 1, 60, 0.5, p => p.ReflectionWidth, (p, v) => p.ReflectionWidth = v),
         ]),
+        ("glisse lens (Lens style 1; Refraction, Bevel, Dispersion and Highlight are the style-0 rim)", [
+            new("Lens style", "0 = the rim squeezes in the surroundings; 1 = glisse's dome lens and rim; between blends.", 0, 1, 0.05, p => p.LensStyle, (p, v) => p.LensStyle = v),
+            new("Lens strength", "How far in the rim reaches for what it shows, as a share of the shorter side (glisse 0.45).", 0, 1, 0.01, p => p.LensStrength, (p, v) => p.LensStrength = v),
+            new("Lens depth", "Width of the bending band around the rim, as a share of the shorter side (glisse 0.25).", 0.02, 0.5, 0.01, p => p.LensDepth, (p, v) => p.LensDepth = v),
+            new("Lens dome", "Sag of the dome whose slope sets the bend, as a share of the shorter side (glisse 0.5).", 0.02, 1, 0.01, p => p.LensDome, (p, v) => p.LensDome = v),
+            new("Lens dispersion", "How much further red bends than blue: at 1, a fifth further (glisse 0.4).", 0, 2, 0.01, p => p.LensDispersion, (p, v) => p.LensDispersion = v),
+            new("Lens blur", "How far (DIPs) the rim's samples spread: the bent band's softness (glisse's 3 px blur).", 0, 10, 0.1, p => p.LensBlur, (p, v) => p.LensBlur = v),
+            new("Rim shine", "The white line along the lit edges (glisse 0.13 dark, 0.3 light).", 0, 1, 0.01, p => p.RimShine, (p, v) => p.RimShine = v),
+            new("Edge line", "Alpha of the 0.5 DIP edge line: white in dark mode, black in light mode (glisse 0.08).", 0, 0.4, 0.01, p => p.RimEdge, (p, v) => p.RimEdge = v),
+        ]),
         ("Layers", [
             new("Backdrop blur", "Gaussian blur under the shader (just softens; the shader does the frost).", 0, 40, 0.5, p => p.BackdropBlur, (p, v) => p.BackdropBlur = v),
             new("Tint alpha", "Material tint over the glass (0-255): white in light mode, graphite in dark mode.", 0, 255, 1, p => p.TintAlpha, (p, v) => p.TintAlpha = v),

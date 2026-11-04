@@ -29,6 +29,24 @@ public sealed class GlassParams
     public double ReflectionReach { get; set; } = 40;
     public double ReflectionWidth { get; set; } = 24;
 
+    // The glisse lens and rim (github.com/0kzh/glisse), what every surface uses since LensStyle 1 became the default.
+    // Sizes are shares of the surface's shorter side, so one set fits a 30 px button and a 600 px panel alike.
+    /// <summary>0 = rim squeeze (Refraction, Bevel, Dispersion, Highlight); 1 = glisse dome lens + rim; between blends.</summary>
+    public double LensStyle { get; set; } = 1;
+    public double LensStrength { get; set; } = 0.45;
+    public double LensDepth { get; set; } = 0.25;
+    public double LensDome { get; set; } = 0.5;
+    public double LensDispersion { get; set; } = 0.4;
+    /// <summary>How far (DIPs) the rim's samples spread: the bent band as soft as glisse's 3 px blur.</summary>
+    public double LensBlur { get; set; } = 3;
+    /// <summary>The white line along the lit edges (glisse: 0.13 on a dark page, 0.3 on a light one).</summary>
+    public double RimShine { get; set; } = DarkRimShine;
+    /// <summary>The 0.5 DIP edge line under it: white in dark mode, black in light mode, at this alpha.</summary>
+    public double RimEdge { get; set; } = 0.08;
+
+    public const double DarkRimShine = 0.13;
+    public const double LightRimShine = 0.3;
+
     // Layers around the shader
     public double BackdropBlur { get; set; } = 4;
     public double TintAlpha { get; set; } = 0x1F;
@@ -736,7 +754,12 @@ public static class GlassTuning
     }
 
     private static GlassParams Default(string surface, bool light)
-        => Registry.TryGetValue(surface, out var d) ? (light ? d.Light() : d.Dark()) : new GlassParams();
+    {
+        var p = Registry.TryGetValue(surface, out var d) ? (light ? d.Light() : d.Dark()) : new GlassParams();
+        // The glisse rim shines brighter on a light page; a surface that sets its own keeps it.
+        if (light && p.RimShine == GlassParams.DarkRimShine) p.RimShine = GlassParams.LightRimShine;
+        return p;
+    }
 
     public static void NotifyChanged() => Changed?.Invoke();
 
@@ -756,7 +779,14 @@ public static class GlassTuning
                 return;
             }
             foreach (var (surface, set) in JsonSerializer.Deserialize<Dictionary<string, ModeSet>>(json) ?? [])
+            {
+                // Saved before the glisse rim existed: the light set gets the light page's shine, not the dark default.
+                if (set.Light != null && doc.RootElement.TryGetProperty(surface, out var saved)
+                    && saved.TryGetProperty("Light", out var lightSet) && lightSet.ValueKind == JsonValueKind.Object
+                    && !lightSet.TryGetProperty(nameof(GlassParams.RimShine), out _))
+                    set.Light.RimShine = GlassParams.LightRimShine;
                 Values[surface] = set;
+            }
         }
         catch (Exception ex)
         {

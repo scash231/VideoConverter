@@ -60,6 +60,7 @@ public class LiquidGlassPanel : Grid
     private double[]? _shownNeed;  // the mask the front scrim shows, per sample (null = no scrim)
     private double _glassSaturation = 1, _glassBrightness = 1;  // what the shader does to the backdrop's colours
     private bool _liquidOn;  // the shader draws the glass (and its rim)
+    private bool _shaderEdge;  // the glisse rim draws the edge line, so the neutral outline stays off
     private readonly DispatcherTimer _sampler = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(400) };
     // Sampling on changes (Settings → Developer, AppSettings.GlassSamplingMode): a one-shot that a scroll, a resize or
     // the panel moving arms; while changes keep coming it samples about every ChangeDelay.
@@ -1726,6 +1727,14 @@ public class LiquidGlassPanel : Grid
             _effect.Reflection = p.Reflection;
             _effect.ReflectionReach = p.ReflectionReach;
             _effect.ReflectionWidth = p.ReflectionWidth;
+            _effect.LensStyle = Math.Clamp(p.LensStyle, 0, 1);
+            _effect.LensStrength = p.LensStrength;
+            _effect.LensDepth = p.LensDepth;
+            _effect.LensDome = p.LensDome;
+            _effect.LensDispersion = p.LensDispersion;
+            _effect.LensBlur = p.LensBlur;
+            _effect.RimShine = p.RimShine;
+            _effect.RimEdge = light ? -p.RimEdge : p.RimEdge;
             _host.Margin = new Thickness(-inset);
             _overlayHost.Margin = new Thickness(inset);  // back on the panel's bounds
             _host.Effect = _effect;
@@ -1745,6 +1754,7 @@ public class LiquidGlassPanel : Grid
         UpdateClip(EffectiveRadius(p));
 
         _liquidOn = liquid;
+        _shaderEdge = liquid && p.LensStyle >= 0.5 && p.RimEdge > 0;
         UpdateOutlineOpacity();
 
         // Liquid glass needs only a whisper of tint; the frosted fallback needs a denser one to stay legible.
@@ -1763,7 +1773,8 @@ public class LiquidGlassPanel : Grid
     private void UpdateOutlineOpacity()
     {
         bool neutral = OutlineBrush == null || OutlineBrush is SolidColorBrush { Color: var c } && c.R == c.G && c.G == c.B;
-        _outline.Opacity = !_liquidOn || !neutral ? 1 : ThemeService.IsLight ? 0.5 : 0;
+        // With the glisse rim the shader draws the edge line itself (RimEdge), in light mode too.
+        _outline.Opacity = !_liquidOn || !neutral ? 1 : ThemeService.IsLight && !_shaderEdge ? 0.5 : 0;
     }
 
     /// <summary>
