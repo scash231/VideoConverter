@@ -54,6 +54,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SetupThumbReflection();
+        BorderMeta.SizeChanged += (_, _) => UpdateQuickActionLabels();
         Loaded += OnLoaded;
         Closing += MainWindow_Closing;
         ThemeService.ThemeApplied += OnThemeApplied;
@@ -199,7 +200,11 @@ public partial class MainWindow : Window
         UpdatePerformanceOverlayVisibility();
         UpdateIconLabelsVisibility();
         ApplySettings();
-        FluidMotion.SetCornerRadiusValue(SegmentIndicator, 14.5);
+        FluidMotion.SetCornerRadiusValue(SegmentIndicator, 14);
+        // Their label and icon lie on the same window background as the search field beside them; a readability sample of
+        // the window for each of two more capsules would cost more than it gives.
+        foreach (var capsule in new[] { PasteGlass, FetchGlass })
+            if (LiquidGlass.GetPanel(capsule) is { } glass) glass.AdaptiveContrast = false;
         Mode_Changed(sender, e);
 
         if (SettingsService.Current.EnablePerformanceMode)
@@ -2075,6 +2080,19 @@ public partial class MainWindow : Window
 
     private bool _isJobRunning = false;
 
+    private bool _startHeld;
+
+    // Acts on release, as glisse's buttons do: a press that leaves the capsule doesn't start anything.
+    private void StartContainer_Down(object sender, MouseButtonEventArgs e) => _startHeld = true;
+    private void StartContainer_Leave(object sender, MouseEventArgs e) => _startHeld = false;
+
+    private void StartContainer_Up(object sender, MouseButtonEventArgs e)
+    {
+        bool held = _startHeld;
+        _startHeld = false;
+        if (held) StartContainer_Click(sender, e);
+    }
+
     private void StartContainer_Click(object sender, MouseButtonEventArgs e)
     {
         if (_isJobRunning)
@@ -2262,6 +2280,7 @@ public partial class MainWindow : Window
 
     private void AnimateStartContainerToProgress()
     {
+        TxtStartLabel?.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
         if (StartIdleBg != null)
         {
             var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200))
@@ -2350,6 +2369,7 @@ public partial class MainWindow : Window
         if (TxtStartLabel != null)
         {
             TxtStartLabel.SetResourceReference(TextBlock.TextProperty, "BtnStart");
+            TxtStartLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextOnMedia");
             TxtStartLabel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(150)));
         }
     }
@@ -3177,15 +3197,24 @@ public partial class MainWindow : Window
 
     private void UpdateIconLabelsVisibility()
     {
-        var vis = SettingsService.Current.ShowIconLabels ? Visibility.Visible : Visibility.Collapsed;
+        UpdateQuickActionLabels();
+
+        // The header's labels slide in and out with the pills.
+        UpdateHeaderToolButtonsVisibility();
+    }
+
+    // The preview card's capsules with labels need about this much; below it they are round icons.
+    private const double QuickActionLabelsMinWidth = 330;
+
+    private void UpdateQuickActionLabels()
+    {
+        bool roomy = BorderMeta == null || BorderMeta.ActualWidth <= 0 || BorderMeta.ActualWidth >= QuickActionLabelsMinWidth;
+        var vis = SettingsService.Current.ShowIconLabels && roomy ? Visibility.Visible : Visibility.Collapsed;
 
         if (TxtQuickCopyTitle != null) TxtQuickCopyTitle.Visibility = vis;
         if (TxtQuickCopyUrl != null) TxtQuickCopyUrl.Visibility = vis;
         if (TxtQuickOpenBrowser != null) TxtQuickOpenBrowser.Visibility = vis;
         if (TxtQuickSaveThumb != null) TxtQuickSaveThumb.Visibility = vis;
-
-        // The header's labels slide in and out with the pills.
-        UpdateHeaderToolButtonsVisibility();
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)

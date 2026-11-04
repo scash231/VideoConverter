@@ -5,6 +5,30 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.30",
+          "date": "2026-11-04",
+          "sections": [
+            {
+              "title": "New",
+              "items": [
+                "The main window has a new design, with new glass buttons, fields and controls.",
+                "The Multi Downloader always shows its link bar now.",
+                "Link fields have a clear button.",
+                "Sliders lift into glass while you drag them."
+              ]
+            },
+            {
+              "title": "Improved",
+              "items": [
+                "Buttons react to your press across the app.",
+                "Start runs when you let go, so you can still change your mind.",
+                "Download and upload options sit in tidy rows.",
+                "The main window shows a hint until there is a video to preview."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.29.4",
           "date": "2026-11-04",
           "sections": [

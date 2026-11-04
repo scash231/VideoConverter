@@ -249,6 +249,14 @@ public static class ThemeService
         // glisse's switch: its green and its track, per mode.
         SetColor(res, "SwitchOn", light ? Color.FromRgb(0x34, 0xC7, 0x59) : Color.FromRgb(0x30, 0xD1, 0x58));
         SetColor(res, "SwitchTrack", light ? Color.FromArgb(0x4D, 0x3B, 0x3B, 0x42) : Color.FromArgb(0x4D, 0xEB, 0xEB, 0xF5));
+        // glisse's materials per mode: the glass of buttons and inputs on a surface (GlassChrome), its lit state and edge,
+        // the slider's rail, the segmented control's thumb and the track under it (its fill on a light page only).
+        SetColor(res, "GlassFill", light ? Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
+        SetColor(res, "GlassFillLit", light ? Color.FromArgb(0xD9, 0xEC, 0xEC, 0xF0) : Color.FromArgb(0x24, 0xFF, 0xFF, 0xFF));
+        SetColor(res, "GlassEdge", light ? Color.FromArgb(0x14, 0, 0, 0) : Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
+        SetColor(res, "SliderRail", light ? Color.FromArgb(0x1A, 0, 0, 0) : Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
+        SetColor(res, "SegmentThumb", light ? Colors.White : Color.FromArgb(0x4D, 0xEB, 0xEB, 0xF5));
+        SetColor(res, "SegmentTrackFill", light ? Color.FromArgb(0x1F, 0x76, 0x76, 0x80) : Colors.Transparent);
         // Black text shadows read as smudges behind dark text on light backgrounds.
         res["TextShadowOpacity"] = light ? 0.0 : 0.5;
 

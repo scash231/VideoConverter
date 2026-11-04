@@ -72,6 +72,9 @@
 
     <!-- Additional quick actions -->
     <sys:String x:Key="TipClearForm">Сбросить ввод и метаданные</sys:String>
+    <sys:String x:Key="TipClearField">Очистить</sys:String>
+    <sys:String x:Key="PreviewEmptyTitle">Видео пока нет</sys:String>
+    <sys:String x:Key="PreviewEmptySub">Вставьте ссылку выше или перетащите её сюда.</sys:String>
     <sys:String x:Key="SaveThumbnailTitle">Сохранить обложку</sys:String>
 
     <!-- Auto-detect -->

@@ -72,6 +72,9 @@
 
     <!-- Additional quick actions -->
     <sys:String x:Key="TipClearForm">Eingabe und Metadaten zurücksetzen</sys:String>
+    <sys:String x:Key="TipClearField">Löschen</sys:String>
+    <sys:String x:Key="PreviewEmptyTitle">Noch kein Video</sys:String>
+    <sys:String x:Key="PreviewEmptySub">Füge oben einen Link ein oder ziehe ihn hierher.</sys:String>
     <sys:String x:Key="SaveThumbnailTitle">Thumbnail speichern</sys:String>
 
     <!-- Auto-detect -->

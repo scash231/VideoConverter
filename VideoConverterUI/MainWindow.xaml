@@ -54,19 +54,73 @@
             <Setter Property="controls:LiquidGlass.TextShadow" Value="False"/>
         </Style>
 
-        <!-- The preview card's quick actions (copy title / URL, open in browser, save thumbnail, clear): secondary text
-             that brightens to TextPrimary on hover; icons and labels both follow the button's Foreground -->
-        <Style x:Key="QuickActionBtn" TargetType="Button" BasedOn="{StaticResource IconBtn}">
+        <!-- The preview card's quick actions (copy title / URL, open in browser, save thumbnail, clear): glisse's glass
+             buttons; icons and labels both follow the button's Foreground -->
+        <Style x:Key="QuickActionBtn" TargetType="Button" BasedOn="{StaticResource GlassBtn}">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinWidth" Value="28"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Style.Resources>
                 <Style TargetType="ui:SymbolIcon">
                     <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
                 </Style>
             </Style.Resources>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                </Trigger>
-            </Style.Triggers>
+        </Style>
+
+        <!-- A button that is the whole of a Liquid Glass capsule (the search row's paste and Fetch): the capsule presses
+             (anim:GlassPress on its Border), this only lights it -->
+        <Style x:Key="GlassHostBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Lit" CornerRadius="30" Background="{DynamicResource Tint14}" Opacity="0"/>
+                            <ContentPresenter x:Name="Content" Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Lit" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Lit" Property="Opacity" Value="1"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Content" Property="Opacity" Value="0.35"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The settings cards are grouped rows, as in iOS: a label at the start, its control at the end, hairlines between -->
+        <Style x:Key="CardRow" TargetType="Grid">
+            <Setter Property="MinHeight" Value="42"/>
+        </Style>
+        <Style x:Key="CardLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+        </Style>
+        <Style x:Key="CardSep" TargetType="Border">
+            <Setter Property="Height" Value="0.5"/>
+            <Setter Property="Background" Value="{DynamicResource Tint1A}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Background" Value="{DynamicResource GlassFill}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassEdge}"/>
         </Style>
 
         <!-- Buttons on the header's glass pills: IconBtn with a capsule hover that follows the pill's shape -->
@@ -326,11 +380,11 @@
                                     <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
                                 </Border.Effect>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock x:Name="TxtPerfCpu" Text="CPU: 0%" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" Margin="0,0,6,0"/>
+                                    <TextBlock x:Name="TxtPerfCpu" Text="CPU: 0%" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0"/>
                                     <TextBlock Text="|" FontSize="9" Foreground="{DynamicResource BorderSub}" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="TxtPerfRam" Text="RAM: 0 MB" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" Margin="0,0,6,0"/>
+                                    <TextBlock x:Name="TxtPerfRam" Text="RAM: 0 MB" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0"/>
                                     <TextBlock Text="|" FontSize="9" Foreground="{DynamicResource BorderSub}" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="TxtPerfFps" Text="Render: 1.2ms" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"/>
+                                    <TextBlock x:Name="TxtPerfFps" Text="Render: 1.2ms" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
                                 </StackPanel>
                             </Border>
 
@@ -366,12 +420,12 @@
                                     <!-- Help / Workflow -->
                                     <Button x:Name="BtnHelp"
                                             Style="{StaticResource PillGlassBtn}"
-                                            Foreground="{DynamicResource TextSec}"
+                                            Foreground="{DynamicResource TextPrimary}"
                                             MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                             ToolTip="{DynamicResource HelpTip}"
                                             Click="Help_Click">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="Info28" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <ui:SymbolIcon Symbol="Info28" FontSize="15" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                             <TextBlock x:Name="TxtHelpLabel" Text="{DynamicResource HelpLabel}" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </Button>
@@ -392,13 +446,13 @@
                                     <!-- Console Button -->
                                     <Button x:Name="BtnHeaderConsole"
                                             Style="{StaticResource PillGlassBtn}"
-                                            Foreground="{DynamicResource TextSec}"
+                                            Foreground="{DynamicResource TextPrimary}"
                                             MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                             ToolTip="Console"
                                             Visibility="Collapsed"
                                             Click="HeaderConsole_Click">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="Code24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <ui:SymbolIcon Symbol="Code24" FontSize="15" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                             <TextBlock x:Name="TxtHeaderConsoleLabel" Text="Console" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </Button>
@@ -411,13 +465,13 @@
                                     <!-- Log Button -->
                                     <Button x:Name="BtnHeaderLog"
                                             Style="{StaticResource PillGlassBtn}"
-                                            Foreground="{DynamicResource TextSec}"
+                                            Foreground="{DynamicResource TextPrimary}"
                                             MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                             ToolTip="Log Viewer"
                                             Visibility="Collapsed"
                                             Click="HeaderLog_Click">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="15" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                             <TextBlock x:Name="TxtHeaderLogLabel" Text="Log" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </Button>
@@ -438,36 +492,36 @@
                                     <StackPanel x:Name="StackToolsExpanded" Orientation="Horizontal" VerticalAlignment="Center">
                                         <!-- Video Editor -->
                                         <Button x:Name="BtnVideoEditor" Style="{StaticResource PillGlassBtn}"
-                                                Foreground="{DynamicResource TextSec}"
+                                                Foreground="{DynamicResource TextPrimary}"
                                                 MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                                 ToolTip="{DynamicResource TipEditor}"
                                                 Click="Editor_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Cut24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                <ui:SymbolIcon Symbol="Cut24" FontSize="15" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                                 <TextBlock x:Name="TxtToolEditor" Text="Editor" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                             </StackPanel>
                                         </Button>
                                         <Border x:Name="VideoEditorSep" Width="1" Height="13" Background="{DynamicResource BorderSub}" Margin="2,0" VerticalAlignment="Center"/>
                                         <!-- Batch & Playlist Queue -->
                                         <Button x:Name="BtnBatchQueue" Style="{StaticResource PillGlassBtn}"
-                                                Foreground="{DynamicResource TextSec}"
+                                                Foreground="{DynamicResource TextPrimary}"
                                                 MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                                 ToolTip="{DynamicResource TipBatchQueue}"
                                                 Click="BatchQueue_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Collections24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                <ui:SymbolIcon Symbol="Collections24" FontSize="15" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                                 <TextBlock x:Name="TxtToolBatchQueue" Text="Batch" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                             </StackPanel>
                                         </Button>
                                         <Border x:Name="BatchQueueSep" Width="1" Height="13" Background="{DynamicResource BorderSub}" Margin="2,0" VerticalAlignment="Center"/>
                                         <!-- Settings -->
                                         <Button x:Name="BtnSettings" Style="{StaticResource PillGlassBtn}"
-                                                Foreground="{DynamicResource TextSec}"
+                                                Foreground="{DynamicResource TextPrimary}"
                                                 MinWidth="34" MinHeight="34" Height="34" Margin="0" Padding="6,0"
                                                 ToolTip="{DynamicResource TipSettings}"
                                                 Click="Settings_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ui:SymbolIcon Symbol="Settings24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                                <ui:SymbolIcon Symbol="Settings24" FontSize="15" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                                 <TextBlock x:Name="TxtToolSettings" Text="Settings" FontSize="11" FontWeight="SemiBold" Margin="5,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                             </StackPanel>
                                         </Button>
@@ -475,12 +529,12 @@
 
                                     <!-- Collapsed Mode: ••• -->
                                     <Button x:Name="BtnToolsCollapsed" Style="{StaticResource PillGlassBtn}"
-                                             Foreground="{DynamicResource TextSec}"
+                                             Foreground="{DynamicResource TextPrimary}"
                                              Width="34" Height="34" Margin="0"
                                              ToolTip="{DynamicResource TipToolsAndSettings}"
                                              Visibility="Collapsed"
                                              Click="ToolsCollapsed_Click">
-                                        <Grid><ui:SymbolIcon Symbol="MoreHorizontal24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
+                                        <Grid><ui:SymbolIcon Symbol="MoreHorizontal24" FontSize="15" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/></Grid>
                                     </Button>
                                 </Grid>
                             </Border>
@@ -964,89 +1018,55 @@
                     </Grid>
                 </Canvas>
 
-                <!-- ──── URL BAR (full-width) ──── -->
-                <!-- ──── UNIFIED FULL-WIDTH URL INPUT CAPSULE: Liquid Glass (surface UrlBar), the Border carries the shadow ──── -->
-                <Border x:Name="UrlBarGlass" Grid.Row="0" Height="51" Margin="0,0,0,8" CornerRadius="50"
-				        controls:LiquidGlass.Surface="UrlBar" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
-				        BorderBrush="{DynamicResource BorderSub}"
-				        Padding="2,0,2,0">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="Black" Opacity="0.2"/>
-                    </Border.Effect>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                <!-- ──── SEARCH ROW: glisse's search field and two glass buttons, each its own Liquid Glass capsule (surface UrlBar) ──── -->
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                        <!-- 1. URL Text Input (Clips cleanly at column edge) -->
-                        <TextBox x:Name="TxtUrl" Grid.Column="0" VerticalAlignment="Center"
-						         Background="Transparent" BorderThickness="0"
-						         Foreground="{DynamicResource TextPrimary}"
-						         CaretBrush="{DynamicResource Accent}"
-						         Padding="14,0,8,0" FontSize="12"
-						         Tag="{DynamicResource UrlPlaceholder}"
-						         TextChanged="TxtUrl_TextChanged">
-                            <TextBox.Style>
-                                <Style TargetType="TextBox">
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="TextBox">
-                                                <Grid>
-                                                    <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
-                                                    <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}"
-													           Foreground="{DynamicResource TextSec}" Opacity="0.6"
-													           FontSize="{TemplateBinding FontSize}"
-													           VerticalAlignment="Center" IsHitTestVisible="False"
-													           Margin="14,0,8,0"
-													           Visibility="Collapsed"/>
-                                                </Grid>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="Text" Value="">
-                                                        <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </TextBox.Style>
-                        </TextBox>
+                    <Border x:Name="UrlBarGlass" Height="40" CornerRadius="20"
+                            controls:LiquidGlass.Surface="UrlBar" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                            BorderBrush="{DynamicResource BorderSub}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="Black" Opacity="0.2"/>
+                        </Border.Effect>
+                        <TextBox x:Name="TxtUrl" Style="{StaticResource GlassSearchField}"
+                                 controls:GlassField.Icon="Link24"
+                                 Tag="{DynamicResource UrlPlaceholder}"
+                                 TextChanged="TxtUrl_TextChanged"/>
+                    </Border>
 
-                        <!-- 2. Vertical Separator Line 1 -->
-                        <Border Grid.Column="1" Width="1" VerticalAlignment="Stretch" Margin="2,8"
-						        Background="{DynamicResource BorderSub}" Opacity="0.6"/>
-
-                        <!-- 3. Paste Button -->
-                        <Button Grid.Column="2" ToolTip="{DynamicResource TipPaste}"
-						        Style="{StaticResource EmbeddedCapsuleBtn}"
-						        Padding="10,4" Margin="2,3" VerticalAlignment="Stretch"
-						        Click="Paste_Click">
-                            <Grid><ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="13.5" Opacity="0.85" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" HorizontalAlignment="Center"/></Grid>
+                    <Border x:Name="PasteGlass" Grid.Column="1" Width="40" Height="40" Margin="8,0,0,0" CornerRadius="20"
+                            anim:GlassPress.IsEnabled="True"
+                            controls:LiquidGlass.Surface="UrlBar" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                            BorderBrush="{DynamicResource BorderSub}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="Black" Opacity="0.2"/>
+                        </Border.Effect>
+                        <Button Style="{StaticResource GlassHostBtn}" ToolTip="{DynamicResource TipPaste}" Click="Paste_Click">
+                            <Grid><ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="16" Foreground="{DynamicResource TextPrimary}"/></Grid>
                         </Button>
+                    </Border>
 
-                        <!-- 4. Vertical Separator Line 2 -->
-                        <Border Grid.Column="3" Width="1" VerticalAlignment="Stretch" Margin="2,8"
-						        Background="{DynamicResource BorderSub}" Opacity="0.6"/>
+                    <Border x:Name="FetchGlass" Grid.Column="2" Height="40" Margin="8,0,0,0" CornerRadius="20"
+                            anim:GlassPress.IsEnabled="True"
+                            controls:LiquidGlass.Surface="UrlBar" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
+                            BorderBrush="{DynamicResource BorderSub}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="Black" Opacity="0.2"/>
+                        </Border.Effect>
+                        <Button x:Name="BtnFetch" Style="{StaticResource GlassHostBtn}" Padding="16,0"
+                                Content="{DynamicResource BtnFetch}" Click="Fetch_Click"/>
+                    </Border>
+                </Grid>
 
-                        <!-- 5. Metadata Button -->
-                        <Button Grid.Column="4" x:Name="BtnFetch"
-						        Content="{DynamicResource BtnFetch}"
-						        Style="{StaticResource EmbeddedCapsuleBtn}"
-						        Foreground="{DynamicResource TextSec}"
-						        FontSize="11.5" FontWeight="SemiBold"
-						        Padding="12,4" Margin="2,3,4,3" VerticalAlignment="Stretch"
-						        Click="Fetch_Click"/>
-                    </Grid>
-                </Border>
-
-                <!-- ──── MODE TOGGLE (Apple iOS segmented control) ──── -->
-                <!-- The track is Liquid Glass (surface SegmentTrack: a thin rim, so it wraps snugly around the thumb
-                     instead of the thumb floating in a thick lens); the indicator slides on it -->
-                <Border x:Name="SegmentTrack" Grid.Row="1" CornerRadius="50" Padding="2.5" Height="34"
+                <!-- ──── MODE TOGGLE: glisse's segmented control, sized as iOS's: a 32 px capsule, a thumb inset 2 px, every label in
+                     full colour, the selected one medium. The track is Liquid Glass (surface SegmentTrack), on a light page
+                     tinted so the white thumb stands out. ──── -->
+                <Border x:Name="SegmentTrack" Grid.Row="1" CornerRadius="16" Padding="2" Height="32" Width="320"
+                        HorizontalAlignment="Center"
                         controls:LiquidGlass.Surface="SegmentTrack" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
                         BorderBrush="{DynamicResource BorderSub}"
                         Margin="0,0,0,10"
@@ -1058,52 +1078,24 @@
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
                     </Border.Effect>
-                    <Grid ClipToBounds="True">
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <!-- The thumb: a raised, translucent white lift, iOS-style. Being translucent it brightens whatever
-                             colour the glass under it has (the thumbnail's tint included) instead of sitting on it as a
-                             grey slab, and reads as white in light mode; a sheen over its upper half and a rim catching
-                             light along the top make it read as a piece of glass resting on the track. Corner radius =
-                             half its height (34 - 2 × 2.5 = 29): a larger one makes WPF draw long elliptical ends that
-                             don't follow the glass track's round ones. -->
+                        <Border Grid.ColumnSpan="2" Margin="-2" CornerRadius="16" Background="{DynamicResource SegmentTrackFill}" IsHitTestVisible="False"/>
+                        <!-- Corner radius = half its height: 32 - 2 x 2 = 28 -->
                         <Border x:Name="SegmentIndicator" Grid.Column="0"
-                                CornerRadius="14.5"
-                                Background="#22FFFFFF"
-                                BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5"
+                                CornerRadius="14"
+                                Background="{DynamicResource SegmentThumb}"
                                 RenderTransformOrigin="0.5,0.5"
-                                ClipToBounds="True">
+                                IsHitTestVisible="False">
                             <Border.RenderTransform>
                                 <TransformGroup>
                                     <ScaleTransform x:Name="SegmentScale" ScaleX="1" ScaleY="1"/>
                                     <TranslateTransform x:Name="SegmentTranslateX" X="0"/>
                                 </TransformGroup>
                             </Border.RenderTransform>
-                            <Border.Effect>
-                                <DropShadowEffect x:Name="PillGlow" BlurRadius="5" ShadowDepth="1"
-                                                  Direction="270" Color="#000000" Opacity="0.22"/>
-                            </Border.Effect>
-                            <Grid IsHitTestVisible="False">
-                                <Border CornerRadius="14.5">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#1EFFFFFF" Offset="0"/>
-                                            <GradientStop Color="#00FFFFFF" Offset="0.55"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                                <Border CornerRadius="14.5" BorderThickness="1">
-                                    <Border.BorderBrush>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#48FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#00FFFFFF" Offset="0.5"/>
-                                            <GradientStop Color="#10FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.BorderBrush>
-                                </Border>
-                            </Grid>
                         </Border>
                         <RadioButton x:Name="RbUpload" Style="{StaticResource SegmentedBtn}"
                                      GroupName="Mode" IsChecked="True"
@@ -1112,9 +1104,8 @@
                                 <ScaleTransform x:Name="UploadBtnScale" ScaleX="1" ScaleY="1"/>
                             </RadioButton.RenderTransform>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="{DynamicResource ModeUploadTitle}"
-                                           FontWeight="SemiBold" FontSize="12.5" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{DynamicResource ModeUploadTitle}" FontSize="12.5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton Grid.Column="1" x:Name="RbDownload"
@@ -1125,9 +1116,8 @@
                                 <TranslateTransform x:Name="DownloadTranslateX"/>
                             </RadioButton.RenderTransform>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ui:SymbolIcon x:Name="IconDownloadMode" Symbol="ArrowDownload24" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="TxtModeDownloadTitle" Text="{DynamicResource ModeDownloadTitle}"
-                                           FontWeight="SemiBold" FontSize="12.5" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon x:Name="IconDownloadMode" Symbol="ArrowDownload24" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="TxtModeDownloadTitle" Text="{DynamicResource ModeDownloadTitle}" FontSize="12.5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </RadioButton>
                     </Grid>
@@ -1149,6 +1139,29 @@
 
                     <!-- ═══ LEFT: Preview ═══ -->
                     <Grid Grid.Column="0">
+                        <!-- Before there is anything to show -->
+                        <Border x:Name="BorderEmptyPreview" Margin="0">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource GlassCard}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Visibility, ElementName=BorderMeta}" Value="Visible">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Visibility, ElementName=BorderMetaSkeleton}" Value="Visible">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="12">
+                                <ui:SymbolIcon Symbol="VideoClip24" FontSize="34" Foreground="{DynamicResource TextSec}" Opacity="0.7" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{DynamicResource PreviewEmptyTitle}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Center" TextAlignment="Center" Margin="0,10,0,3"/>
+                                <TextBlock Text="{DynamicResource PreviewEmptySub}" FontSize="11.5" Foreground="{DynamicResource TextSec}"
+                                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="240"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Skeleton Loading Wireframe Card for MainWindow (Image 2 style: no text, pulsating rounded pill bars) -->
                         <Border x:Name="BorderMetaSkeleton" Style="{StaticResource GlassCard}"
                                 Visibility="Collapsed" Opacity="0" Padding="0" Margin="0">
@@ -1218,43 +1231,22 @@
                                         <!-- Subtle darken overlay -->
                                         <Border Background="#14000000" IsHitTestVisible="False"/>
 
-                                        <!-- Duration Timestamp Liquid Glass Badge Pill (Bottom-Right overlay) -->
+                                        <!-- Duration: a small dark capsule on the thumbnail -->
                                         <Border x:Name="BorderDurationBadge"
                                                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                                Margin="0,0,8,8" Padding="7,2.5" CornerRadius="6"
-                                                Background="#E616171E"
-                                                BorderBrush="#55FFFFFF" BorderThickness="0.8"
+                                                Margin="0,0,10,10" Padding="8,3" CornerRadius="10"
+                                                Background="#B8000000"
                                                 Visibility="Collapsed">
-                                            <Border.Effect>
-                                                <DropShadowEffect BlurRadius="10" ShadowDepth="1" Color="#000000" Opacity="0.6"/>
-                                            </Border.Effect>
-                                            <Grid>
-                                                <!-- Glass top specular highlight overlay -->
-                                                <Border Height="6" VerticalAlignment="Top" CornerRadius="6,6,0,0" IsHitTestVisible="False">
-                                                    <Border.Background>
-                                                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                                            <GradientStop Color="#40FFFFFF" Offset="0"/>
-                                                            <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </Border.Background>
-                                                </Border>
-                                                <TextBlock x:Name="TxtMetaDuration"
-                                                           FontSize="11" FontWeight="Bold"
-                                                           Foreground="#FFFFFF"
-                                                           VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                    <TextBlock.Effect>
-                                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Color="#000000" Opacity="0.6"/>
-                                                    </TextBlock.Effect>
-                                                </TextBlock>
-                                            </Grid>
+                                            <TextBlock x:Name="TxtMetaDuration" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                         </Border>
                                     </Grid>
                                 </Border>
 
                                 <!-- Info -->
-                                <StackPanel Grid.Row="1" Margin="14,10,14,6">
+                                <StackPanel Grid.Row="1" Margin="14,12,14,6">
                                     <TextBlock x:Name="TxtMetaTitle" FontWeight="SemiBold"
-                                               FontSize="12"
+                                               FontSize="13"
                                                Foreground="{DynamicResource TextPrimary}"
                                                TextWrapping="Wrap" MaxHeight="48"
                                                TextTrimming="CharacterEllipsis" LineHeight="16"/>
@@ -1273,7 +1265,7 @@
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border CornerRadius="6" Padding="6,2.5"
+                                                <Border CornerRadius="9" Padding="8,2.5"
                                                         Margin="0,0,4,4"
                                                         Background="{DynamicResource InputBg}"
                                                         BorderBrush="{DynamicResource BorderSub}"
@@ -1288,35 +1280,33 @@
 
                                 <!-- Quick actions: a footer on the card's glass, set off by a hairline only (the glass rounds
                                      and clips its corners) -->
-                                <Border Grid.Row="2"
-                                        BorderBrush="{DynamicResource BorderSub}"
-                                        BorderThickness="0,0.5,0,0" Padding="12,8">
+                                <Border Grid.Row="2" Padding="12,4,12,12">
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Style="{StaticResource QuickActionBtn}"
-                                                Click="ClearForm_Click" Padding="4,3"
+                                                Click="ClearForm_Click" Padding="0"
                                                 ToolTip="{DynamicResource TipClearForm}">
                                             <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="11"/></Grid>
                                         </Button>
                                         <StackPanel Orientation="Horizontal">
-                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Click="CopyTitle_Click" ToolTip="Copy title">
+                                            <Button Style="{StaticResource QuickActionBtn}" Click="CopyTitle_Click" ToolTip="Copy title">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <ui:SymbolIcon Symbol="Document24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickCopyTitle" Text="Title" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                 </StackPanel>
                                             </Button>
-                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Margin="8,0,0,0" Click="CopyUrl_Click" ToolTip="Copy URL">
+                                            <Button Style="{StaticResource QuickActionBtn}" Margin="6,0,0,0" Click="CopyUrl_Click" ToolTip="Copy URL">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <ui:SymbolIcon Symbol="Link24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickCopyUrl" Text="URL" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                 </StackPanel>
                                             </Button>
-                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Margin="8,0,0,0" Click="OpenInBrowser_Click" ToolTip="Open in browser">
+                                            <Button Style="{StaticResource QuickActionBtn}" Margin="6,0,0,0" Click="OpenInBrowser_Click" ToolTip="Open in browser">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <ui:SymbolIcon Symbol="Globe24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickOpenBrowser" Text="Browser" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                 </StackPanel>
                                             </Button>
-                                            <Button Style="{StaticResource QuickActionBtn}" Padding="4,3" Margin="8,0,0,0" Click="SaveThumbnail_Click" ToolTip="Save thumbnail">
+                                            <Button Style="{StaticResource QuickActionBtn}" Margin="6,0,0,0" Click="SaveThumbnail_Click" ToolTip="Save thumbnail">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <ui:SymbolIcon Symbol="Save24" FontSize="12.5" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="TxtQuickSaveThumb" Text="Save" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,2,0" VerticalAlignment="Center" Visibility="Collapsed"/>
@@ -1333,51 +1323,58 @@
                     <Grid Grid.Column="2">
                         <!-- UPLOAD SETTINGS (Stretches full height, large description box fills middle) -->
                         <Border x:Name="BorderUpload" Style="{StaticResource GlassCard}"
-                                VerticalAlignment="Stretch" Margin="0"
+                                VerticalAlignment="Stretch" Margin="0" Padding="14,4"
                                 Visibility="Collapsed" Opacity="0">
                             <DockPanel LastChildFill="True">
-                                <StackPanel DockPanel.Dock="Top">
-                                    <TextBlock Text="{DynamicResource LblTitleField}" FontSize="10"
-                                                   Foreground="{DynamicResource TextSec}" Margin="0,0,0,3"/>
-                                    <TextBox x:Name="TxtTitle"/>
-                                    <Grid Margin="0,8,0,3">
+                                <StackPanel DockPanel.Dock="Top" Grid.IsSharedSizeScope="True">
+                                    <Grid Style="{StaticResource CardRow}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{DynamicResource LblTitleField}" Style="{StaticResource CardLabel}"/>
+                                        <TextBox x:Name="TxtTitle" Grid.Column="1" Style="{StaticResource GlassInput}"/>
+                                    </Grid>
+                                    <Border Style="{StaticResource CardSep}"/>
+                                    <Grid Margin="0,9,0,6">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{DynamicResource LblDescField}" FontSize="10"
-                                                       Foreground="{DynamicResource TextSec}"
-                                                       VerticalAlignment="Center"/>
-                                        <Button Grid.Column="1" Style="{StaticResource IconBtn}"
-                                                    ToolTip="{DynamicResource TipEditDesc}"
-                                                    Click="EditDescription_Click">
-                                            <Grid><ui:SymbolIcon Symbol="Edit24" FontSize="11" Foreground="{DynamicResource TextSec}"/></Grid>
+                                        <TextBlock Text="{DynamicResource LblDescField}" Style="{StaticResource CardLabel}"/>
+                                        <Button Grid.Column="1" Style="{StaticResource GlassIconBtn}" Width="26" Height="26"
+                                                ToolTip="{DynamicResource TipEditDesc}"
+                                                Click="EditDescription_Click">
+                                            <Grid><ui:SymbolIcon Symbol="Edit24" FontSize="12" Foreground="{DynamicResource TextPrimary}"/></Grid>
                                         </Button>
                                     </Grid>
                                 </StackPanel>
 
                                 <StackPanel DockPanel.Dock="Bottom">
-                                    <TextBlock Text="{DynamicResource LblVisibility}" FontSize="10"
-                                                   Foreground="{DynamicResource TextSec}" Margin="0,8,0,3"/>
-                                    <ComboBox x:Name="CmbPrivacy" SelectedIndex="0">
-                                        <ComboBoxItem Content="{DynamicResource PrivacyPublic}"   Tag="public"/>
-                                        <ComboBoxItem Content="{DynamicResource PrivacyUnlisted}" Tag="unlisted"/>
-                                        <ComboBoxItem Content="{DynamicResource PrivacyPrivate}"  Tag="private"/>
-                                    </ComboBox>
-                                    <Grid Margin="0,10,0,0">
+                                    <Grid Style="{StaticResource CardRow}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <CheckBox x:Name="ChkFingerprint" Style="{StaticResource GlassToggleSwitchLabeled}" IsChecked="True" VerticalAlignment="Center" Content="Fingerprint" FontSize="11"/>
-                                        </StackPanel>
+                                        <TextBlock Text="{DynamicResource LblVisibility}" Style="{StaticResource CardLabel}"/>
+                                        <ComboBox x:Name="CmbPrivacy" Grid.Column="1" SelectedIndex="0">
+                                            <ComboBoxItem Content="{DynamicResource PrivacyPublic}"   Tag="public"/>
+                                            <ComboBoxItem Content="{DynamicResource PrivacyUnlisted}" Tag="unlisted"/>
+                                            <ComboBoxItem Content="{DynamicResource PrivacyPrivate}"  Tag="private"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Border Style="{StaticResource CardSep}"/>
+                                    <Grid Style="{StaticResource CardRow}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox x:Name="ChkFingerprint" Style="{StaticResource GlassToggleSwitchLabeled}" IsChecked="True" VerticalAlignment="Center" Content="Fingerprint" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
                                         <ComboBox x:Name="CmbFingerprintMethod" Grid.Column="1"
-                                                      Margin="8,0,0,0" SelectedIndex="2"
+                                                      Margin="10,0,0,0" SelectedIndex="2"
                                                       IsEnabled="{Binding IsChecked, ElementName=ChkFingerprint}">
                                             <ComboBox.Style>
                                                 <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-                                                    <Setter Property="Opacity" Value="1.0"/>
                                                     <Style.Triggers>
                                                         <Trigger Property="IsEnabled" Value="False">
                                                             <Setter Property="Opacity" Value="0.45"/>
@@ -1394,11 +1391,11 @@
                                 </StackPanel>
 
                                 <!-- Description Box stretches to fill available middle height -->
-                                <TextBox x:Name="TxtDescription" IsReadOnly="True"
+                                <TextBox x:Name="TxtDescription" IsReadOnly="True" Background="{DynamicResource GlassFill}"
                                              TextWrapping="Wrap" MinHeight="60"
                                              VerticalAlignment="Stretch"
-                                             Margin="0,0,0,4"
-                                             BorderBrush="{DynamicResource BorderSub}"
+                                             Margin="0,0,0,8" Padding="10,8"
+                                             BorderBrush="{DynamicResource GlassEdge}"
                                              VerticalScrollBarVisibility="Auto"
                                              ToolTip="{DynamicResource TipDescBox}"
                                              MouseDoubleClick="EditDescription_Click"/>
@@ -1416,73 +1413,73 @@
                             <!-- DOWNLOAD SETTINGS (Compact natural card aligned to top) -->
                             <Border x:Name="BorderDownload" Grid.Row="0" Style="{StaticResource GlassCard}"
                                         VerticalAlignment="Top" Margin="0"
-                                        Padding="14,8"
+                                        Padding="14,4"
                                         Visibility="Visible" Opacity="0">
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource LblDlTitle}" FontSize="10"
-                                               Foreground="{DynamicResource TextSec}" Margin="0,0,0,2"/>
-                                    <TextBox x:Name="TxtTitleDl"
-                                             Tag="{DynamicResource DlTitlePlaceholder}"/>
-                                    <TextBlock Text="{DynamicResource LblQuality}" FontSize="10"
-                                               Foreground="{DynamicResource TextSec}" Margin="0,4,0,2"/>
-                                    <ComboBox x:Name="CmbQuality" SelectedIndex="0">
-                                        <ComboBoxItem x:Name="CmbItemBest" Content="{DynamicResource QualityBest}" Tag="best"/>
-                                        <ComboBoxItem x:Name="CmbItem1080" Content="1080p" Tag="1080"/>
-                                        <ComboBoxItem x:Name="CmbItem720" Content="720p" Tag="720"/>
-                                        <ComboBoxItem x:Name="CmbItem480" Content="480p" Tag="480"/>
-                                        <ComboBoxItem x:Name="CmbItem360" Content="360p" Tag="360"/>
-                                        <ComboBoxItem x:Name="CmbItemAudio" Content="{DynamicResource QualityAudio}" Tag="audio"/>
-                                        <ComboBoxItem x:Name="CmbItemYt320" Content="{DynamicResource QualityYTMusic320}" Tag="ytmusic_320k" Visibility="Collapsed"/>
-                                        <ComboBoxItem x:Name="CmbItemYtM4a" Content="{DynamicResource QualityYTMusicM4a}" Tag="ytmusic_m4a" Visibility="Collapsed"/>
-                                        <ComboBoxItem x:Name="CmbItemYtFlac" Content="{DynamicResource QualityYTMusicFlac}" Tag="ytmusic_flac" Visibility="Collapsed"/>
-                                    </ComboBox>
-                                    <!-- Save Destination Header & Mode Toggle -->
-                                    <Grid Margin="0,4,0,2">
+                                <StackPanel Grid.IsSharedSizeScope="True">
+                                    <Grid Style="{StaticResource CardRow}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="DlLabel"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{DynamicResource LblDlTitle}" Style="{StaticResource CardLabel}"/>
+                                        <TextBox x:Name="TxtTitleDl" Grid.Column="1" Style="{StaticResource GlassInput}"
+                                                 Tag="{DynamicResource DlTitlePlaceholder}"/>
+                                    </Grid>
+                                    <Border Style="{StaticResource CardSep}"/>
+                                    <Grid Style="{StaticResource CardRow}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="DlLabel"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{DynamicResource LblQuality}" Style="{StaticResource CardLabel}"/>
+                                        <ComboBox x:Name="CmbQuality" Grid.Column="1" SelectedIndex="0">
+                                            <ComboBoxItem x:Name="CmbItemBest" Content="{DynamicResource QualityBest}" Tag="best"/>
+                                            <ComboBoxItem x:Name="CmbItem1080" Content="1080p" Tag="1080"/>
+                                            <ComboBoxItem x:Name="CmbItem720" Content="720p" Tag="720"/>
+                                            <ComboBoxItem x:Name="CmbItem480" Content="480p" Tag="480"/>
+                                            <ComboBoxItem x:Name="CmbItem360" Content="360p" Tag="360"/>
+                                            <ComboBoxItem x:Name="CmbItemAudio" Content="{DynamicResource QualityAudio}" Tag="audio"/>
+                                            <ComboBoxItem x:Name="CmbItemYt320" Content="{DynamicResource QualityYTMusic320}" Tag="ytmusic_320k" Visibility="Collapsed"/>
+                                            <ComboBoxItem x:Name="CmbItemYtM4a" Content="{DynamicResource QualityYTMusicM4a}" Tag="ytmusic_m4a" Visibility="Collapsed"/>
+                                            <ComboBoxItem x:Name="CmbItemYtFlac" Content="{DynamicResource QualityYTMusicFlac}" Tag="ytmusic_flac" Visibility="Collapsed"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Border Style="{StaticResource CardSep}"/>
+
+                                    <!-- Where it goes: the local path, or the cloud service while Cloud is on -->
+                                    <Grid MinHeight="36" Margin="0,3,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{DynamicResource LblSavePath}" FontSize="10"
-                                                    Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <CheckBox x:Name="ChkCloudUpload" Style="{StaticResource GlassToggleSwitchLabeledLeft}"
-                                                      Content="Cloud" Foreground="{DynamicResource TextSec}" FontSize="10" FontWeight="SemiBold"
-                                                       VerticalAlignment="Center" Click="ChkCloudUpload_Click"
-                                                       ToolTip="{DynamicResource TipCloudUpload}"/>
-                                        </StackPanel>
+                                        <TextBlock Text="{DynamicResource LblSavePath}" Style="{StaticResource CardLabel}"/>
+                                        <CheckBox x:Name="ChkCloudUpload" Grid.Column="1" Style="{StaticResource GlassToggleSwitchLabeledLeft}"
+                                                  Content="Cloud" Foreground="{DynamicResource TextPrimary}" FontSize="12"
+                                                  VerticalAlignment="Center" Click="ChkCloudUpload_Click"
+                                                  ToolTip="{DynamicResource TipCloudUpload}"/>
                                     </Grid>
-
-                                    <!-- Standard Local Save Path -->
                                     <controls:ExpandPresenter x:Name="ExpandLocalSave" Progress="1">
-                                        <Grid x:Name="PanelLocalSave">
+                                        <Grid x:Name="PanelLocalSave" Margin="0,0,0,10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBox x:Name="TxtOutputDir" IsReadOnly="True"/>
-                                            <Button Grid.Column="1"
-                                                     Style="{StaticResource OutlineBtn}"
-                                                     Content="{DynamicResource BtnBrowse}"
-                                                     Margin="8,0,0,0" Click="Browse_Click"/>
+                                            <TextBox x:Name="TxtOutputDir" IsReadOnly="True" Style="{StaticResource GlassInput}"/>
+                                            <Button Grid.Column="1" Style="{StaticResource OutlineBtn}" Height="30"
+                                                    Content="{DynamicResource BtnBrowse}"
+                                                    Margin="6,0,0,0" Click="Browse_Click"/>
                                         </Grid>
                                     </controls:ExpandPresenter>
-
-                                    <!-- Instant Cloud Upload Capsule -->
                                     <controls:ExpandPresenter x:Name="ExpandCloudSave">
-                                        <Border x:Name="PanelCloudSave"
-                                                 Background="{DynamicResource InputBg}"
-                                                 BorderBrush="{DynamicResource BorderSub}"
-                                                 BorderThickness="0.5" CornerRadius="8" Padding="9,6"
-                                                 Margin="0,2,0,0">
+                                        <Border x:Name="PanelCloudSave" Padding="0,0,0,8">
                                             <StackPanel>
-                                                <!-- Provider Select & Setup -->
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <ComboBox x:Name="CmbCloudProvider" SelectionChanged="CmbCloudProvider_SelectionChanged"
-                                                               Height="27" VerticalAlignment="Center" SelectedIndex="0">
+                                                              VerticalAlignment="Center" SelectedIndex="0">
                                                         <ComboBoxItem Content="Google Drive" Tag="gdrive"/>
                                                         <ComboBoxItem Content="Dropbox" Tag="dropbox"/>
                                                         <ComboBoxItem Content="Microsoft OneDrive" Tag="onedrive"/>
@@ -1490,47 +1487,42 @@
                                                         <ComboBoxItem Content="{DynamicResource CloudProviderCustom}" Tag="custom"/>
                                                     </ComboBox>
                                                     <Button x:Name="BtnCloudConfig" Grid.Column="1" Style="{StaticResource OutlineBtn}"
-                                                             Height="27" Margin="6,0,0,0" Padding="8,0" Click="BtnCloudConfig_Click"
-                                                             ToolTip="{DynamicResource TipCloudConfig}">
+                                                            Height="30" Margin="6,0,0,0" Click="BtnCloudConfig_Click"
+                                                            ToolTip="{DynamicResource TipCloudConfig}">
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <ui:SymbolIcon Symbol="Settings24" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="{DynamicResource BtnSetup}" FontSize="10.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                            <ui:SymbolIcon Symbol="Settings24" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
+                                                            <TextBlock Text="{DynamicResource BtnSetup}" VerticalAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </Grid>
-
-                                                <!-- Target & Status Row -->
-                                                <Grid Margin="0,6,0,0">
+                                                <Grid Margin="4,5,0,0">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock x:Name="TxtCloudTargetStatus" Text="Google Drive: Ready"
-                                                                FontSize="9.5" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"
-                                                                TextTrimming="CharacterEllipsis"/>
-                                                    <Button x:Name="BtnChangeCloudFolder" Grid.Column="1" Style="{StaticResource IconBtn}"
-                                                             Padding="3" Click="BtnChangeCloudFolder_Click" ToolTip="{DynamicResource TipChangeCloudFolder}"
-                                                             Cursor="Hand">
-                                                        <Grid><ui:SymbolIcon Symbol="FolderOpen24" FontSize="11" Foreground="{DynamicResource TextSec}"/></Grid>
+                                                               FontSize="10.5" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <Button x:Name="BtnChangeCloudFolder" Grid.Column="1" Style="{StaticResource GlassIconBtn}"
+                                                            Width="24" Height="24" Click="BtnChangeCloudFolder_Click" ToolTip="{DynamicResource TipChangeCloudFolder}">
+                                                        <Grid><ui:SymbolIcon Symbol="FolderOpen24" FontSize="12" Foreground="{DynamicResource TextPrimary}"/></Grid>
                                                     </Button>
                                                 </Grid>
                                             </StackPanel>
                                         </Border>
                                     </controls:ExpandPresenter>
-                                    <Grid Margin="0,7,0,0">
+                                    <Border Style="{StaticResource CardSep}"/>
+                                    <Grid Style="{StaticResource CardRow}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <CheckBox x:Name="ChkFingerprintDl" Style="{StaticResource GlassToggleSwitchLabeled}" IsChecked="True" VerticalAlignment="Center" Content="Fingerprint" FontSize="11" Width="116"/>
-                                        </StackPanel>
+                                        <CheckBox x:Name="ChkFingerprintDl" Style="{StaticResource GlassToggleSwitchLabeled}" IsChecked="True" VerticalAlignment="Center" Content="Fingerprint" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
                                         <ComboBox x:Name="CmbFingerprintMethodDl" Grid.Column="1"
-                                                  Margin="8,0,0,0" SelectedIndex="2"
+                                                  Margin="10,0,0,0" SelectedIndex="2"
                                                   IsEnabled="{Binding IsChecked, ElementName=ChkFingerprintDl}">
                                             <ComboBox.Style>
                                                 <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-                                                    <Setter Property="Opacity" Value="1.0"/>
                                                     <Style.Triggers>
                                                         <Trigger Property="IsEnabled" Value="False">
                                                             <Setter Property="Opacity" Value="0.45"/>
@@ -1620,71 +1612,45 @@
                     </Grid>
                 </Grid>
 
-                <!-- UNIFIED MORPHING START BUTTON & INTEGRATED LOG CAPSULE: Liquid Glass (surface StartButton); the glass
-                     clips everything on it to its capsule, the Border carries the shadow -->
-                <Border x:Name="StartContainer" Grid.Row="3" Height="42" Margin="0,4,0,0" CornerRadius="21"
+                <!-- START: glisse's filled button. While a job runs the fill gives way to the glass capsule under it (surface
+                     StartButton), with the progress as a softer accent capsule growing along it. -->
+                <Border x:Name="StartContainer" Grid.Row="3" Height="44" Margin="0,10,0,0" CornerRadius="22"
                         controls:LiquidGlass.Surface="StartButton" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
                         BorderBrush="{DynamicResource BorderSub}"
                         Cursor="Hand"
-                        MouseLeftButtonDown="StartContainer_Click">
+                        anim:GlassPress.IsEnabled="True"
+                        MouseLeftButtonDown="StartContainer_Down"
+                        MouseLeftButtonUp="StartContainer_Up"
+                        MouseLeave="StartContainer_Leave">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="Black" Opacity="0.24"/>
                     </Border.Effect>
                     <Grid x:Name="StartGrid">
-                        <!-- 1. Idle: a faint lift over the glass, so the button reads brighter than the link field -->
-                        <Border x:Name="StartIdleBg" Background="{DynamicResource Tint0C}"/>
+                        <!-- 1. Idle: the fill -->
+                        <controls:GlassChrome x:Name="StartIdleBg" Fill="{DynamicResource Accent}"
+                                              IsHovered="{Binding IsMouseOver, ElementName=StartContainer}"
+                                              IsHeld="{Binding (anim:GlassPress.IsHeld), ElementName=StartContainer}"/>
 
-                        <!-- 2. Inner Glass Track Groove (Visible when running) -->
-                        <Border x:Name="StartTrackGroove" Background="#20000000" Visibility="Collapsed"/>
+                        <!-- 2. Running: a faint groove on the glass -->
+                        <Border x:Name="StartTrackGroove" Background="{DynamicResource Tint0A}" Visibility="Collapsed"/>
 
-                        <!-- 3. Morphing Floating Color-Free Transparent Glass Progress Capsule -->
+                        <!-- 3. Running: the progress capsule. The effect is for the optional glow pulse. -->
                         <Border x:Name="StartProgressFill" Height="38" Margin="3" CornerRadius="19"
-                                Width="0" HorizontalAlignment="Left" ClipToBounds="True"
+                                Width="0" HorizontalAlignment="Left"
                                 Visibility="Collapsed">
                             <Border.Effect>
                                 <DropShadowEffect x:Name="StartProgressGlow" BlurRadius="10" ShadowDepth="1" Color="#000000" Opacity="0.35"/>
                             </Border.Effect>
-                            <Border.Background><DynamicResource ResourceKey="Tint24"/></Border.Background>
-                            <Grid>
-                                <!-- Pure Specular Top Gloss Highlight -->
-                                <Border Height="19" VerticalAlignment="Top" CornerRadius="19,19,0,0">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                            <GradientStop Color="#55FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                                <!-- Pure Glass Rim Stroke -->
-                                <Border CornerRadius="19" BorderThickness="0.8" IsHitTestVisible="False">
-                                    <Border.BorderBrush>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#65FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#15FFFFFF" Offset="0.5"/>
-                                            <GradientStop Color="#25FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.BorderBrush>
-                                </Border>
-                                <!-- Bottom Refraction Line -->
-                                <Border Height="1" VerticalAlignment="Bottom" Margin="6,0,6,1.5" Background="{DynamicResource Tint25}"/>
-                            </Grid>
+                            <controls:GlassChrome Fill="{DynamicResource Accent}" Opacity="0.55" IsHitTestVisible="False"/>
                         </Border>
 
-                        <!-- 4. Overlay Grid (Status Label) -->
-                        <Grid Margin="2,0">
-                            <!-- Floating Label Overlay -->
-                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Margin="16,0">
-                                <TextBlock x:Name="TxtStartLabel" Text="{DynamicResource BtnStart}"
-                                           FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           TextTrimming="CharacterEllipsis">
-                                    <TextBlock.Effect>
-                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Color="#000000" Opacity="{DynamicResource TextShadowOpacity}"/>
-                                    </TextBlock.Effect>
-                                </TextBlock>
-                            </Grid>
+                        <!-- 4. The label -->
+                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Margin="18,0">
+                            <TextBlock x:Name="TxtStartLabel" Text="{DynamicResource BtnStart}"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextOnMedia}"
+                                       TextTrimming="CharacterEllipsis"/>
                         </Grid>
-
                     </Grid>
                 </Border>
             </Grid>

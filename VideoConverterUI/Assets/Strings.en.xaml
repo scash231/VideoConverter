@@ -73,6 +73,9 @@
 
     <!-- Additional quick actions -->
     <sys:String x:Key="TipClearForm">Clear input and metadata</sys:String>
+    <sys:String x:Key="TipClearField">Clear</sys:String>
+    <sys:String x:Key="PreviewEmptyTitle">No video yet</sys:String>
+    <sys:String x:Key="PreviewEmptySub">Paste a link above or drop one here.</sys:String>
     <sys:String x:Key="SaveThumbnailTitle">Save Thumbnail</sys:String>
 
     <!-- Auto-detect -->

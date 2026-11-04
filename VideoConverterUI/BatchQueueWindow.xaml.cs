@@ -130,6 +130,7 @@ public partial class BatchQueueWindow : Window
         UpdateOptionsTextVisibility();
         InitFrostedBars();
         TitleBackdrop.SizeChanged += (_, _) => FitLinkField();
+        TitleActions.SizeChanged += (_, _) => FitLinkField();
         LayoutUpdated += (_, _) => UpdateFetchReflection();
         SettingsService.SettingsChanged += OnSettingsChanged;
         _isUiInitialized = true;
@@ -216,14 +217,13 @@ public partial class BatchQueueWindow : Window
         });
     }
 
-    /// <summary>The title-bar pills' labels follow "Show icon labels"; the add-links one also hides while its field is open.</summary>
+    /// <summary>The title-bar pills' labels follow "Show icon labels".</summary>
     private void UpdateOptionsTextVisibility()
     {
         bool show = SettingsService.Current.ShowIconLabels;
         bool animate = _isUiInitialized;
         PillMotion.SetShown(TxtBatchOptionsLabel, show, animate, pop: false);
         PillMotion.SetShown(TxtSaveAndExitLabel, show, animate, pop: false);
-        PillMotion.SetShown(TxtAddLinksLabel, show && _linkField == LinkField.Closed, animate, pop: false);
     }
 
     private void OnEngineOutput(string line)
@@ -711,7 +711,7 @@ public partial class BatchQueueWindow : Window
         else if (e.Key == Key.Escape && _linkField == LinkField.Open)
         {
             TxtPlaylistUrl.Clear();
-            SetLinkField(LinkField.Closed);
+            Keyboard.ClearFocus();
             e.Handled = true;
         }
     }
@@ -781,16 +781,12 @@ public partial class BatchQueueWindow : Window
         UpdateBadge();
         if (skeletons.Count == 0)
         {
-            // Everything was already queued: nothing to load, so the field folds back straight away.
-            if (_linkFetches == 0)
-            {
-                TxtPlaylistUrl.Clear();
-                SetLinkField(LinkField.Closed);
-            }
+            // Everything was already queued: nothing to load.
+            if (_linkFetches == 0) TxtPlaylistUrl.Clear();
             return;
         }
 
-        // The pill shrinks to its loading capsule (also for pasted or dropped links), then folds away.
+        // The bar narrows to its loading capsule (also for pasted or dropped links), then opens again.
         _linkFetches++;
         SetLinkField(LinkField.Loading);
 
@@ -908,137 +904,80 @@ public partial class BatchQueueWindow : Window
             if (_linkFetches == 0)
             {
                 TxtPlaylistUrl.Clear();
-                SetLinkField(LinkField.Closed);
+                SetLinkField(LinkField.Open);
             }
             UpdateBadge();
         }
     }
 
     // ════════════════════════════════════════════════════════════
-    //  ADD LINKS PILL (title bar)
-    //  A glass pill beside Options and Save. Clicked, it grows to the left into the link field. While links load it
-    //  shrinks to just the "Loading..." capsule, and folds away completely once they are in. Esc, or leaving the
-    //  field empty, folds it back too.
+    //  SEARCH BAR (title bar)
+    //  glisse's search field, always there beside Options and Save. While links load it narrows to just the
+    //  "Loading..." capsule, and opens again once they are in.
     // ════════════════════════════════════════════════════════════
 
-    private enum LinkField { Closed, Open, Loading }
+    private enum LinkField { Open, Loading }
 
-    private LinkField _linkField;
+    private LinkField _linkField = LinkField.Open;
     private int _linkFetches;  // AddUrlsWithSkeletonPreviewAsync runs in progress
-    private const double LinkFieldMin = 150, LinkFieldMax = 440;
+    private const double LinkFieldMin = 150, LinkFieldMax = 480;
 
-    private void AddLinks_Click(object sender, RoutedEventArgs e)
-    {
-        switch (_linkField)
-        {
-            case LinkField.Closed: SetLinkField(LinkField.Open); break;
-            case LinkField.Open when string.IsNullOrWhiteSpace(TxtPlaylistUrl.Text): SetLinkField(LinkField.Closed); break;
-            case LinkField.Open: TxtPlaylistUrl.Focus(); break;
-        }
-    }
-
-    private void TxtPlaylistUrl_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => CloseLinkFieldIfIdle();
-
-    /// <summary>Folds the field back unless links are loading or something has been typed.</summary>
-    private void CloseLinkFieldIfIdle()
-    {
-        if (_linkField == LinkField.Open && string.IsNullOrWhiteSpace(TxtPlaylistUrl.Text))
-            SetLinkField(LinkField.Closed);
-    }
-
-    /// <summary>The field's width: what the title bar has left beside the title and the other capsules.</summary>
+    /// <summary>The bar's width: what the title bar has left beside the title and the other capsules.</summary>
     private double LinkFieldWidth()
     {
         const double titleRoom = 190;  // keeps the window title readable
-        const double iconRoom = 32;    // the pill's link button without its label, plus padding
         double others = TitleActions.ActualWidth - AddLinksGlass.ActualWidth;
-        double room = TitleBackdrop.ActualWidth - titleRoom - TitleActions.Margin.Right - others - iconRoom;
+        double room = TitleBackdrop.ActualWidth - titleRoom - TitleActions.Margin.Right - others;
         return Math.Clamp(room, LinkFieldMin, LinkFieldMax);
     }
 
-    private void SetLinkField(LinkField state, bool focus = true)
+    private void SetLinkField(LinkField state)
     {
-        if (state == _linkField)
-        {
-            if (state == LinkField.Open && focus) TxtPlaylistUrl.Focus();
-            return;
-        }
+        if (state == _linkField) return;
         _linkField = state;
         bool animate = !FluidMotion.AnimationsDisabled && IsLoaded;
-        PillMotion.SetShown(TxtAddLinksLabel, state == LinkField.Closed && SettingsService.Current.ShowIconLabels, animate, pop: false);
 
-        bool fromClosed = LinkFieldHost.Visibility != Visibility.Visible;
         double to;
-        switch (state)
+        if (state == LinkField.Open)
         {
-            case LinkField.Open:
-                ShowFetchLoading(false);
-                to = LinkFieldWidth();
-                LinkFieldContent.Width = to;
-                break;
-            case LinkField.Loading:
-                // Only the Fetch button stays: paste goes (its room passes to the text box, so nothing moves), and the
-                // window narrows to the button, which is pinned to its right edge.
-                if (double.IsNaN(LinkFieldContent.Width) || fromClosed) LinkFieldContent.Width = LinkFieldWidth();
-                ShowFetchLoading(true);
-                if (TxtPlaylistUrl.IsKeyboardFocusWithin) Keyboard.ClearFocus();
-                BtnFetchPlaylist.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                to = BtnFetchPlaylist.DesiredSize.Width + BtnFetchPlaylist.Margin.Left + BtnFetchPlaylist.Margin.Right;
-                break;
-            default:
-                to = 0;  // the loading look stays while it folds and is reset once it is gone
-                break;
+            ShowFetchLoading(false);
+            to = LinkFieldWidth();
+            LinkFieldContent.Width = to;
         }
-        LinkFieldHost.Visibility = Visibility.Visible;
+        else
+        {
+            // Only the Fetch button stays: paste goes (its room passes to the text box, so nothing moves), and the
+            // window narrows to the button, which is pinned to its right edge.
+            ShowFetchLoading(true);
+            if (TxtPlaylistUrl.IsKeyboardFocusWithin) Keyboard.ClearFocus();
+            BtnFetchPlaylist.UpdateLayout();  // its label just changed; a Measure alone would still give the old width
+            to = BtnFetchPlaylist.DesiredSize.Width + 2;  // its margin is part of that; 2 for the other side
+        }
 
         void Settle()
         {
             LinkFieldHost.BeginAnimation(WidthProperty, null);
             LinkFieldHost.Width = to;
-            LinkFieldContent.BeginAnimation(OpacityProperty, null);
-            LinkFieldContent.Opacity = state == LinkField.Closed ? 0 : 1;
-            if (state != LinkField.Closed)
-            {
-                if (LinkFieldHost.OpacityMask is LinearGradientBrush edge) FadeOutSoftEdge(edge);
-                return;
-            }
-            LinkFieldHost.OpacityMask = null;
-            LinkFieldHost.Visibility = Visibility.Collapsed;
-            ShowFetchLoading(false);
+            if (LinkFieldHost.OpacityMask is LinearGradientBrush edge) FadeOutSoftEdge(edge);
         }
 
         if (!animate)
         {
             Settle();
+            return;
         }
-        else
+
+        // No From: a bar still moving turns around where it is. Opening eases out with only a hint of spring; narrowing
+        // doesn't overshoot (that would clip the loading capsule). The moving edge fades softly as it opens.
+        var anim = state == LinkField.Open
+            ? new DoubleAnimation(to, TimeSpan.FromMilliseconds(400)) { EasingFunction = AppleSpringEase.Snappy }
+            : new DoubleAnimation(to, TimeSpan.FromMilliseconds(380)) { EasingFunction = AppleSpringEase.Smooth };
+        anim.Completed += (_, _) =>
         {
-            // No From: a field still moving turns around where it is. Opening eases out with only a hint of spring;
-            // narrowing and folding don't overshoot (that would clip the loading capsule).
-            var anim = state == LinkField.Open
-                ? new DoubleAnimation(to, TimeSpan.FromMilliseconds(400)) { EasingFunction = AppleSpringEase.Snappy }
-                : new DoubleAnimation(to, TimeSpan.FromMilliseconds(state == LinkField.Loading ? 380 : 340)) { EasingFunction = AppleSpringEase.Smooth };
-            anim.Completed += (_, _) =>
-            {
-                if (_linkField == state) Settle();  // otherwise it turned around meanwhile
-            };
-
-            // Opening and folding: the moving edge fades softly instead of cutting through the content, and the content
-            // fades with it (folding: gone well before the field is, so nothing is left as a hard sliver at the end).
-            // Narrowing to the loading capsule keeps everything as it is: the button it ends on must stay crisp.
-            // (Pasted or dropped links open it straight into the loading capsule, which then fades in like opening.)
-            if (state != LinkField.Loading || fromClosed)
-            {
-                LinkFieldHost.OpacityMask = CreateSoftEdge();
-                LinkFieldContent.BeginAnimation(OpacityProperty, state != LinkField.Closed
-                    ? new DoubleAnimation(1, TimeSpan.FromMilliseconds(260)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } }
-                    : new DoubleAnimation(0, TimeSpan.FromMilliseconds(220)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } });
-            }
-            LinkFieldHost.BeginAnimation(WidthProperty, anim);
-        }
-
-        if (state == LinkField.Open && focus)
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, () => TxtPlaylistUrl.Focus());
+            if (_linkField == state) Settle();  // otherwise it turned around meanwhile
+        };
+        if (state == LinkField.Open) LinkFieldHost.OpacityMask = CreateSoftEdge();
+        LinkFieldHost.BeginAnimation(WidthProperty, anim);
     }
 
     private const double SoftEdgeWidth = 18;
@@ -1065,6 +1004,7 @@ public partial class BatchQueueWindow : Window
     private void ShowFetchLoading(bool loading)
     {
         BtnPasteLinks.Visibility = loading ? Visibility.Collapsed : Visibility.Visible;
+        TxtPlaylistUrl.Visibility = loading ? Visibility.Hidden : Visibility.Visible;  // only the capsule is left of the bar
         BtnFetchPlaylist.IsHitTestVisible = !loading;  // not disabled: that would dim the capsule
         TxtBtnFetch.Text = loading ? "Loading..." : (string)FindResource("BtnLoadPlaylist");
         IconFetchSpinner.Symbol = loading ? Wpf.Ui.Controls.SymbolRegular.ArrowClockwise24 : Wpf.Ui.Controls.SymbolRegular.Add24;
@@ -1615,8 +1555,6 @@ public partial class BatchQueueWindow : Window
     protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseDown(e);
-        // A click anywhere else folds an empty link field back (not every click there moves keyboard focus).
-        if (_linkField == LinkField.Open && !IsMouseInsideElement(AddLinksGlass, e)) CloseLinkFieldIfIdle();
         if (BatchOptionsPopup != null && BatchOptionsPopup.IsOpen && !_isClosingBatchOptions)
         {
             if (!IsMouseInsideBorder(BatchOptionsPopupBorder, e) && !IsMouseInsideElement(BtnBatchOptions, e))

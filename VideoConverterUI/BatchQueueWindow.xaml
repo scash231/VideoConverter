@@ -69,6 +69,7 @@
 
         <!-- ═══════════ BATCH CAPSULE BUTTON ═══════════ -->
         <Style x:Key="BatchCapsuleBtn" TargetType="Button">
+            <Setter Property="anim:GlassPress.IsEnabled" Value="True"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -78,7 +79,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="10" Padding="{TemplateBinding Padding}"
+                        <Border x:Name="Bd" CornerRadius="13" Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -305,40 +306,17 @@
         </Style>
 
         <!-- ═══════════ TINTED ACCENT BUTTON (secondary action: accent label on a soft accent wash) ═══════════ -->
-        <Style x:Key="BatchAccentBtn" TargetType="Button">
-            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="BatchAccentBtn" TargetType="Button" BasedOn="{StaticResource TintedBtn}">
+            <Setter Property="Height" Value="Auto"/>
+            <Setter Property="MinHeight" Value="26"/>
             <Setter Property="Padding" Value="12,4"/>
             <Setter Property="Margin" Value="2,2"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Grid x:Name="Root">
-                            <Border x:Name="Wash" CornerRadius="20" Background="{DynamicResource Accent}" Opacity="0.14"/>
-                            <Border Padding="{TemplateBinding Padding}" Background="Transparent">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Wash" Property="Opacity" Value="0.22"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Wash" Property="Opacity" Value="0.32"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
 
         <!-- ═══════════ ITEM ACTION BUTTON (Sleek Circle/Square) ═══════════ -->
         <Style x:Key="BatchItemActionBtn" TargetType="Button">
+            <Setter Property="anim:GlassPress.IsEnabled" Value="True"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -347,7 +325,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="13" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -367,6 +345,7 @@
 
         <!-- ═══════════ ITEM DELETE BUTTON ═══════════ -->
         <Style x:Key="BatchItemDeleteBtn" TargetType="Button">
+            <Setter Property="anim:GlassPress.IsEnabled" Value="True"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -375,7 +354,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="13" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -445,54 +424,15 @@
 
         <!-- ═══════════ PRIMARY ACTION BUTTON (accent fill, like a macOS default button) ═══════════
              Tag="stop" turns it into the red "Stop" state while a batch is running. -->
-        <Style x:Key="BatchPrimaryBtn" TargetType="Button">
+        <!-- glisse's filled button; red while it stops the batch (Tag "stop") -->
+        <Style x:Key="BatchPrimaryBtn" TargetType="Button" BasedOn="{StaticResource FilledBtn}">
             <Setter Property="Height" Value="36"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextOnMedia}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="18,0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
-                            <Grid.RenderTransform>
-                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                            </Grid.RenderTransform>
-                            <Border x:Name="Bd" CornerRadius="18" Background="{DynamicResource Accent}">
-                                <Border.Effect>
-                                    <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.16"/>
-                                </Border.Effect>
-                            </Border>
-                            <Border x:Name="Sheen" CornerRadius="18" Background="{DynamicResource TextOnMedia}" Opacity="0" IsHitTestVisible="False"/>
-                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="Tag" Value="stop">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ErrorRed}"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Sheen" Property="Opacity" Value="0.12"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Sheen" Property="Opacity" Value="0.22"/>
-                                <Setter TargetName="Root" Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint1A}"/>
-                                <Setter TargetName="Bd" Property="Effect" Value="{x:Null}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
-                                <Setter Property="Cursor" Value="Arrow"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="stop">
+                    <Setter Property="Background" Value="{DynamicResource ErrorRed}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- ═══════════ PROGRESS BARS (accent fill; no endless sheen: it kept the whole window and its glass redrawing) ═══════════ -->
@@ -518,55 +458,16 @@
         </Style>
 
         <!-- ═══════════ CAPSULE PUSH (Settings push button in the toolbar's capsule shape) ═══════════ -->
-        <Style x:Key="CapsulePush" TargetType="Button" BasedOn="{StaticResource Push}">
-            <Setter Property="Height" Value="32"/>
+        <!-- glisse's glass button in the toolbar's capsule shape -->
+        <Style x:Key="CapsulePush" TargetType="Button" BasedOn="{StaticResource GlassBtn}">
+            <Setter Property="DockPanel.Dock" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Padding" Value="13,0"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="16" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint1C}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Tint26}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
         <!-- Accent-filled capsule (Settings' primary push) for the Fetch button -->
-        <Style x:Key="CapsulePrimary" TargetType="Button" BasedOn="{StaticResource CapsulePush}">
-            <Setter Property="Background" Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextOnMedia}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="16" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <!-- The search bar's Fetch button: glisse's filled button -->
+        <Style x:Key="CapsulePrimary" TargetType="Button" BasedOn="{StaticResource FilledBtn}">
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <!-- Title-bar pill buttons (add links, Options, save & exit): icon plus a label shown with "Show icon labels" -->
         <Style x:Key="TitlePillBtn" TargetType="Button">
@@ -655,43 +556,35 @@
                          Liquid Glass capsule (surface "Button", like the Settings close button). The Borders carry the shadows.
                          The pills' labels follow "Show icon labels" (UpdateOptionsTextVisibility). -->
                     <StackPanel x:Name="TitleActions" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,14,0" VerticalAlignment="Center">
-                        <!-- Add links: a pill that grows to the left into a link field when clicked and folds back once the
-                             links are loaded (or on Esc / clicking away while empty): SetLinkFieldOpen -->
+                        <!-- The search bar: glisse's search field, as on the main window, always there. While links load it narrows to
+                             just the Fetch capsule (SetLinkField) -->
                         <Border x:Name="AddLinksGlass" Height="32" Margin="0,0,8,0">
                             <controls:GlassShadow>
                             <controls:LiquidGlassPanel Surface="Button" CornerRadius="16" BackdropSource="{Binding ElementName=TitleBackdrop}">
-                                <StackPanel Orientation="Horizontal" Margin="2,0">
-                                    <Button x:Name="BtnAddLinks" Style="{StaticResource TitlePillBtn}" Click="AddLinks_Click"
-                                            ToolTip="Add a playlist or video links to the queue">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="Link24" FontSize="13" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtAddLinksLabel" Text="{DynamicResource BatchAddLinks}" Style="{StaticResource TitlePillLabel}"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <!-- The field: a clipping window whose Width animates between 0, the room the title bar has, and
-                                         (while links load) just the Fetch button. Its content keeps its full width and is pinned to the
-                                         right edge (Canvas.Right), so the Fetch button stays put and the glass uncovers it instead of
-                                         pushing it in from under the capsules beside it -->
-                                    <Canvas x:Name="LinkFieldHost" Width="0" Height="28" VerticalAlignment="Center" ClipToBounds="True" Visibility="Collapsed">
-                                    <Grid x:Name="LinkFieldContent" Canvas.Right="0" Height="28" Opacity="0">
+                                <!-- A clipping window whose Width animates between the room the title bar has and (while links load) just
+                                     the Fetch button. Its content keeps its full width and is pinned to the right edge (Canvas.Right), so the
+                                     Fetch button stays put and the glass uncovers it. -->
+                                <Canvas x:Name="LinkFieldHost" Height="32" VerticalAlignment="Center" ClipToBounds="True" Width="300">
+                                    <Grid x:Name="LinkFieldContent" Canvas.Right="0" Height="32" Width="300">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBox x:Name="TxtPlaylistUrl" Grid.Column="0"
-                                                 Style="{StaticResource SeamlessInputTextBox}"
-                                                 Padding="2,0,6,0" FontSize="12"
+                                                 Style="{StaticResource GlassSearchField}"
+                                                 controls:GlassField.Icon="Link24"
+                                                 Padding="11,0,2,0" FontSize="12"
                                                  Tag="{DynamicResource BatchQueuePlaceholder}"
-                                                 KeyDown="TxtPlaylistUrl_KeyDown" LostKeyboardFocus="TxtPlaylistUrl_LostKeyboardFocus"/>
+                                                 KeyDown="TxtPlaylistUrl_KeyDown"/>
                                         <Button x:Name="BtnPasteLinks" Grid.Column="1" Style="{StaticResource GlassRoundBtn}" Margin="0,0,2,0" Focusable="False"
                                                 ToolTip="Paste links from the clipboard and add them (Ctrl+V)" Click="Paste_Click">
-                                            <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
+                                            <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
                                         </Button>
                                         <Button Grid.Column="2" x:Name="BtnFetchPlaylist"
                                                 Style="{StaticResource CapsulePrimary}"
-                                                FontWeight="SemiBold" FontSize="11.5"
-                                                Padding="11,0" Margin="0" Height="26" VerticalAlignment="Center"
+                                                FontSize="11.5"
+                                                Padding="11,0" Margin="0,0,2,0" Height="28"
                                                 ToolTip="Load the links and add them to the queue (Enter)"
                                                 Click="FetchPlaylist_Click" Focusable="False">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -701,8 +594,7 @@
                                             </StackPanel>
                                         </Button>
                                     </Grid>
-                                    </Canvas>
-                                </StackPanel>
+                                </Canvas>
                             </controls:LiquidGlassPanel>
                             </controls:GlassShadow>
                         </Border>
