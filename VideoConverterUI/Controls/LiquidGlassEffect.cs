@@ -53,6 +53,7 @@ public sealed class LiquidGlassEffect : ShaderEffect
         float  rimEdge    : register(c20);   // the 0.5 px edge line: > 0 white, < 0 black, its size the alpha
         float3 domeScale  : register(c21);   // the dome arcs' slope scales (across, down, along an L's arms), from C#
         float  lensBlur   : register(c22);   // glisse lens: how far (DIPs) the rim's samples spread, its softness
+        float  lensMaxSide : register(c23);  // the lens is sized as if the shorter side were at most this (DIPs)
 
         // Rounded rect with superellipse (n = 4) corners like SquircleBorder: 0 on the edge, negative inside.
         // Fully rounded (r = half the short side) it is a circle / capsule (n = 2), also like SquircleBorder.
@@ -86,11 +87,12 @@ public sealed class LiquidGlassEffect : ShaderEffect
             return min(right, bottom);
         }
 
-        // The shorter side the lens is sized by: the card's, or an L's narrower arm.
+        // The shorter side the lens is sized by: the card's, or an L's narrower arm, up to lensMaxSide. Without that
+        // limit a big surface got a band and a pull that grew with it, tens of DIPs wide, smearing what's under it.
         float domeSide(float2 h)
         {
             float2 a = min(arms, h * 2);
-            return lerp(2 * min(h.x, h.y), max(min(a.x, a.y), 1), step(0.5, arms.x) * step(0.5, arms.y));
+            return min(lerp(2 * min(h.x, h.y), max(min(a.x, a.y), 1), step(0.5, arms.x) * step(0.5, arms.y)), max(lensMaxSide, 1));
         }
 
         // How far into the dome's band a point is: 0 in the flat middle, 0.5 on the band's inner edge, about 0.84 at
@@ -304,6 +306,9 @@ public sealed class LiquidGlassEffect : ShaderEffect
     public static readonly DependencyProperty LensDomeProperty = DependencyProperty.Register(nameof(LensDome), typeof(double),
         typeof(LiquidGlassEffect), new UIPropertyMetadata(0.5, ShapeChanged(17)));
 
+    public static readonly DependencyProperty LensMaxSideProperty = DependencyProperty.Register(nameof(LensMaxSide), typeof(double),
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(72.0, ShapeChanged(23)));
+
     public static readonly DependencyProperty LensBlurProperty = DependencyProperty.Register(nameof(LensBlur), typeof(double),
         typeof(LiquidGlassEffect), new UIPropertyMetadata(3.0, PixelShaderConstantCallback(22)));
 
@@ -334,6 +339,7 @@ public sealed class LiquidGlassEffect : ShaderEffect
         var arms = Arms;
         bool l = arms.Width >= 0.5 && arms.Height >= 0.5;
         double m = l ? Math.Max(Math.Min(Math.Min(arms.Width, hx * 2), Math.Min(arms.Height, hy * 2)), 1) : 2 * Math.Min(hx, hy);
+        m = Math.Min(m, Math.Max(LensMaxSide, 1));
         double sag = Math.Max(0.01, Math.Min(LensDome * m, m * 0.5 - 1));
         SetValue(DomeScaleProperty, new Point3D(ArcScale(sag, hx), ArcScale(sag, hy), ArcScale(sag, m * 0.5)));
     }
@@ -400,6 +406,9 @@ public sealed class LiquidGlassEffect : ShaderEffect
     public double LensDome { get => (double)GetValue(LensDomeProperty); set => SetValue(LensDomeProperty, value); }
     /// <summary>glisse lens: how much further red bends than blue (at 1, a fifth further; glisse uses 0.4).</summary>
     public double LensDispersion { get => (double)GetValue(LensDispersionProperty); set => SetValue(LensDispersionProperty, value); }
+    /// <summary>glisse lens: the shorter side the lens's shares are taken of is at most this many DIPs (72), so a big surface
+    /// keeps a narrow bent rim instead of one that grows with it. Small surfaces aren't affected.</summary>
+    public double LensMaxSide { get => (double)GetValue(LensMaxSideProperty); set => SetValue(LensMaxSideProperty, value); }
     /// <summary>glisse lens: how far (DIPs) the rim's samples spread, so the bent band is as soft as glisse's (3).</summary>
     public double LensBlur { get => (double)GetValue(LensBlurProperty); set => SetValue(LensBlurProperty, value); }
     /// <summary>glisse rim: alpha of the white line along the lit edges (glisse: 0.13 dark, 0.3 light).</summary>
@@ -433,6 +442,7 @@ public sealed class LiquidGlassEffect : ShaderEffect
         UpdateShaderValue(RimShineProperty);
         UpdateShaderValue(RimEdgeProperty);
         UpdateShaderValue(LensBlurProperty);
+        UpdateShaderValue(LensMaxSideProperty);
         UpdateDomeScale();
         UpdateShaderValue(DomeScaleProperty);
     }

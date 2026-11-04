@@ -1733,6 +1733,7 @@ public class LiquidGlassPanel : Grid
             _effect.LensDome = p.LensDome;
             _effect.LensDispersion = p.LensDispersion;
             _effect.LensBlur = p.LensBlur;
+            _effect.LensMaxSide = p.LensMaxSide;
             _effect.RimShine = p.RimShine;
             _effect.RimEdge = light ? -p.RimEdge : p.RimEdge;
             _host.Margin = new Thickness(-inset);

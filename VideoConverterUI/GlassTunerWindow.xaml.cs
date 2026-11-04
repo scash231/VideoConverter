@@ -41,6 +41,7 @@ public partial class GlassTunerWindow : Window
             new("Lens dome", "Sag of the dome whose slope sets the bend, as a share of the shorter side (glisse 0.5).", 0.02, 1, 0.01, p => p.LensDome, (p, v) => p.LensDome = v),
             new("Lens dispersion", "How much further red bends than blue: at 1, a fifth further (glisse 0.4).", 0, 2, 0.01, p => p.LensDispersion, (p, v) => p.LensDispersion = v),
             new("Lens blur", "How far (DIPs) the rim's samples spread: the bent band's softness (glisse's 3 px blur).", 0, 10, 0.1, p => p.LensBlur, (p, v) => p.LensBlur = v),
+            new("Lens max side", "The lens's shares are of the shorter side up to this many DIPs, so big surfaces keep a narrow rim.", 20, 600, 1, p => p.LensMaxSide, (p, v) => p.LensMaxSide = v),
             new("Rim shine", "The white line along the lit edges (glisse 0.13 dark, 0.3 light).", 0, 1, 0.01, p => p.RimShine, (p, v) => p.RimShine = v),
             new("Edge line", "Alpha of the 0.5 DIP edge line: white in dark mode, black in light mode (glisse 0.08).", 0, 0.4, 0.01, p => p.RimEdge, (p, v) => p.RimEdge = v),
         ]),

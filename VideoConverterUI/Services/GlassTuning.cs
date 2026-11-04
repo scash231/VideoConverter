@@ -39,6 +39,8 @@ public sealed class GlassParams
     public double LensDispersion { get; set; } = 0.4;
     /// <summary>How far (DIPs) the rim's samples spread: the bent band as soft as glisse's 3 px blur.</summary>
     public double LensBlur { get; set; } = 3;
+    /// <summary>Those shares are of the shorter side up to this many DIPs: a big surface keeps a narrow bent rim.</summary>
+    public double LensMaxSide { get; set; } = 72;
     /// <summary>The white line along the lit edges (glisse: 0.13 on a dark page, 0.3 on a light one).</summary>
     public double RimShine { get; set; } = DarkRimShine;
     /// <summary>The 0.5 DIP edge line under it: white in dark mode, black in light mode, at this alpha.</summary>
