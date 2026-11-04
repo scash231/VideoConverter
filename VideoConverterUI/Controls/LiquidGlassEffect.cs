@@ -296,7 +296,7 @@ public sealed class LiquidGlassEffect : ShaderEffect
         typeof(LiquidGlassEffect), new UIPropertyMetadata(1.0, PixelShaderConstantCallback(14)));
 
     public static readonly DependencyProperty LensStrengthProperty = DependencyProperty.Register(nameof(LensStrength), typeof(double),
-        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.45, PixelShaderConstantCallback(15)));
+        typeof(LiquidGlassEffect), new UIPropertyMetadata(0.40, PixelShaderConstantCallback(15)));
 
     public static readonly DependencyProperty LensDepthProperty = DependencyProperty.Register(nameof(LensDepth), typeof(double),
         typeof(LiquidGlassEffect), new UIPropertyMetadata(0.25, PixelShaderConstantCallback(16)));
@@ -392,7 +392,7 @@ public sealed class LiquidGlassEffect : ShaderEffect
     /// <summary>0 = the rim squeezes in the surroundings (Refraction, Bevel, Dispersion, Highlight); 1 = glisse's dome
     /// lens and rim (the Lens* and Rim* values); values between blend the two.</summary>
     public double LensStyle { get => (double)GetValue(LensStyleProperty); set => SetValue(LensStyleProperty, value); }
-    /// <summary>glisse lens: how far in the rim reaches for what it shows, as a share of the shorter side (0.45).</summary>
+    /// <summary>glisse lens: how far in the rim reaches for what it shows, as a share of the shorter side (0.40; glisse 0.45).</summary>
     public double LensStrength { get => (double)GetValue(LensStrengthProperty); set => SetValue(LensStrengthProperty, value); }
     /// <summary>glisse lens: width of the band around the rim that bends, as a share of the shorter side (0.25).</summary>
     public double LensDepth { get => (double)GetValue(LensDepthProperty); set => SetValue(LensDepthProperty, value); }

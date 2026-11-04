@@ -5,6 +5,20 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.29.1",
+          "date": "2026-11-04",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "Switches have a new look, and you can hold and drag them.",
+                "Selectors now grow out of their button when they open.",
+                "The Liquid Glass lens is a little more subtle."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.29",
           "date": "2026-11-04",
           "sections": [

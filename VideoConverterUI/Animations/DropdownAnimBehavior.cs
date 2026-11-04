@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
 namespace VideoConverterUI.Animations;
@@ -74,6 +75,8 @@ public static class DropdownAnimBehavior
         var popup = combo.Template.FindName("PART_Popup", combo) as Popup;
         if (popup == null || GetMenuSurface(popup) is not Border border) return;
 
+        (border.GetValue(RigProperty) as MorphRig)?.Release();
+
         int selIdx = Math.Max(combo.SelectedIndex, 0);
         popup.Placement = PlacementMode.Relative;
 
@@ -129,7 +132,7 @@ public static class DropdownAnimBehavior
         }
         if (Liquid.IsActive)
         {
-            PlayBubble(border);
+            PlayMorph(combo, popup, border);
             return;
         }
 
@@ -175,42 +178,138 @@ public static class DropdownAnimBehavior
         }
     }
 
+    // ═══ glisse's opening and closing (the Liquid motion; github.com/0kzh/glisse, src/menu.tsx) ═══
+    // The glass grows out of the box while the rows scale up from the box's centre and come into focus; the box fades
+    // away under it. Closing runs it back on a quicker spring. One value, 0 closed to 1 open, drives all of it.
+
+    // glisse's springs: stiffness 600, damping 46 to open; 900, 57 to close.
+    private static readonly Spring MorphOpen = new(0.2565, 0.939);
+    private static readonly Spring MorphClose = new(0.2094, 0.95);
+
+    private static readonly DependencyProperty MorphProperty =
+        DependencyProperty.RegisterAttached("Morph", typeof(double), typeof(DropdownAnimBehavior),
+            new PropertyMetadata(0.0, (d, e) => (d.GetValue(RigProperty) as MorphRig)?.Paint((double)e.NewValue)));
+
+    private static readonly DependencyProperty RigProperty =
+        DependencyProperty.RegisterAttached("Rig", typeof(object), typeof(DropdownAnimBehavior), new PropertyMetadata(null));
+
     /// <summary>
-    /// With the Liquid motion, drop-downs open like the help bubble did before it (MainWindow.AnimatePopupIn): fade in,
-    /// grow from 96 % around the selected row (so it stays on the box) and settle 4 px down, while the glass firms up
-    /// from round corners into its own.
+    /// Holds a menu in pieces while it morphs: the surface keeps its full size (so the popup window stays still), the
+    /// glass inside it takes the morphing rectangle, and the rows keep their size and place, cut by the glass's clip.
     /// </summary>
-    private static void PlayBubble(Border surface)
+    private sealed class MorphRig
     {
-        var scale = new ScaleTransform(0.96, 0.96);
-        var move = new TranslateTransform(0, -4);
-        var group = new TransformGroup();
-        group.Children.Add(scale);
-        group.Children.Add(move);
-        surface.RenderTransform = group;
+        private readonly Border _surface;
+        private readonly FrameworkElement _shell, _content;
+        private readonly UIElement? _box;
+        private readonly Rect _from;
+        private readonly Size _to;
+        private readonly Point _contentAt;
+        private readonly ScaleTransform _scale;
+        private readonly BlurEffect _blur = new();
+        private readonly Effect? _contentEffect;
 
-        var spring = AppleSpringEase.Interactive;
-        var dur = TimeSpan.FromMilliseconds(420);
-        surface.BeginAnimation(UIElement.OpacityProperty,
-            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)) { EasingFunction = AppleSpringEase.Gentle });
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(0.96, 1, dur) { EasingFunction = spring });
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.96, 1, dur) { EasingFunction = spring });
-        move.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(-4, 0, dur) { EasingFunction = spring });
+        public bool Leaving { get; set; }
 
-        // The glass is a LiquidGlassPanel inside the surface; its radius is the tuned one when not animated (NaN).
-        if (surface.Child is Controls.LiquidGlassPanel glass)
+        private MorphRig(ComboBox combo, Popup popup, Border surface, FrameworkElement shell, FrameworkElement content)
         {
-            double radius = Services.GlassTuning.Effective(glass.Surface).CornerRadius;
-            var corners = new DoubleAnimation(55, radius, TimeSpan.FromMilliseconds(550)) { EasingFunction = AppleSpringEase.Bouncy };
-            // Back to following the tuning (Glass Tuner, Liquid Glass look) once it has landed; not if the
-            // list is already closing again (that animation owns the corners now).
-            corners.Completed += (_, _) =>
-            {
-                if (Math.Abs(glass.CornerRadius - radius) < 0.01)
-                    glass.BeginAnimation(Controls.LiquidGlassPanel.CornerRadiusProperty, null);
-            };
-            glass.BeginAnimation(Controls.LiquidGlassPanel.CornerRadiusProperty, corners);
+            _surface = surface;
+            _shell = shell;
+            _content = content;
+            _box = BoxOf(combo);
+            _to = new Size(surface.ActualWidth, surface.ActualHeight);
+            _contentAt = content.TranslatePoint(new Point(0, 0), surface);
+
+            // Where the box lies inside the surface (the popup's offsets are relative to the box).
+            var inHost = (Point)VisualTreeHelper.GetOffset(surface);
+            var box = new Rect(-(popup.HorizontalOffset + inHost.X), -(popup.VerticalOffset + inHost.Y), combo.ActualWidth, combo.ActualHeight);
+            box.Intersect(new Rect(_to));
+            _from = box.IsEmpty ? new Rect(_to.Width / 2, _to.Height / 2, 0, 0) : box;
+
+            double width = content.ActualWidth, height = content.ActualHeight;
+            _scale = new ScaleTransform(1, 1, _from.X + _from.Width / 2 - _contentAt.X, _from.Y + _from.Height / 2 - _contentAt.Y);
+
+            surface.Width = _to.Width;
+            surface.Height = _to.Height;
+            shell.HorizontalAlignment = HorizontalAlignment.Left;
+            shell.VerticalAlignment = VerticalAlignment.Top;
+            content.Width = width;
+            content.Height = height;
+            content.HorizontalAlignment = HorizontalAlignment.Left;
+            content.VerticalAlignment = VerticalAlignment.Top;
+            content.RenderTransform = _scale;
+            _contentEffect = content.Effect;
+            content.Effect = _blur;
+            surface.SetValue(RigProperty, this);
         }
+
+        public static MorphRig? Create(ComboBox combo, Popup popup, Border surface)
+        {
+            if (FindDescendant<Controls.LiquidGlassPanel>(surface) is not { } glass) return null;
+            if (glass.Children.OfType<Controls.UnclippedDecorator>().FirstOrDefault() is not { } content) return null;
+            return new MorphRig(combo, popup, surface, glass.Parent as FrameworkElement ?? glass, content);
+        }
+
+        public void Paint(double value)
+        {
+            double t = Math.Clamp(value, 0, 1);
+            double x = _from.X * (1 - t), y = _from.Y * (1 - t);
+            double fade = Math.Clamp(t / 0.2, 0, 1);
+
+            _shell.Width = _from.Width + (_to.Width - _from.Width) * t;
+            _shell.Height = _from.Height + (_to.Height - _from.Height) * t;
+            _shell.Margin = new Thickness(x, y, 0, 0);
+            _surface.Opacity = fade;
+            if (_box != null) _box.Opacity = 1 - fade;
+
+            double scale = 0.5 + 0.5 * t;
+            _scale.ScaleX = scale;
+            _scale.ScaleY = scale;
+            _content.Margin = new Thickness(_contentAt.X - x, _contentAt.Y - y, 0, 0);
+            _content.Opacity = Math.Clamp(Leaving ? (t - 0.55) / 0.45 : (t - 0.15) / 0.6, 0, 1);
+            _blur.Radius = 12 * (1 - t);
+        }
+
+        /// <summary>Puts the menu back together at its full size.</summary>
+        public void Release()
+        {
+            _surface.ClearValue(RigProperty);
+            _surface.ClearValue(FrameworkElement.WidthProperty);
+            _surface.ClearValue(FrameworkElement.HeightProperty);
+            _surface.Opacity = 1;
+            foreach (var dp in new[] { FrameworkElement.WidthProperty, FrameworkElement.HeightProperty, FrameworkElement.MarginProperty,
+                         FrameworkElement.HorizontalAlignmentProperty, FrameworkElement.VerticalAlignmentProperty })
+            {
+                _shell.ClearValue(dp);
+                _content.ClearValue(dp);
+            }
+            _content.ClearValue(UIElement.RenderTransformProperty);
+            _content.ClearValue(UIElement.OpacityProperty);
+            _content.Effect = _contentEffect;
+        }
+    }
+
+    /// <summary>The closed box, what fades under the menu: the template's root (a popup's content isn't under it).</summary>
+    private static UIElement? BoxOf(ComboBox combo) =>
+        VisualTreeHelper.GetChildrenCount(combo) > 0 ? VisualTreeHelper.GetChild(combo, 0) as UIElement : null;
+
+    private static void PlayMorph(ComboBox combo, Popup popup, Border surface)
+    {
+        surface.RenderTransform = Transform.Identity;
+        surface.UpdateLayout();  // PositionOverCombo has just changed its MinWidth
+        if (MorphRig.Create(combo, popup, surface) is not { } rig)
+        {
+            surface.Opacity = 1;
+            return;
+        }
+        rig.Paint((double)surface.GetValue(MorphProperty));
+        Liquid.To(surface, MorphProperty, 1, MorphOpen, done: () =>
+        {
+            if (!ReferenceEquals(surface.GetValue(RigProperty), rig)) return;
+            rig.Release();
+            surface.BeginAnimation(MorphProperty, null);
+            surface.SetValue(MorphProperty, 1.0);
+        });
     }
 
     /// <summary>
@@ -291,9 +390,9 @@ public static class DropdownAnimBehavior
     }
 
     /// <summary>
-    /// Closing (an item picked, a click elsewhere, Esc): the menu leaves like the help bubble does
-    /// (MainWindow.AnimatePopupOut): fades, shrinks to 96 % towards the box and lifts 4 px while its corners round
-    /// off, and only then does the popup close.
+    /// Closing (an item picked, a click elsewhere, Esc): with the Liquid motion the opening runs back into the box;
+    /// otherwise the menu fades, shrinks to 96 % towards the box and lifts 4 px while its corners round off. Only then
+    /// does the popup close.
     /// </summary>
     private static void BeginClose(ComboBox combo)
     {
@@ -305,6 +404,13 @@ public static class DropdownAnimBehavior
         {
             if ((int)combo.GetValue(OpenCountProperty) != openCount) return; // reopened meanwhile
             combo.SetValue(PopupShownProperty, false);
+            if (GetMenuSurface(popup) is Border surface)
+            {
+                (surface.GetValue(RigProperty) as MorphRig)?.Release();
+                surface.BeginAnimation(MorphProperty, null);
+                surface.SetValue(MorphProperty, 0.0);
+            }
+            BoxOf(combo)?.ClearValue(UIElement.OpacityProperty);
             popup.Placement = PlacementMode.Bottom;
             popup.VerticalOffset = 0;
             popup.HorizontalOffset = 0;
@@ -327,6 +433,25 @@ public static class DropdownAnimBehavior
 
         // Clicks pass nothing on while it fades.
         border.IsHitTestVisible = false;
+
+        if (Liquid.IsActive)
+        {
+            double morph = (double)border.GetValue(MorphProperty);
+            var rig = border.GetValue(RigProperty) as MorphRig;
+            if (morph <= 0)
+            {
+                Finish();
+                return;
+            }
+            rig ??= MorphRig.Create(combo, popup, border);
+            if (rig != null)
+            {
+                rig.Leaving = true;
+                rig.Paint(morph);
+                Liquid.To(border, MorphProperty, 0, MorphClose, done: Finish);
+                return;
+            }
+        }
 
         // From wherever the opening got to.
         if (border.RenderTransform is not TransformGroup { IsFrozen: false } group || group.Children.Count != 2

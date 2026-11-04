@@ -202,10 +202,12 @@
                                         MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                         <controls:GlassShadow>
                                         <controls:LiquidGlassPanel Surface="Dropdown">
-                                            <ScrollViewer Margin="5" SnapsToDevicePixels="True" VerticalScrollBarVisibility="Auto">
+                                            <controls:UnclippedDecorator Margin="5">
+                                            <ScrollViewer SnapsToDevicePixels="True" VerticalScrollBarVisibility="Auto">
                                                 <StackPanel IsItemsHost="True"
                                                             KeyboardNavigation.DirectionalNavigation="Contained"/>
                                             </ScrollViewer>
+                                            </controls:UnclippedDecorator>
                                         </controls:LiquidGlassPanel>
                                         </controls:GlassShadow>
                                     </Border>

@@ -55,129 +55,19 @@
             <sys:Double x:Key="GlobalScrollBarWidth">6</sys:Double>
             <sys:Double x:Key="GlobalScrollBarHeight">6</sys:Double>
 
-            <!-- ══════ ToggleSwitch (CheckBox) ══════ -->
+            <!-- ══════ Switches (CheckBox): glisse's switch, Controls/GlassSwitch ══════ -->
             <Style x:Key="ToggleSwitch" TargetType="CheckBox">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Width" Value="38"/>
-                <Setter Property="Height" Value="20"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="CheckBox">
-                            <Border x:Name="Track" Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" CornerRadius="10">
-                                <Border x:Name="Thumb" Width="14" Height="14" CornerRadius="7" Background="#E6FFFFFF" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,0,3,0" RenderTransformOrigin="0.5,0.5">
-                                    <Border.RenderTransform>
-                                        <TransformGroup>
-                                            <TranslateTransform/>
-                                            <ScaleTransform/>
-                                        </TransformGroup>
-                                    </Border.RenderTransform>
-                                </Border>
-                            </Border>
+                            <controls:GlassSwitch x:Name="Switch" IsOn="{TemplateBinding IsChecked}" IsHeld="{TemplateBinding IsPressed}"/>
                             <ControlTemplate.Triggers>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}"/>
-                                    <Setter TargetName="Track" Property="BorderBrush" Value="Transparent"/>
-                                    <Setter TargetName="Thumb" Property="Background" Value="#FFFFFFFF"/>
-                                    <Trigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="Thumb" 
-                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)" 
-                                                                 To="18" Duration="0:0:0.16">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <QuadraticEase EasingMode="EaseInOut"/>
-                                                    </DoubleAnimation.EasingFunction>
-                                                </DoubleAnimation>
-                                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Thumb" 
-                                                                               Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleX)">
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1.0"/>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.08" Value="1.4">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseOut"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.16" Value="1.0">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseIn"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                </DoubleAnimationUsingKeyFrames>
-                                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Thumb" 
-                                                                               Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleY)">
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1.0"/>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.08" Value="0.82">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseOut"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.16" Value="1.0">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseIn"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                </DoubleAnimationUsingKeyFrames>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.EnterActions>
-                                    <Trigger.ExitActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="Thumb" 
-                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)" 
-                                                                 To="0" Duration="0:0:0.16">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <QuadraticEase EasingMode="EaseInOut"/>
-                                                    </DoubleAnimation.EasingFunction>
-                                                </DoubleAnimation>
-                                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Thumb" 
-                                                                               Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleX)">
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1.0"/>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.08" Value="1.4">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseOut"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.16" Value="1.0">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseIn"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                </DoubleAnimationUsingKeyFrames>
-                                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Thumb" 
-                                                                               Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleY)">
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1.0"/>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.08" Value="0.82">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseOut"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                    <EasingDoubleKeyFrame KeyTime="0:0:0.16" Value="1.0">
-                                                        <EasingDoubleKeyFrame.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseIn"/>
-                                                        </EasingDoubleKeyFrame.EasingFunction>
-                                                    </EasingDoubleKeyFrame>
-                                                </DoubleAnimationUsingKeyFrames>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.ExitActions>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Track" Property="Background" Value="{DynamicResource Tint25}"/>
-                                </Trigger>
-                                <MultiTrigger>
-                                    <MultiTrigger.Conditions>
-                                        <Condition Property="IsMouseOver" Value="True"/>
-                                        <Condition Property="IsChecked" Value="True"/>
-                                    </MultiTrigger.Conditions>
-                                    <MultiTrigger.Setters>
-                                        <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}"/>
-                                        <Setter TargetName="Track" Property="Opacity" Value="0.9"/>
-                                    </MultiTrigger.Setters>
-                                </MultiTrigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.4"/>
+                                    <Setter TargetName="Switch" Property="Opacity" Value="0.35"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -185,66 +75,15 @@
                 </Setter>
             </Style>
 
-            
-            
-            <!-- ══════ Subtle ToggleSwitch (Matches InputBg / BorderSub material) ══════ -->
-            <Style x:Key="SubtleToggleSwitch" TargetType="CheckBox">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Width" Value="34"/>
-                <Setter Property="Height" Value="18"/>
+            <!-- A little smaller, for the tight rows of the Multi Downloader's options -->
+            <Style x:Key="SubtleToggleSwitch" TargetType="CheckBox" BasedOn="{StaticResource ToggleSwitch}">
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="CheckBox">
-                            <Border x:Name="Track" Background="{DynamicResource InputBg}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" CornerRadius="9">
-                                <Border x:Name="Thumb" Width="12" Height="12" CornerRadius="6" Background="{DynamicResource Tint60}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2.5,0,2.5,0" RenderTransformOrigin="0.5,0.5">
-                                    <Border.RenderTransform>
-                                        <TransformGroup>
-                                            <TranslateTransform/>
-                                            <ScaleTransform/>
-                                        </TransformGroup>
-                                    </Border.RenderTransform>
-                                </Border>
-                            </Border>
+                            <controls:GlassSwitch x:Name="Switch" Scale="0.3" IsOn="{TemplateBinding IsChecked}" IsHeld="{TemplateBinding IsPressed}"/>
                             <ControlTemplate.Triggers>
-                                <!-- Checked state: Liquid Glass Grey Thumb -->
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="Track" Property="Background" Value="{DynamicResource InputBg}"/>
-                                    <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BorderSub}"/>
-                                    <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource TextPrimary}"/>
-                                    <Trigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="Thumb" 
-                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)" 
-                                                                 To="16" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <QuadraticEase EasingMode="EaseInOut"/>
-                                                    </DoubleAnimation.EasingFunction>
-                                                </DoubleAnimation>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.EnterActions>
-                                    <Trigger.ExitActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="Thumb" 
-                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)" 
-                                                                 To="0" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <QuadraticEase EasingMode="EaseInOut"/>
-                                                    </DoubleAnimation.EasingFunction>
-                                                </DoubleAnimation>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.ExitActions>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource TextSec}"/>
-                                </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.4"/>
+                                    <Setter TargetName="Switch" Property="Opacity" Value="0.35"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -252,241 +91,36 @@
                 </Setter>
             </Style>
 
-            <!-- ══════ Glass Toggle (shared template: orb + optional label) ══════ -->
+            <!-- Switch + text, the text greyed out while off -->
             <ControlTemplate x:Key="GlassToggleTemplate" TargetType="CheckBox">
                 <StackPanel Orientation="Horizontal" Background="Transparent">
-                    <Grid Width="40" Height="22" VerticalAlignment="Center">
-                        <Border x:Name="Track" CornerRadius="11"
-                                Background="{DynamicResource InputBg}"
-                                BorderBrush="{DynamicResource BorderSub}"
-                                BorderThickness="0.5"/>
-                        <Border x:Name="TrackOn" CornerRadius="11" Opacity="0" IsHitTestVisible="False">
-                            <Border.Background>
-                                <DynamicResource ResourceKey="Tint28"/>
-                            </Border.Background>
-                        </Border>
-                        <Border CornerRadius="11" IsHitTestVisible="False">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#16FFFFFF" Offset="0"/>
-                                    <GradientStop Color="#00FFFFFF" Offset="0.55"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                        </Border>
-                        <Grid x:Name="ThumbHost" Width="16" Height="16"
-                              HorizontalAlignment="Left" VerticalAlignment="Center"
-                              Margin="3,0,0,0" RenderTransformOrigin="0.5,0.5"
-                              IsHitTestVisible="False">
-                            <Grid.RenderTransform>
-                                <TransformGroup>
-                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                    <TranslateTransform X="0"/>
-                                </TransformGroup>
-                            </Grid.RenderTransform>
-                            <Border x:Name="Glow" Width="28" Height="28" CornerRadius="14"
-                                    HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
-                                <Border.Background>
-                                    <RadialGradientBrush>
-                                        <GradientStop Color="#60FFFFFF" Offset="0"/>
-                                        <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                    </RadialGradientBrush>
-                                </Border.Background>
-                            </Border>
-                            <Grid x:Name="PressHost" RenderTransformOrigin="0.5,0.5">
-                                <Grid.RenderTransform>
-                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                </Grid.RenderTransform>
-                                <Border CornerRadius="8" BorderThickness="0.75">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#B8FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#48FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                    <Border.BorderBrush>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#F0FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#28FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.BorderBrush>
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="1" Opacity="0.35"/>
-                                    </Border.Effect>
-                                </Border>
-                                <Border x:Name="OnFill" CornerRadius="8" Opacity="0">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#F5FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#CCFFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                                <Border Height="6" VerticalAlignment="Top" Margin="2.5,1.5,2.5,0" CornerRadius="3">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C8FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                                <Border Height="4" VerticalAlignment="Bottom" Margin="3,0,3,1.5" CornerRadius="2">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#00FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#50FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                            </Grid>
-                        </Grid>
-                    </Grid>
+                    <controls:GlassSwitch x:Name="Switch" IsOn="{TemplateBinding IsChecked}" IsHeld="{TemplateBinding IsPressed}"/>
                     <ContentPresenter x:Name="Label" Margin="6,0,0,0" VerticalAlignment="Center"
                                       RecognizesAccessKey="True" Opacity="0.4"/>
                 </StackPanel>
                 <ControlTemplate.Triggers>
-                    <Trigger Property="HasContent" Value="False">
-                        <Setter TargetName="Label" Property="Visibility" Value="Collapsed"/>
-                    </Trigger>
                     <Trigger Property="IsChecked" Value="True">
                         <Trigger.EnterActions>
                             <BeginStoryboard>
                                 <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.X)"
-                                                     To="18" Duration="0:0:0.34">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="1.45">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="0.86">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="OnFill" Storyboard.TargetProperty="Opacity">
-                                        <LinearDoubleKeyFrame KeyTime="0:0:0.12" Value="0.15"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.38" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseIn"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.12" Value="0.9"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.42" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimation Storyboard.TargetName="TrackOn" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.25"/>
-                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.25"/>
+                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
                                 </Storyboard>
                             </BeginStoryboard>
                         </Trigger.EnterActions>
                         <Trigger.ExitActions>
                             <BeginStoryboard>
                                 <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.X)"
-                                                     To="0" Duration="0:0:0.34">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="1.45">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="0.86">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="OnFill" Storyboard.TargetProperty="Opacity">
-                                        <LinearDoubleKeyFrame KeyTime="0:0:0.12" Value="0.15"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.30" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.12" Value="0.9"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.42" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimation Storyboard.TargetName="TrackOn" Storyboard.TargetProperty="Opacity"
-                                                     To="0" Duration="0:0:0.25"/>
-                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity"
-                                                     To="0.4" Duration="0:0:0.25"/>
+                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0:0:0.2"/>
                                 </Storyboard>
                             </BeginStoryboard>
                         </Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Trigger.EnterActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                     To="1.2" Duration="0:0:0.10"/>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                     To="0.94" Duration="0:0:0.10"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.EnterActions>
-                        <Trigger.ExitActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                     To="1" Duration="0:0:0.25">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.5"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                     To="1" Duration="0:0:0.25">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.5"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource TextSec}"/>
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Opacity" Value="0.4"/>
+                        <Setter TargetName="Switch" Property="Opacity" Value="0.35"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
 
-            <!-- Version 1: switch only, no text -->
             <Style x:Key="GlassToggleSwitch" TargetType="CheckBox">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderThickness" Value="0"/>
@@ -496,248 +130,42 @@
                 <Setter Property="Template" Value="{StaticResource GlassToggleTemplate}"/>
             </Style>
 
-            <!-- Version 2: switch + text field, text grays out while OFF -->
             <Style x:Key="GlassToggleSwitchLabeled" TargetType="CheckBox" BasedOn="{StaticResource GlassToggleSwitch}">
                 <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
                 <Setter Property="Focusable" Value="True"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
             </Style>
 
-            <!-- ══════ Glass Toggle, label on the LEFT (same template, StackPanel reversed) ══════ -->
+            <!-- The same with the text on the left -->
             <ControlTemplate x:Key="GlassToggleTemplateLeftLabel" TargetType="CheckBox">
                 <StackPanel Orientation="Horizontal" Background="Transparent">
                     <ContentPresenter x:Name="Label" Margin="0,0,6,0" VerticalAlignment="Center"
                                       RecognizesAccessKey="True" Opacity="0.4"/>
-                    <Grid Width="40" Height="22" VerticalAlignment="Center">
-                        <Border x:Name="Track" CornerRadius="11"
-                                Background="{DynamicResource InputBg}"
-                                BorderBrush="{DynamicResource BorderSub}"
-                                BorderThickness="0.5"/>
-                        <Border x:Name="TrackOn" CornerRadius="11" Opacity="0" IsHitTestVisible="False">
-                            <Border.Background>
-                                <DynamicResource ResourceKey="Tint28"/>
-                            </Border.Background>
-                        </Border>
-                        <Border CornerRadius="11" IsHitTestVisible="False">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#16FFFFFF" Offset="0"/>
-                                    <GradientStop Color="#00FFFFFF" Offset="0.55"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                        </Border>
-                        <Grid x:Name="ThumbHost" Width="16" Height="16"
-                              HorizontalAlignment="Left" VerticalAlignment="Center"
-                              Margin="3,0,0,0" RenderTransformOrigin="0.5,0.5"
-                              IsHitTestVisible="False">
-                            <Grid.RenderTransform>
-                                <TransformGroup>
-                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                    <TranslateTransform X="0"/>
-                                </TransformGroup>
-                            </Grid.RenderTransform>
-                            <Border x:Name="Glow" Width="28" Height="28" CornerRadius="14"
-                                    HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
-                                <Border.Background>
-                                    <RadialGradientBrush>
-                                        <GradientStop Color="#60FFFFFF" Offset="0"/>
-                                        <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                    </RadialGradientBrush>
-                                </Border.Background>
-                            </Border>
-                            <Grid x:Name="PressHost" RenderTransformOrigin="0.5,0.5">
-                                <Grid.RenderTransform>
-                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                </Grid.RenderTransform>
-                                <Border CornerRadius="8" BorderThickness="0.75">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#B8FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#48FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                    <Border.BorderBrush>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#F0FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#28FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.BorderBrush>
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="1" Opacity="0.35"/>
-                                    </Border.Effect>
-                                </Border>
-                                <Border x:Name="OnFill" CornerRadius="8" Opacity="0">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#F5FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#CCFFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                                <Border Height="6" VerticalAlignment="Top" Margin="2.5,1.5,2.5,0" CornerRadius="3">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C8FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                                <Border Height="4" VerticalAlignment="Bottom" Margin="3,0,3,1.5" CornerRadius="2">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#00FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#50FFFFFF" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-                            </Grid>
-                        </Grid>
-                    </Grid>
+                    <controls:GlassSwitch x:Name="Switch" IsOn="{TemplateBinding IsChecked}" IsHeld="{TemplateBinding IsPressed}"/>
                 </StackPanel>
                 <ControlTemplate.Triggers>
-                    <Trigger Property="HasContent" Value="False">
-                        <Setter TargetName="Label" Property="Visibility" Value="Collapsed"/>
-                    </Trigger>
                     <Trigger Property="IsChecked" Value="True">
                         <Trigger.EnterActions>
                             <BeginStoryboard>
                                 <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.X)"
-                                                     To="18" Duration="0:0:0.34">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="1.45">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="0.86">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="OnFill" Storyboard.TargetProperty="Opacity">
-                                        <LinearDoubleKeyFrame KeyTime="0:0:0.12" Value="0.15"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.38" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseIn"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.12" Value="0.9"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.42" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimation Storyboard.TargetName="TrackOn" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.25"/>
-                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.25"/>
+                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
                                 </Storyboard>
                             </BeginStoryboard>
                         </Trigger.EnterActions>
                         <Trigger.ExitActions>
                             <BeginStoryboard>
                                 <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.X)"
-                                                     To="0" Duration="0:0:0.34">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="1.45">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ThumbHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="0.86">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.36" Value="1">
-                                            <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="OnFill" Storyboard.TargetProperty="Opacity">
-                                        <LinearDoubleKeyFrame KeyTime="0:0:0.12" Value="0.15"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.30" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.12" Value="0.9"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.42" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimation Storyboard.TargetName="TrackOn" Storyboard.TargetProperty="Opacity"
-                                                     To="0" Duration="0:0:0.25"/>
-                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity"
-                                                     To="0.4" Duration="0:0:0.25"/>
+                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0:0:0.2"/>
                                 </Storyboard>
                             </BeginStoryboard>
                         </Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Trigger.EnterActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                     To="1.2" Duration="0:0:0.10"/>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                     To="0.94" Duration="0:0:0.10"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.EnterActions>
-                        <Trigger.ExitActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                     To="1" Duration="0:0:0.25">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.5"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="PressHost"
-                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                     To="1" Duration="0:0:0.25">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.5"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource TextSec}"/>
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Opacity" Value="0.4"/>
+                        <Setter TargetName="Switch" Property="Opacity" Value="0.35"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
 
-            <!-- Version 3: switch + text field, label sits to the LEFT of the switch -->
             <Style x:Key="GlassToggleSwitchLabeledLeft" TargetType="CheckBox">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderThickness" Value="0"/>
@@ -748,213 +176,6 @@
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="Template" Value="{StaticResource GlassToggleTemplateLeftLabel}"/>
             </Style>
-
-            <!-- ══════ Glass Capsule Toggle (dot grows into a glass pill that encases dot + text) ══════ -->
-            <ControlTemplate x:Key="GlassCapsuleToggleTemplate" TargetType="CheckBox">
-                <Grid x:Name="Root" Background="Transparent" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
-                    <Grid.RenderTransform>
-                        <ScaleTransform x:Name="RootScale" ScaleX="1" ScaleY="1"/>
-                    </Grid.RenderTransform>
-
-                    <!-- Glass capsule: auto-sized to match dot+text, revealed left-to-right via ScaleX -->
-                    <Border x:Name="Pill" CornerRadius="16" Opacity="0" BorderThickness="0.75"
-                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                            RenderTransformOrigin="0,0.5">
-                        <Border.RenderTransform>
-                            <ScaleTransform x:Name="PillScale" ScaleX="0.42" ScaleY="1"/>
-                        </Border.RenderTransform>
-                        <Border.Background>
-                                <DynamicResource ResourceKey="Tint2B"/>
-                            </Border.Background>
-                        <Border.BorderBrush>
-                                <DynamicResource ResourceKey="Tint38"/>
-                            </Border.BorderBrush>
-                        <Border.Effect>
-                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="1" Opacity="0.3"/>
-                        </Border.Effect>
-                    </Border>
-
-                    <!-- Top sheen on the capsule -->
-                    <Border x:Name="PillSheen" CornerRadius="16" Opacity="0" IsHitTestVisible="False"
-                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#22FFFFFF" Offset="0"/>
-                                <GradientStop Color="#00FFFFFF" Offset="0.6"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-
-                    <!-- Glow flash on toggle -->
-                    <Border x:Name="Glow" CornerRadius="16" Opacity="0" IsHitTestVisible="False"
-                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                        <Border.Background>
-                            <RadialGradientBrush>
-                                <GradientStop Color="#70FFFFFF" Offset="0"/>
-                                <GradientStop Color="#00FFFFFF" Offset="1"/>
-                            </RadialGradientBrush>
-                        </Border.Background>
-                        <Border.Effect>
-                            <BlurEffect Radius="10"/>
-                        </Border.Effect>
-                    </Border>
-
-                    <!-- Content: dot + text. Position never moves; only the glass behind it grows. -->
-                    <StackPanel Orientation="Horizontal" Margin="5,0,14,0" VerticalAlignment="Center">
-                        <Grid Width="22" Height="22">
-                            <!-- Ball: visible OFF, fades/shrinks away as it turns into the checkmark -->
-                            <Border x:Name="Dot" CornerRadius="11" Background="{DynamicResource Tint60}"
-                                    RenderTransformOrigin="0.5,0.5">
-                                <Border.RenderTransform>
-                                    <ScaleTransform x:Name="DotScale" ScaleX="1" ScaleY="1"/>
-                                </Border.RenderTransform>
-                                <Border.Effect>
-                                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.25"/>
-                                </Border.Effect>
-                            </Border>
-                            <!-- Checkmark: only icon, hidden OFF, the ball turns into this -->
-                            <Path x:Name="CheckIcon" Width="11" Height="11" Stretch="Uniform"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                  Data="M1,5.2 L4.2,8.4 L9.5,1.4"
-                                  Stroke="#68686E" StrokeThickness="1.8"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                  Opacity="0" RenderTransformOrigin="0.5,0.5">
-                                <Path.RenderTransform>
-                                    <ScaleTransform x:Name="CheckIconScale" ScaleX="0.4" ScaleY="0.4"/>
-                                </Path.RenderTransform>
-                            </Path>
-                        </Grid>
-                        <ContentPresenter x:Name="Label" Margin="7,0,0,0" VerticalAlignment="Center"
-                                          Opacity="0.45" RecognizesAccessKey="True"/>
-                    </StackPanel>
-                </Grid>
-                <ControlTemplate.Triggers>
-                    <Trigger Property="IsChecked" Value="True">
-                        <Trigger.EnterActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <!-- Ball dissolves -->
-                                    <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity"
-                                                     To="0" Duration="0:0:0.18"/>
-                                    <DoubleAnimation Storyboard.TargetName="DotScale" Storyboard.TargetProperty="ScaleX"
-                                                     To="0.4" Duration="0:0:0.2"/>
-                                    <DoubleAnimation Storyboard.TargetName="DotScale" Storyboard.TargetProperty="ScaleY"
-                                                     To="0.4" Duration="0:0:0.2"/>
-                                    <!-- ...and the checkmark takes its place -->
-                                    <DoubleAnimation Storyboard.TargetName="CheckIcon" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.2" BeginTime="0:0:0.08"/>
-                                    <DoubleAnimation Storyboard.TargetName="CheckIconScale" Storyboard.TargetProperty="ScaleX"
-                                                     To="1" Duration="0:0:0.22" BeginTime="0:0:0.08">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.2"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="CheckIconScale" Storyboard.TargetProperty="ScaleY"
-                                                     To="1" Duration="0:0:0.22" BeginTime="0:0:0.08">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.2"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-
-                                    <DoubleAnimation Storyboard.TargetName="Pill" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.22" BeginTime="0:0:0.02"/>
-                                    <DoubleAnimation Storyboard.TargetName="PillScale" Storyboard.TargetProperty="ScaleX"
-                                                     To="1" Duration="0:0:0.3" BeginTime="0:0:0.02">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.18"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="PillSheen" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.25" BeginTime="0:0:0.1"/>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.05" Value="0.85"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.28" BeginTime="0:0:0.05"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.EnterActions>
-                        <Trigger.ExitActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="Pill" Storyboard.TargetProperty="Opacity"
-                                                     To="0" Duration="0:0:0.18"/>
-                                    <DoubleAnimation Storyboard.TargetName="PillScale" Storyboard.TargetProperty="ScaleX"
-                                                     To="0.42" Duration="0:0:0.22">
-                                        <DoubleAnimation.EasingFunction>
-                                            <QuadraticEase EasingMode="EaseIn"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="PillSheen" Storyboard.TargetProperty="Opacity"
-                                                     To="0" Duration="0:0:0.15"/>
-                                    <!-- Checkmark dissolves -->
-                                    <DoubleAnimation Storyboard.TargetName="CheckIcon" Storyboard.TargetProperty="Opacity"
-                                                     To="0" Duration="0:0:0.14"/>
-                                    <DoubleAnimation Storyboard.TargetName="CheckIconScale" Storyboard.TargetProperty="ScaleX"
-                                                     To="0.4" Duration="0:0:0.16"/>
-                                    <DoubleAnimation Storyboard.TargetName="CheckIconScale" Storyboard.TargetProperty="ScaleY"
-                                                     To="0.4" Duration="0:0:0.16"/>
-                                    <!-- ...and the ball takes its place again -->
-                                    <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity"
-                                                     To="1" Duration="0:0:0.2" BeginTime="0:0:0.06"/>
-                                    <DoubleAnimation Storyboard.TargetName="DotScale" Storyboard.TargetProperty="ScaleX"
-                                                     To="1" Duration="0:0:0.22" BeginTime="0:0:0.06">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.18"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="DotScale" Storyboard.TargetProperty="ScaleY"
-                                                     To="1" Duration="0:0:0.22" BeginTime="0:0:0.06">
-                                        <DoubleAnimation.EasingFunction>
-                                            <BackEase EasingMode="EaseOut" Amplitude="0.18"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity">
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.04" Value="0.6"/>
-                                        <EasingDoubleKeyFrame KeyTime="0:0:0.32" Value="0">
-                                            <EasingDoubleKeyFrame.EasingFunction><QuadraticEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                                        </EasingDoubleKeyFrame>
-                                    </DoubleAnimationUsingKeyFrames>
-                                    <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="Opacity"
-                                                     To="0.45" Duration="0:0:0.2"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Trigger.EnterActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="RootScale" Storyboard.TargetProperty="ScaleX" To="0.97" Duration="0:0:0.08"/>
-                                    <DoubleAnimation Storyboard.TargetName="RootScale" Storyboard.TargetProperty="ScaleY" To="0.97" Duration="0:0:0.08"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.EnterActions>
-                        <Trigger.ExitActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="RootScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.18">
-                                        <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.35"/></DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="RootScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.18">
-                                        <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.35"/></DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.ExitActions>
-                    </Trigger>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="Dot" Property="Background" Value="{DynamicResource Tint80}"/>
-                    </Trigger>
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Opacity" Value="0.4"/>
-                    </Trigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
-
 
             <!-- ══════ ScrollBar ══════ -->
             <!-- Slim overlay-style bar: a thin translucent pill, no track and no arrows. It widens a little under the mouse,
@@ -1247,10 +468,12 @@
                                                 MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                             <controls:GlassShadow>
                                             <controls:LiquidGlassPanel Surface="Dropdown">
-                                                <ScrollViewer Margin="5" SnapsToDevicePixels="True" VerticalScrollBarVisibility="Auto">
+                                                <controls:UnclippedDecorator Margin="5">
+                                                <ScrollViewer SnapsToDevicePixels="True" VerticalScrollBarVisibility="Auto">
                                                     <StackPanel IsItemsHost="True"
                                                                 KeyboardNavigation.DirectionalNavigation="Contained"/>
                                                 </ScrollViewer>
+                                                </controls:UnclippedDecorator>
                                             </controls:LiquidGlassPanel>
                                             </controls:GlassShadow>
                                         </Border>

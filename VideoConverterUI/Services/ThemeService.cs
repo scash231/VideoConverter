@@ -246,6 +246,9 @@ public static class ThemeService
         // Text drawn on dark media (thumbnails, video) or on accent fills stays white in both modes.
         SetColor(res, "TextOnMedia", Colors.White);
         SetColor(res, "ConsoleText", light ? Color.FromRgb(0x1D, 0x1D, 0x1F) : Color.FromRgb(0xE5, 0xE5, 0xEA));
+        // glisse's switch: its green and its track, per mode.
+        SetColor(res, "SwitchOn", light ? Color.FromRgb(0x34, 0xC7, 0x59) : Color.FromRgb(0x30, 0xD1, 0x58));
+        SetColor(res, "SwitchTrack", light ? Color.FromArgb(0x4D, 0x3B, 0x3B, 0x42) : Color.FromArgb(0x4D, 0xEB, 0xEB, 0xF5));
         // Black text shadows read as smudges behind dark text on light backgrounds.
         res["TextShadowOpacity"] = light ? 0.0 : 0.5;
 
