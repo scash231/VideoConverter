@@ -5,6 +5,18 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.29",
+          "date": "2026-11-04",
+          "sections": [
+            {
+              "title": "New",
+              "items": [
+                "Liquid Glass has a new lens: the edges of glass now bend and magnify what lies beneath them, with a subtle colour fringe and a thin highlight along the rim."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.28.4",
           "date": "2026-11-01",
           "sections": [
