@@ -9,7 +9,7 @@ namespace VideoConverterUI.Controls;
 
 /// <summary>
 /// glisse's switch (github.com/0kzh/glisse, src/switch.tsx), drawn inside a CheckBox's template. All sizes are glisse's
-/// at its 160 x 67 design size times <see cref="Scale"/> (glisse uses 0.375). At rest the thumb is a white capsule. Held,
+/// at its 160 x 67 design size times <see cref="Scale"/> (glisse uses 0.375). At rest the thumb is a white capsule, dimmed while off. Held,
 /// it lifts into clear glass, a lens that shows the track drawn a little smaller, ringed by the glass and bent at its
 /// rim, and it can be dragged across. The CheckBox stays the control: a click toggles it as usual, a drag ends in
 /// <see cref="ToggleButton.IsCheckedProperty"/> plus a Click event. The lens exists only while the thumb is lifted, so
@@ -67,7 +67,7 @@ public sealed class GlassSwitch : Grid
     private readonly Border _insetTrack = new(), _insetFill = new();
     private readonly Border _ring = new() { BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x80, 255, 255, 255)) };
     private readonly Border _gloss = new() { IsHitTestVisible = false };
-    private readonly Border _face = new() { Background = Brushes.White };
+    private readonly Border _face = new(), _faceOn = new() { Background = Brushes.White };  // the off colour, the white over it as the switch turns on
     private LiquidGlassEffect? _effect;
     private bool _lensTried;
 
@@ -84,6 +84,8 @@ public sealed class GlassSwitch : Grid
 
         _track.SetResourceReference(Border.BackgroundProperty, "SwitchTrack");
         _fill.SetResourceReference(Border.BackgroundProperty, "SwitchOn");
+        _face.SetResourceReference(Border.BackgroundProperty, "SwitchThumbOff");
+        _face.Child = _faceOn;
         _insetTrack.SetResourceReference(Border.BackgroundProperty, "SwitchTrack");
         _insetFill.SetResourceReference(Border.BackgroundProperty, "SwitchOn");
         _bed.Children.Add(_track);
@@ -140,6 +142,7 @@ public sealed class GlassSwitch : Grid
         _ring.BorderThickness = new Thickness(1.5 * s / 0.375);
         _gloss.CornerRadius = round;
         _face.CornerRadius = round;
+        _faceOn.CornerRadius = round;
         _shadow.CornerRadius = h / 2;
         if (_effect != null) ConfigureLens(_effect);
         Paint();
@@ -240,6 +243,7 @@ public sealed class GlassSwitch : Grid
         _thumbMove.X = x;
         _fill.Opacity = Math.Clamp(Color, 0, 1);
         _face.Opacity = 1 - 0.85 * lift;
+        _faceOn.Opacity = _fill.Opacity;
 
         bool lifted = Lift > 0.01;
         if (!lifted)

@@ -16,7 +16,12 @@ namespace VideoConverterUI.Controls;
 public sealed class GlassMenuItem : Border
 {
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(nameof(Icon), typeof(SymbolRegular), typeof(GlassMenuItem),
-        new PropertyMetadata(SymbolRegular.Empty, (d, e) => ((GlassMenuItem)d)._icon.Symbol = (SymbolRegular)e.NewValue));
+        new PropertyMetadata(SymbolRegular.Empty, (d, e) =>
+        {
+            var item = (GlassMenuItem)d;
+            item._icon.Symbol = (SymbolRegular)e.NewValue;
+            item._icon.Visibility = (SymbolRegular)e.NewValue == SymbolRegular.Empty ? Visibility.Collapsed : Visibility.Visible;
+        }));
 
     public static readonly DependencyProperty LabelProperty = DependencyProperty.Register(nameof(Label), typeof(string), typeof(GlassMenuItem),
         new PropertyMetadata(string.Empty, (d, e) => ((GlassMenuItem)d)._label.Text = (string)e.NewValue));
@@ -24,15 +29,34 @@ public sealed class GlassMenuItem : Border
     public static readonly DependencyProperty IsDestructiveProperty = DependencyProperty.Register(nameof(IsDestructive), typeof(bool), typeof(GlassMenuItem),
         new PropertyMetadata(false, (d, _) => ((GlassMenuItem)d).ApplyColour()));
 
+    public static readonly DependencyProperty DetailProperty = DependencyProperty.Register(nameof(Detail), typeof(string), typeof(GlassMenuItem),
+        new PropertyMetadata(string.Empty, (d, e) =>
+        {
+            var item = (GlassMenuItem)d;
+            item._detail.Text = (string)e.NewValue;
+            item._detail.Visibility = string.IsNullOrEmpty((string)e.NewValue) ? Visibility.Collapsed : Visibility.Visible;
+        }));
+
+    public static readonly DependencyProperty IsCheckedProperty = DependencyProperty.Register(nameof(IsChecked), typeof(bool), typeof(GlassMenuItem),
+        new PropertyMetadata(false, (d, e) => ((GlassMenuItem)d)._check.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed));
+
     public SymbolRegular Icon { get => (SymbolRegular)GetValue(IconProperty); set => SetValue(IconProperty, value); }
     public string Label { get => (string)GetValue(LabelProperty); set => SetValue(LabelProperty, value); }
     public bool IsDestructive { get => (bool)GetValue(IsDestructiveProperty); set => SetValue(IsDestructiveProperty, value); }
 
+    /// <summary>A quieter note after the label.</summary>
+    public string Detail { get => (string)GetValue(DetailProperty); set => SetValue(DetailProperty, value); }
+
+    /// <summary>A checkmark at the row's end, for a menu that picks one of several.</summary>
+    public bool IsChecked { get => (bool)GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }
+
     /// <summary>Raised once the menu has started closing.</summary>
     public event RoutedEventHandler? Click;
 
-    private readonly SymbolIcon _icon = new() { FontSize = 16, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+    private readonly SymbolIcon _icon = new() { FontSize = 16, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0), Visibility = Visibility.Collapsed };
     private readonly System.Windows.Controls.TextBlock _label = new() { FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+    private readonly System.Windows.Controls.TextBlock _detail = new() { FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Visibility = Visibility.Collapsed };
+    private readonly SymbolIcon _check = new() { Symbol = SymbolRegular.Checkmark24, FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), Visibility = Visibility.Collapsed };
 
     public GlassMenuItem()
     {
@@ -40,7 +64,13 @@ public sealed class GlassMenuItem : Border
         Padding = new Thickness(12, 0, 12, 0);
         MinHeight = 32;
         Cursor = Cursors.Hand;
-        Child = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Children = { _icon, _label } };
+        DockPanel.SetDock(_check, Dock.Right);
+        Child = new DockPanel
+        {
+            LastChildFill = true,
+            Children = { _check, new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Children = { _icon, _label, _detail } } },
+        };
+        _detail.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "TextSec");
         ApplyColour();
     }
 
@@ -49,6 +79,7 @@ public sealed class GlassMenuItem : Border
         string key = IsDestructive ? "ErrorRed" : "TextPrimary";
         _icon.SetResourceReference(SymbolIcon.ForegroundProperty, key);
         _label.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, key);
+        _check.SetResourceReference(SymbolIcon.ForegroundProperty, key);
     }
 
     internal void RaiseClick() => Click?.Invoke(this, new RoutedEventArgs());
@@ -86,6 +117,19 @@ public sealed class GlassMenu : Popup
         set => _glyph.Symbol = value;
     }
 
+    /// <summary>For a trigger that shows text rather than an icon: the text, carried away in the icon's place.</summary>
+    public string? GlyphText
+    {
+        get => _glyphText.Text;
+        set
+        {
+            _glyphText.Text = value ?? string.Empty;
+            bool text = !string.IsNullOrEmpty(value);
+            _glyphText.Visibility = text ? Visibility.Visible : Visibility.Collapsed;
+            _glyph.Visibility = text ? Visibility.Collapsed : Visibility.Visible;
+        }
+    }
+
     public Collection<GlassMenuItem> Items { get; } = [];
 
     private readonly Grid _root = new() { Background = Brushes.Transparent };
@@ -94,6 +138,7 @@ public sealed class GlassMenu : Popup
     private readonly LiquidGlassPanel _glass = new() { Surface = GlassSurfaces.Menu, AdaptiveContrast = false, TextShadow = false };
     private readonly Border _pressedLight = new() { CornerRadius = new CornerRadius(CardRadius), IsHitTestVisible = false, Opacity = 0 };
     private readonly SymbolIcon _glyph = new() { Symbol = SymbolRegular.MoreHorizontal24, FontSize = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+    private readonly System.Windows.Controls.TextBlock _glyphText = new() { FontSize = 11.5, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     private readonly Grid _glyphHost = new() { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, IsHitTestVisible = false };
     private readonly ScaleTransform _glyphScale = new();
     private readonly TranslateTransform _glyphMove = new();
@@ -128,7 +173,9 @@ public sealed class GlassMenu : Popup
         _plate.RenderTransform = _plateMove;
         _glyph.SetResourceReference(SymbolIcon.ForegroundProperty, "TextPrimary");
         _pressedLight.Background = new LinearGradientBrush(Color.FromArgb(0x1C, 255, 255, 255), Color.FromArgb(0x06, 255, 255, 255), 45);
+        _glyphText.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "TextPrimary");
         _glyphHost.Children.Add(_glyph);
+        _glyphHost.Children.Add(_glyphText);
         _glyphHost.RenderTransformOrigin = new Point(0.5, 0.5);
         var glyphTransform = new TransformGroup();
         glyphTransform.Children.Add(_glyphScale);
@@ -179,7 +226,9 @@ public sealed class GlassMenu : Popup
         if (wasClosed)
         {
             _from = new Size(trigger.ActualWidth, trigger.ActualHeight);
-            _content.ClearValue(FrameworkElement.WidthProperty);
+            // Measured free of the last opening's size: the labels may have changed language since.
+            _contentHost.ClearValue(FrameworkElement.WidthProperty);
+            _contentHost.ClearValue(FrameworkElement.HeightProperty);
             _contentHost.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             double width = Math.Max(MinCardWidth, Math.Ceiling(_contentHost.DesiredSize.Width));
             _to = new Size(width, Math.Ceiling(_contentHost.DesiredSize.Height));
@@ -192,9 +241,8 @@ public sealed class GlassMenu : Popup
             _glyphHost.Width = _from.Width;
             _glyphHost.Height = _from.Height;
 
-            // The card's top-right corner on the trigger's.
             PlacementTarget = trigger;
-            HorizontalOffset = _from.Width - (_to.Width + RoomSide * 2) + RoomSide;
+            AimAtTrigger();
             VerticalOffset = -RoomTop;
 
             _plate.Opacity = 0;
@@ -203,6 +251,7 @@ public sealed class GlassMenu : Popup
             trigger.BeginAnimation(UIElement.OpacityProperty, null);  // the header's motion leaves its finished fade holding this
             fades?.BeginAnimation(UIElement.OpacityProperty, null);
             trigger.IsVisibleChanged += OnTriggerVisibleChanged;
+            trigger.SizeChanged += OnTriggerSizeChanged;
             _window = Window.GetWindow(trigger);
             if (_window != null)
             {
@@ -252,7 +301,11 @@ public sealed class GlassMenu : Popup
         _glyphHost.Effect = null;
         _trigger?.ClearValue(UIElement.OpacityProperty);
         _fades?.ClearValue(UIElement.OpacityProperty);
-        if (_trigger != null) _trigger.IsVisibleChanged -= OnTriggerVisibleChanged;
+        if (_trigger != null)
+        {
+            _trigger.IsVisibleChanged -= OnTriggerVisibleChanged;
+            _trigger.SizeChanged -= OnTriggerSizeChanged;
+        }
         if (_window != null)
         {
             _window.PreviewMouseDown -= OnWindowMouseDown;
@@ -269,11 +322,25 @@ public sealed class GlassMenu : Popup
         if (e.NewValue is false) Close();  // the header unfolded its tools
     }
 
+    // The card's top-right corner on the trigger's.
+    private void AimAtTrigger() => HorizontalOffset = _from.Width - (_to.Width + RoomSide * 2) + RoomSide;
+
+    // A row can change the trigger itself (a new language's name): the closing glass heads for what it is now.
+    private void OnTriggerSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        _from = e.NewSize;
+        _glyphHost.Width = _from.Width;
+        _glyphHost.Height = _from.Height;
+        AimAtTrigger();
+        Paint((double)GetValue(MorphProperty));
+    }
+
     private void OnWindowDeactivated(object? sender, EventArgs e) => Close();
 
     private void OnWindowMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (_trigger is { IsMouseOver: true }) return;  // its click toggles
+        if (_card.IsMouseOver) return;  // a Popup's mouse events tunnel through the window that declares it, on their way to the card
         Close();
     }
 

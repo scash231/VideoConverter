@@ -18,6 +18,7 @@ public sealed class GlassChrome : Decorator
     private static readonly Spring HoverSpring = GlassPress.FromStiffness(420, 41);
 
     public static readonly DependencyProperty FillProperty = Renders<Brush?>(nameof(Fill), null);
+    public static readonly DependencyProperty DimProperty = Renders(nameof(Dim), 0.0);
     public static readonly DependencyProperty CornerRadiusProperty = Renders(nameof(CornerRadius), double.NaN);
     public static readonly DependencyProperty PaddingProperty = DependencyProperty.Register(nameof(Padding), typeof(Thickness), typeof(GlassChrome),
         new FrameworkPropertyMetadata(default(Thickness), FrameworkPropertyMetadataOptions.AffectsMeasure));
@@ -38,6 +39,8 @@ public sealed class GlassChrome : Decorator
 
     /// <summary>The fill of a filled button; null = the glass colour.</summary>
     public Brush? Fill { get => (Brush?)GetValue(FillProperty); set => SetValue(FillProperty, value); }
+    /// <summary>How much black lies over the <see cref="Fill"/>, for a fill quieter than its colour.</summary>
+    public double Dim { get => (double)GetValue(DimProperty); set => SetValue(DimProperty, value); }
     /// <summary>NaN = a capsule, whatever the height.</summary>
     public double CornerRadius { get => (double)GetValue(CornerRadiusProperty); set => SetValue(CornerRadiusProperty, value); }
     public Thickness Padding { get => (Thickness)GetValue(PaddingProperty); set => SetValue(PaddingProperty, value); }
@@ -100,6 +103,7 @@ public sealed class GlassChrome : Decorator
         if (Fill is { } fill)
         {
             dc.DrawRoundedRectangle(fill, null, rect, r, r);
+            if (Dim > 0) dc.DrawRoundedRectangle(Soft(Dim), null, rect, r, r);
             // Lighter while hovered, darker while held, as glisse mixes its fill.
             bool held = IsHeld;
             if (lit > 0.001)

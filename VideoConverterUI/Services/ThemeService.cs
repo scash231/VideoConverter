@@ -249,6 +249,8 @@ public static class ThemeService
         // glisse's switch: its green and its track, per mode.
         SetColor(res, "SwitchOn", light ? Color.FromRgb(0x34, 0xC7, 0x59) : Color.FromRgb(0x30, 0xD1, 0x58));
         SetColor(res, "SwitchTrack", light ? Color.FromArgb(0x4D, 0x3B, 0x3B, 0x42) : Color.FromArgb(0x4D, 0xEB, 0xEB, 0xF5));
+        // The thumb while off, quieter than the white it has while on (on a light page white doesn't glare).
+        SetColor(res, "SwitchThumbOff", light ? Colors.White : Color.FromRgb(0xB0, 0xB0, 0xB6));
         // glisse's materials per mode: the glass of buttons and inputs on a surface (GlassChrome), its lit state and edge,
         // the slider's rail, the segmented control's thumb and the track under it (its fill on a light page only).
         SetColor(res, "GlassFill", light ? Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));

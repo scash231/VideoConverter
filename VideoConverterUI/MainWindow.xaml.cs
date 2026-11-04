@@ -1466,7 +1466,7 @@ public partial class MainWindow : Window
     // window's glass, and the progress bar moves on every frame.
     private const double StartReflectionStep = 16;
     private const double StartBackdropBlur = 8;
-    private const double StartReflectionOpacity = 0.4;  // a hint of its colour on the rims, not a glow
+    private const double StartReflectionOpacity = 0.3;  // a hint of its colour on the rims, not a glow
     private const double StartProgressReflectionOpacity = 0.25;
 
     /// <summary>
@@ -2023,67 +2023,23 @@ public partial class MainWindow : Window
         _ => L("StatusBackendReady"),
     };
 
-    private bool _isClosingLangPopup;
-    private DateTime _langPopupClosedTime = DateTime.MinValue;
-
-    private void LangPopup_Closed(object sender, EventArgs e)
-    {
-        _langPopupClosedTime = DateTime.UtcNow;
-        if (IconLangArrow != null) IconLangArrow.Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronRight24;
-        RefreshHeaderPills();
-    }
-
     private void LangPill_Click(object s, RoutedEventArgs e)
     {
-        if (LangPopup == null) return;
-        if ((DateTime.UtcNow - _langPopupClosedTime).TotalMilliseconds < 250)
-        {
-            return;
-        }
-
-        LangPopup.PlacementTarget = BtnLangPill;
-        if (!LangPopup.IsOpen && !_isClosingLangPopup)
-        {
-            UpdateLanguageCheckmarks();
-            LangPopup.IsOpen = true;
-            if (IconLangArrow != null) IconLangArrow.Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronDown24;
-            AnimatePopupIn(LangPopupBorder);
-            RefreshHeaderPills();
-        }
-        else
-        {
-            CloseLangPopupAnimated();
-        }
+        UpdateLanguageCheckmarks();
+        LangMenu.GlyphText = TxtCurrentLang.Text;
+        LangMenu.Toggle(BtnLangPill, LangPillGlass);
     }
 
-    private void CloseLangPopupAnimated()
+    private void LangItem_Click(object sender, RoutedEventArgs e)
     {
-        if (_isClosingLangPopup || LangPopup == null || !LangPopup.IsOpen) return;
-        _isClosingLangPopup = true;
-        _langPopupClosedTime = DateTime.UtcNow;
-        if (IconLangArrow != null) IconLangArrow.Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronRight24;
-        AnimatePopupOut(LangPopupBorder, () =>
-        {
-            LangPopup.IsOpen = false;
-            _isClosingLangPopup = false;
-            RefreshHeaderPills();
-        });
-    }
-
-    private void SelectLang_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.Tag is string lang)
-        {
-            SetLanguage(lang);
-            CloseLangPopupAnimated();
-        }
+        if (sender is Controls.GlassMenuItem { Tag: string lang }) SetLanguage(lang);
     }
 
     private void UpdateLanguageCheckmarks()
     {
-        if (CheckLangDE != null) CheckLangDE.Visibility = _currentLang == "de" ? Visibility.Visible : Visibility.Collapsed;
-        if (CheckLangEN != null) CheckLangEN.Visibility = _currentLang == "en" ? Visibility.Visible : Visibility.Collapsed;
-        if (CheckLangRU != null) CheckLangRU.Visibility = _currentLang == "ru" ? Visibility.Visible : Visibility.Collapsed;
+        LangItemEn.IsChecked = _currentLang == "en";
+        LangItemDe.IsChecked = _currentLang == "de";
+        LangItemRu.IsChecked = _currentLang == "ru";
     }
 
     private void SetLanguage(string lang)
@@ -2098,6 +2054,7 @@ public partial class MainWindow : Window
                 "ru" => "RU (Unsupported)",
                 _ => "EN"
             };
+            LangMenu.GlyphText = TxtCurrentLang.Text;
             if (BtnLangPill != null)
             {
                 BtnLangPill.ToolTip = lang == "en" ? "Language: English" : $"Language: {lang.ToUpperInvariant()} (Unsupported)";
@@ -3133,7 +3090,7 @@ public partial class MainWindow : Window
                       && _editorWin?.IsLoaded != true && !IsWindowOpen<EditorWindow>();
         bool batch = _batchQueueWin?.IsLoaded != true && !IsWindowOpen<BatchQueueWindow>();
         bool settings = _settingsWin?.IsLoaded != true && !IsWindowOpen<SettingsWindow>();
-        bool lang = s.ShowLangPill && LangPopup?.IsOpen != true;
+        bool lang = s.ShowLangPill;
         bool labels = s.ShowIconLabels;
         bool tools = editor || batch || settings;
         bool fold = tools && ShouldFoldTools(perfOverlay, error, help, console, log, editor, batch, settings, lang, labels);
@@ -4000,14 +3957,6 @@ public partial class MainWindow : Window
             }
         }
 
-        if (LangPopup != null && LangPopup.IsOpen && !_isClosingLangPopup)
-        {
-            if (!IsMouseInsideBorder(LangPopupBorder, e))
-            {
-                CloseLangPopupAnimated();
-            }
-        }
-
         if (ErrorPopup != null && ErrorPopup.IsOpen && !_isClosingErrorPopup)
         {
             if (!IsMouseInsideBorder(ErrorPopupBorder, e))
@@ -4034,7 +3983,6 @@ public partial class MainWindow : Window
     private void CloseAllPopupsAnimated()
     {
         if (HelpPopup != null && HelpPopup.IsOpen) CloseHelpPopupAnimated();
-        if (LangPopup != null && LangPopup.IsOpen) CloseLangPopupAnimated();
         if (ErrorPopup != null && ErrorPopup.IsOpen) CloseErrorPopupAnimated();
     }
 

@@ -544,6 +544,13 @@
                                 <controls:GlassMenuItem Icon="Settings24" Label="{DynamicResource SettingsTitle}" Click="SettingsFromMenu_Click"/>
                             </controls:GlassMenu>
 
+                            <!-- The languages: the same menu, growing out of the language pill -->
+                            <controls:GlassMenu x:Name="LangMenu">
+                                <controls:GlassMenuItem x:Name="LangItemEn" Label="English" Tag="en" Click="LangItem_Click"/>
+                                <controls:GlassMenuItem x:Name="LangItemDe" Label="Deutsch" Detail="Unsupported" Tag="de" Click="LangItem_Click"/>
+                                <controls:GlassMenuItem x:Name="LangItemRu" Label="Русский" Detail="Unsupported" Tag="ru" Click="LangItem_Click"/>
+                            </controls:GlassMenu>
+
                             <!-- Language Toggle Pill Button -->
                             <Border x:Name="LangPillGlass"
                                     controls:LiquidGlass.Surface="HeaderPill" controls:LiquidGlass.Backdrop="{Binding ElementName=GlassBackdrop}"
@@ -1583,7 +1590,7 @@
                     </Border.Effect>
                     <Grid x:Name="StartGrid">
                         <!-- 1. Idle: the fill -->
-                        <controls:GlassChrome x:Name="StartIdleBg" Fill="{DynamicResource Accent}"
+                        <controls:GlassChrome x:Name="StartIdleBg" Fill="{DynamicResource Accent}" Dim="0.22"
                                               IsHovered="{Binding IsMouseOver, ElementName=StartContainer}"
                                               IsHeld="{Binding (anim:GlassPress.IsHeld), ElementName=StartContainer}"/>
 
@@ -1612,59 +1619,6 @@
             </Grid>
 
 
-
-            <!-- ═══════════ LANGUAGE SELECTOR POPUP ═══════════ -->
-            <Popup x:Name="LangPopup" PlacementTarget="{Binding ElementName=BtnLangPill}" Placement="Bottom" AllowsTransparency="True" StaysOpen="True"
-                   PopupAnimation="None" Closed="LangPopup_Closed">
-                <Border x:Name="LangPopupBorder" controls:LiquidGlass.Surface="Popup"
-                        Background="{DynamicResource PopupBg}"
-                        BorderBrush="{DynamicResource BorderSub}"
-                        BorderThickness="0.5" CornerRadius="12"
-                        Padding="4,6" Margin="0,4,0,0" MinWidth="135"
-                        RenderTransformOrigin="0.5,0">
-                    <Border.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform ScaleX="0.9" ScaleY="0.9"/>
-                            <TranslateTransform Y="-6"/>
-                        </TransformGroup>
-                    </Border.RenderTransform>
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="12" ShadowDepth="3" Color="Black" Opacity="0.35"/>
-                    </Border.Effect>
-                    <StackPanel>
-                        <Button Style="{StaticResource IconBtn}" HorizontalContentAlignment="Left" Padding="8,5" Click="SelectLang_Click" Tag="en">
-                            <Grid Width="175">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="English" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                                </StackPanel>
-                                <ui:SymbolIcon Symbol="Checkmark24" x:Name="CheckLangEN" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextPrimary}" Visibility="Collapsed"/>
-                            </Grid>
-                        </Button>
-                        <Button Style="{StaticResource IconBtn}" HorizontalContentAlignment="Left" Padding="8,5" Click="SelectLang_Click" Tag="de" Opacity="0.75">
-                            <Grid Width="175">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="Deutsch" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextSec}"/>
-                                    <Border Background="{DynamicResource Tint14}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" CornerRadius="4" Margin="6,0,0,0" Padding="4,1">
-                                        <TextBlock Text="Unsupported" FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"/>
-                                    </Border>
-                                </StackPanel>
-                                <ui:SymbolIcon Symbol="Checkmark24" x:Name="CheckLangDE" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextPrimary}" Visibility="Collapsed"/>
-                            </Grid>
-                        </Button>
-                        <Button Style="{StaticResource IconBtn}" HorizontalContentAlignment="Left" Padding="8,5" Click="SelectLang_Click" Tag="ru" Opacity="0.75">
-                            <Grid Width="175">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="Русский" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextSec}"/>
-                                    <Border Background="{DynamicResource Tint14}" BorderBrush="{DynamicResource BorderSub}" BorderThickness="0.5" CornerRadius="4" Margin="6,0,0,0" Padding="4,1">
-                                        <TextBlock Text="Unsupported" FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}"/>
-                                    </Border>
-                                </StackPanel>
-                                <ui:SymbolIcon Symbol="Checkmark24" x:Name="CheckLangRU" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextPrimary}" Visibility="Collapsed"/>
-                            </Grid>
-                        </Button>
-                    </StackPanel>
-                </Border>
-            </Popup>
 
             <!-- Corner Resize Grip Handle -->
             <Border x:Name="WindowCornerGrip"
