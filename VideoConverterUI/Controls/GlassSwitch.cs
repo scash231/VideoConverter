@@ -13,13 +13,16 @@ namespace VideoConverterUI.Controls;
 /// it lifts into clear glass, a lens that shows the track drawn a little smaller, ringed by the glass and bent at its
 /// rim, and it can be dragged across. The CheckBox stays the control: a click toggles it as usual, a drag ends in
 /// <see cref="ToggleButton.IsCheckedProperty"/> plus a Click event. The lens exists only while the thumb is lifted, so
-/// a resting switch costs no effect.
+/// a resting switch costs no effect. A change of state happens in the lens: the thumb lifts, travels, and goes back to
+/// the white capsule only once it has fully arrived.
 /// </summary>
 public sealed class GlassSwitch : Grid
 {
     // glisse's springs (stiffness, damping) as response and damping ratio.
     private static readonly Spring TravelSpring = FromStiffness(1000, 80);
     private static readonly Spring LiftSpring = FromStiffness(2000, 80);
+    // Going to a new state, a little slower than glisse's, so the trip is seen in the lens.
+    private static readonly Spring SettleSpring = TravelSpring.Slower(1.25);
 
     private const double RestScale = 0.65, LiftScaleGain = 0.25;
     private const double TravelUnits = 57.9, ThumbLeftUnits = -21.95, ThumbWidthUnits = 146, ThumbHeightUnits = 92;
@@ -69,6 +72,7 @@ public sealed class GlassSwitch : Grid
 
     private CheckBox? _owner;
     private bool _dragging, _moved;
+    private bool _travelling;  // on its way to a new state: the thumb stays lifted until it has arrived
     private double _dragStartX, _dragFrom, _dragValue;
 
     public GlassSwitch()
@@ -190,6 +194,7 @@ public sealed class GlassSwitch : Grid
 
     private void Snap()
     {
+        _travelling = false;
         foreach (var dp in new[] { PositionProperty, ColorProperty, LiftProperty }) BeginAnimation(dp, null);
         SetValue(PositionProperty, Target ? 1.0 : 0.0);
         SetValue(ColorProperty, Target ? 1.0 : 0.0);
@@ -203,13 +208,20 @@ public sealed class GlassSwitch : Grid
     {
         if (_dragging) return;
         if (!Animates) { Snap(); return; }
-        Liquid.To(this, PositionProperty, Target ? 1 : 0, TravelSpring);
-        Liquid.To(this, ColorProperty, Target ? 1 : 0, TravelSpring);
+        double target = Target ? 1 : 0;
+        _travelling = Math.Abs(Position - target) > 0.002;
+        SyncLift();
+        Liquid.To(this, PositionProperty, target, SettleSpring, precision: 0.005, done: () =>
+        {
+            _travelling = false;
+            SyncLift();
+        });
+        Liquid.To(this, ColorProperty, target, SettleSpring);
     }
 
     private void SyncLift()
     {
-        if (Animates) Liquid.To(this, LiftProperty, IsHeld ? 1 : 0, LiftSpring);
+        if (Animates) Liquid.To(this, LiftProperty, IsHeld || _dragging || _travelling ? 1 : 0, LiftSpring);
         else
         {
             BeginAnimation(LiftProperty, null);
@@ -305,6 +317,7 @@ public sealed class GlassSwitch : Grid
         if (!_moved || _owner is not { } owner) return;  // a tap: the CheckBox's own click
 
         e.Handled = true;
+        _travelling = true;  // no dip in the lift between letting go and the trip to the final state
         owner.ReleaseMouseCapture();
         bool next = _dragValue > 0.5;
         if (next != Target)

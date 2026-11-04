@@ -496,8 +496,10 @@ public partial class MainWindow : Window
 
         if (!_pillSnapFromDrag && SegmentIndicator != null && RbUpload.ActualWidth > 0 && Liquid.IsActive)
         {
-            // Glass pill: stretches and clears while it travels, settles solid; a second tap mid-way swings it round.
-            Liquid.Glide(SegmentIndicator, SegmentTranslateX, SegmentScale, toDownload ? RbUpload.ActualWidth : 0);
+            // As the switches do: the thumb lifts into the lens, slides, and settles only once it has arrived.
+            TakeOverPill();
+            Liquid.To(this, PillLiftProperty, 1, PillLiftDrag);
+            SettlePill(toDownload);
         }
         else if (!_pillSnapFromDrag && SegmentIndicator != null && RbUpload.ActualWidth > 0)
         {
@@ -550,10 +552,109 @@ public partial class MainWindow : Window
     // ════════════════════════════════════════════════════════════
     //  SEGMENT PILL DRAG  (Apple iOS clear glass interactive)
     // ════════════════════════════════════════════════════════════
+    // Under the Liquid motion the thumb works like glisse's segmented control (src/internal/segments.tsx) and the switches
+    // (Controls/GlassSwitch): pressed, it lifts into a lens and goes to the pressed side; it follows a drag; let go, it
+    // slides to the nearest side and turns back into the thumb only once it is there.
+
+    // glisse's springs (stiffness, damping) as response and damping ratio: 2500, 94 and 576, 44.2 while held, 1024, 58.9
+    // and 676, 47.8 at rest.
+    private static readonly Spring PillSlideDrag = new(0.1257, 0.94);
+    private static readonly Spring PillLiftDrag = new(0.2618, 0.921);
+    private static readonly Spring PillSlideRest = new(0.2454, 0.92);  // a little slower than glisse's, like the switches
+    private static readonly Spring PillLiftRest = new(0.2417, 0.919);
+
+    private static readonly DependencyProperty PillXProperty = DependencyProperty.Register("PillX", typeof(double), typeof(MainWindow),
+        new PropertyMetadata(0.0, (d, _) => ((MainWindow)d).PaintPill()));
+    private static readonly DependencyProperty PillLiftProperty = DependencyProperty.Register("PillLift", typeof(double), typeof(MainWindow),
+        new PropertyMetadata(0.0, (d, _) => ((MainWindow)d).PaintPill()));
+
+    private bool _pillPressed, _pillMoved;
+    private double _pillDownX, _pillAnchorX;
+
+    private bool PillUsesLens => Liquid.IsActive && !SettingsService.Current.EnablePerformanceMode;
+
+    /// <summary>The lens's rectangle and the thumb's fade, from the slide and the lift.</summary>
+    private void PaintPill()
+    {
+        double x = (double)GetValue(PillXProperty), raw = (double)GetValue(PillLiftProperty);
+        double lift = Math.Clamp(raw, 0, 1);
+        SegmentTranslateX.X = x;
+        SegmentIndicator.Opacity = 1 - Math.Clamp(lift / 0.5, 0, 1);
+
+        if (lift <= 0.01)
+        {
+            SegmentLens.Visibility = Visibility.Collapsed;
+            return;
+        }
+        // glisse's lens is 24 px wider and 16 px taller than the thumb.
+        double width = SegmentIndicator.ActualWidth + 24 * lift, height = SegmentIndicator.ActualHeight + 16 * lift;
+        var origin = ((UIElement)SegmentIndicator.Parent).TranslatePoint(new Point(0, 0), SegmentLensLayer);
+        SegmentLens.Width = width;
+        SegmentLens.Height = height;
+        Canvas.SetLeft(SegmentLens, origin.X + x - 12 * lift);
+        Canvas.SetTop(SegmentLens, origin.Y - 8 * lift);
+        SegmentLens.Opacity = Math.Clamp(lift / 0.25, 0, 1);
+        SegmentLens.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Takes the thumb from whatever animated it last: from here on the slide and the lift drive it.</summary>
+    private void TakeOverPill()
+    {
+        double x = SegmentTranslateX.X;
+        SegmentTranslateX.BeginAnimation(TranslateTransform.XProperty, null);
+        SegmentTranslateX.X = x;
+        SegmentScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        SegmentScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        SegmentScale.ScaleX = 1;
+        SegmentScale.ScaleY = 1;
+        SegmentIndicator.BeginAnimation(UIElement.OpacityProperty, null);
+        if (!Liquid.IsMoving(this, PillXProperty))
+        {
+            BeginAnimation(PillXProperty, null);
+            SetValue(PillXProperty, x);
+        }
+    }
+
+    /// <summary>Slides the lifted thumb to its side, then lets it down.</summary>
+    private void SettlePill(bool toDownload)
+    {
+        double colW = RbUpload.ActualWidth, target = toDownload ? colW : 0;
+        void Land() => Liquid.To(this, PillLiftProperty, 0, PillLiftRest);
+        if (Math.Abs((double)GetValue(PillXProperty) - target) < 0.3)
+        {
+            Liquid.To(this, PillXProperty, target, PillSlideRest, min: 0, max: colW);
+            Land();
+            return;
+        }
+        Liquid.To(this, PillXProperty, target, PillSlideRest, min: 0, max: colW, precision: 0.003, done: Land);
+    }
+
+    private void Segment_LostMouseCapture(object sender, MouseEventArgs e)
+    {
+        if (!_pillPressed) return;
+        // Handing over between the track and its buttons isn't the end of the press.
+        if (Mouse.Captured is DependencyObject now && (ReferenceEquals(now, SegmentTrack) || SegmentTrack.IsAncestorOf(now))) return;
+        _pillPressed = false;
+        SettlePill(RbDownload.IsChecked == true);
+    }
+
     private void Segment_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (_isUploadDisabledForYtMusic || SegmentIndicator == null || RbUpload.ActualWidth <= 0) return;
         var grid = (UIElement)SegmentIndicator.Parent;
+        if (PillUsesLens)
+        {
+            double colW = RbUpload.ActualWidth;
+            _pillPressed = true;
+            _pillMoved = false;
+            _pillDownX = e.GetPosition(grid).X;
+            _pillAnchorX = _pillDownX < colW ? 0 : colW;
+            TakeOverPill();
+            ((UIElement)sender).CaptureMouse();  // a button under it takes this over, and hands it back for a drag
+            Liquid.To(this, PillXProperty, _pillAnchorX, PillSlideDrag, min: 0, max: colW);
+            Liquid.To(this, PillLiftProperty, 1, PillLiftDrag);
+            return;
+        }
         double mouseX = e.GetPosition(grid).X;
 
         _pillDragPending = true;
@@ -566,6 +667,19 @@ public partial class MainWindow : Window
 
     private void Segment_PreviewMouseMove(object sender, MouseEventArgs e)
     {
+        if (_pillPressed)
+        {
+            double slot = RbUpload.ActualWidth;
+            double dx = e.GetPosition((UIElement)SegmentIndicator.Parent).X - _pillDownX;
+            if (!_pillMoved && Math.Abs(dx) <= 6) return;
+            if (!_pillMoved)
+            {
+                _pillMoved = true;
+                ((UIElement)sender).CaptureMouse();
+            }
+            Liquid.To(this, PillXProperty, Math.Clamp(_pillAnchorX + dx, 0, slot), PillSlideDrag, min: 0, max: slot);
+            return;
+        }
         if (_isUploadDisabledForYtMusic || !_pillDragPending) return;
         var grid = SegmentIndicator?.Parent as UIElement;
         if (grid == null || SegmentIndicator == null || RbUpload.ActualWidth <= 0) return;
@@ -640,6 +754,29 @@ public partial class MainWindow : Window
 
     private void Segment_PreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
+        if (_pillPressed)
+        {
+            _pillPressed = false;
+            double slot = RbUpload.ActualWidth;
+            var at = e.GetPosition((UIElement)SegmentIndicator.Parent);
+            double landed = Math.Clamp(_pillAnchorX + (at.X - _pillDownX), 0, slot);
+            bool isDownload = RbDownload.IsChecked == true;
+            // A drag selects wherever it leaves the lens; a tap only counts if it ends on the track.
+            bool near = at.Y >= -24 && at.Y <= ((FrameworkElement)SegmentIndicator.Parent).ActualHeight + 24;
+            bool toDownload = _pillMoved ? landed > slot / 2 : near ? _pillAnchorX > 0 : isDownload;
+
+            if (_pillMoved) e.Handled = true;
+            ((UIElement)sender).ReleaseMouseCapture();
+            if (toDownload != isDownload)
+            {
+                _pillSnapFromDrag = true;
+                if (toDownload) RbDownload.IsChecked = true;
+                else RbUpload.IsChecked = true;
+            }
+            SettlePill(toDownload);
+            return;
+        }
+
         if (_isUploadDisabledForYtMusic)
         {
             _pillDragPending = false;

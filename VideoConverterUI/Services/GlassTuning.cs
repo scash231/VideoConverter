@@ -90,6 +90,8 @@ public static class GlassSurfaces
     public const string UrlBar = "UrlBar";
     /// <summary>The track of the main window's Upload / Download switcher.</summary>
     public const string SegmentTrack = "SegmentTrack";
+    /// <summary>The Upload / Download thumb, lifted: a clear lens over the track and its labels.</summary>
+    public const string SegmentLens = "SegmentLens";
     /// <summary>The main window's cards (preview, upload/download settings, finished actions).</summary>
     public const string Card = "Card";
     /// <summary>The main window's Start button (also the progress capsule while a job runs).</summary>
@@ -560,6 +562,48 @@ public static class GlassTuning
                 ShadowBlur = 10,
                 ShadowDepth = 2,
                 ShadowOpacity = 0.12,
+            }),
+        // glisse's segmented control lens: clear, so the labels stay sharp, bent only in a narrow band at the rim.
+        [GlassSurfaces.SegmentLens] = new("Main window Upload / Download thumb while it is held or moving",
+            () => new GlassParams
+            {
+                CornerRadius = 200,
+                Saturation = 1,
+                Brightness = 1,
+                Frost = 0,
+                Inset = 12,
+                Reflection = 0,
+                LensStrength = 0.3,
+                LensDepth = 0.06,
+                LensDome = 0.02,
+                LensDispersion = 0.1,
+                LensBlur = 1,
+                BackdropBlur = 0,
+                TintAlpha = 0x0E,
+                FallbackTintAlpha = 0x60,
+                ShadowBlur = 0,
+                ShadowDepth = 0,
+                ShadowOpacity = 0,
+            },
+            () => new GlassParams
+            {
+                CornerRadius = 200,
+                Saturation = 1,
+                Brightness = 1,
+                Frost = 0,
+                Inset = 12,
+                Reflection = 0,
+                LensStrength = 0.3,
+                LensDepth = 0.06,
+                LensDome = 0.02,
+                LensDispersion = 0.1,
+                LensBlur = 1,
+                BackdropBlur = 0,
+                TintAlpha = 0x18,
+                FallbackTintAlpha = 0x80,
+                ShadowBlur = 0,
+                ShadowDepth = 0,
+                ShadowOpacity = 0,
             }),
         // A wide capsule holding the link text: the Multi Downloader's link bar.
         [GlassSurfaces.UrlBar] = new("Main window link field",

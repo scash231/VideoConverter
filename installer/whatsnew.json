@@ -5,6 +5,19 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.29.2",
+          "date": "2026-11-04",
+          "sections": [
+            {
+              "title": "Changed",
+              "items": [
+                "The Upload and Download toggle now lifts into glass and slides as you drag it.",
+                "Switches stay in glass until they have fully switched."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.29.1",
           "date": "2026-11-04",
           "sections": [

@@ -1053,7 +1053,8 @@
                         SizeChanged="SegmentTrack_SizeChanged"
                         PreviewMouseLeftButtonDown="Segment_PreviewMouseDown"
                         PreviewMouseMove="Segment_PreviewMouseMove"
-                        PreviewMouseLeftButtonUp="Segment_PreviewMouseUp">
+                        PreviewMouseLeftButtonUp="Segment_PreviewMouseUp"
+                        LostMouseCapture="Segment_LostMouseCapture">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.18"/>
                     </Border.Effect>
@@ -1131,6 +1132,12 @@
                         </RadioButton>
                     </Grid>
                 </Border>
+                <!-- The thumb, lifted: bigger than the track, so it lies over it rather than on its glass (see PaintPill) -->
+                <Canvas x:Name="SegmentLensLayer" Grid.Row="1" Margin="0,0,0,10" IsHitTestVisible="False">
+                    <controls:LiquidGlassPanel x:Name="SegmentLens" Surface="SegmentLens" Visibility="Collapsed"
+                                               AdaptiveContrast="False" TextShadow="False"
+                                               BackdropSource="{Binding ElementName=SegmentTrack}"/>
+                </Canvas>
 
                 <!-- ──── Two-column layout ──── -->
                 <Grid Grid.Row="2">
