@@ -22,7 +22,8 @@ public sealed class GlassSwitch : Grid
     private static readonly Spring TravelSpring = FromStiffness(1000, 80);
     private static readonly Spring LiftSpring = FromStiffness(2000, 80);
     // Going to a new state: quick, without glisse's overdamped tail, which only kept the thumb creeping in the lens.
-    private static readonly Spring SettleSpring = new(0.24, 1);
+    // The main window's Upload / Download thumb travels on this too, so the two take the same time.
+    public static readonly Spring SettleSpring = new(0.24, 1);
 
     private const double RestScale = 0.65, LiftScaleGain = 0.25;
     private const double TravelUnits = 57.9, ThumbLeftUnits = -21.95, ThumbWidthUnits = 146, ThumbHeightUnits = 92;

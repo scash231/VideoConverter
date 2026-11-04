@@ -557,10 +557,9 @@ public partial class MainWindow : Window
     // slides to the nearest side and turns back into the thumb only once it is there.
 
     // glisse's springs (stiffness, damping) as response and damping ratio: 2500, 94 while following a drag, 576, 44.2 and
-    // 676, 47.8 for the lift. Going from side to side has its own: glisse's thumb travels 84 px, this one about 360, and
-    // on glisse's spring it covered that in 100 ms, up to a third of the way per frame, which reads as a jump.
+    // 676, 47.8 for the lift. Going from side to side takes as long as a switch does.
     private static readonly Spring PillSlideDrag = new(0.1257, 0.94);
-    private static readonly Spring PillSlideTravel = new(0.5, 0.95);
+    private static readonly Spring PillSlideTravel = Controls.GlassSwitch.SettleSpring;
     private static readonly Spring PillLiftDrag = new(0.2618, 0.921);
     private static readonly Spring PillLiftRest = new(0.2417, 0.919);
     private const double PillFollowRange = 40;  // further than this from the pointer, the thumb travels instead of following
@@ -628,7 +627,7 @@ public partial class MainWindow : Window
             Land();
             return;
         }
-        Liquid.To(this, PillXProperty, target, PillSlideTravel, min: 0, max: colW, precision: 0.003, done: Land);
+        Liquid.To(this, PillXProperty, target, PillSlideTravel, min: 0, max: colW, precision: 0.005, done: Land);
     }
 
     private void Segment_LostMouseCapture(object sender, MouseEventArgs e)
