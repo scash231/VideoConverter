@@ -736,7 +736,7 @@ public partial class SettingsWindow : Window
     private bool IsSubPage(StackPanel pane) =>
         pane == PaneLiquidGlass || pane == PaneGlassReadability || pane == PaneGlassTextColor || pane == PaneColors || pane == PaneVideoColors || pane == PaneWindowGlass
         || pane == PaneToolbar || pane == PaneWindowSizes || pane == PaneMotion || pane == PaneCloudConfig || pane == PaneWhatsNew || pane == PaneVersion || pane == PaneRelease
-        || pane == PaneUpdate;
+        || pane == PaneUpdate || pane == PaneOtherVersions;
 
     /// <summary>Switches to a pane by name: "update" (General → Software Update), "cloud-config" or "cloud-config:dropbox" (Cloud → Configuration on a service), "appearance", "glass", "animations", "advanced", "download", "upload" or "cloud".</summary>
     public void SelectPane(string name)

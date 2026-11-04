@@ -5,6 +5,18 @@
       "channel": "Canary",
       "releases": [
         {
+          "version": "27H1.29.4",
+          "date": "2026-11-04",
+          "sections": [
+            {
+              "title": "New",
+              "items": [
+                "You can install earlier versions from Software Update."
+              ]
+            }
+          ]
+        },
+        {
           "version": "27H1.29.3",
           "date": "2026-11-04",
           "sections": [

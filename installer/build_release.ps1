@@ -9,6 +9,8 @@
     whatsnew.json                     every release's notes (installer\whatsnew.json), for the app's What's New;
                                       the website only gives it to the app (header x-videoconverter)
     <version>\VideoConverterUI.exe    the app (framework-dependent single file)
+    <version>\manifest.json           this release on its own (Software Update -> Other Versions)
+    versions.json                     with -Upload: every installable release, newest first (the one on the website plus this one)
     <version>\ferrite.exe             the Ferrite engine
     VideoConverterSetup.exe           the installer you give to people
     VideoConverter-Legacy-Python.zip  the unsupported Python engine, for manual download only
@@ -177,6 +179,18 @@ if ($release -and $release.sections) { $manifest.notes = @($release.sections) }
 $json = $manifest | ConvertTo-Json -Depth 6
 [IO.File]::WriteAllText((Join-Path $dist "manifest.json"), $json, (New-Object Text.UTF8Encoding $false))
 
+# <version>\manifest.json: this release on its own, for Software Update -> Other Versions. The paths are relative to it,
+# and it names no setup: the current setup installs it and stays the one in the install folder.
+$versionManifest = [ordered]@{
+    name      = $manifest.name
+    version   = $version
+    published = $manifest.published
+    minSetup  = $manifest.minSetup
+    files     = @($files | ForEach-Object { [ordered]@{ name = $_.name; path = $_.name; size = $_.size; sha256 = $_.sha256 } })
+    runtime   = $manifest.runtime
+}
+[IO.File]::WriteAllText((Join-Path $versionDir "manifest.json"), ($versionManifest | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding $false))
+
 Write-Host ""
 Write-Host "Release in $dist" -ForegroundColor Green
 Get-ChildItem $dist -Recurse -File | ForEach-Object {
@@ -191,6 +205,18 @@ if ($Upload) {
     Put "VideoConverterSetup.exe" (Join-Path $dist "VideoConverterSetup.exe") "application/vnd.microsoft.portable-executable"
     Put "VideoConverter-Legacy-Python.zip" $legacyZip "application/zip"
     Put "whatsnew.json" (Join-Path $dist "whatsnew.json") "application/json"
+    Put "$version/manifest.json" (Join-Path $versionDir "manifest.json") "application/json"
+
+    # versions.json: what Other Versions lists, newest first. It lives only on the website, so this release joins the
+    # list that is there; if that can't be read, stop rather than replace the list with one version.
+    $listed = (Invoke-WebRequest "https://scash.uk/$Prefix/versions.json" -UseBasicParsing -Headers @{ "Cache-Control" = "no-cache" } -ErrorAction Stop).Content | ConvertFrom-Json
+    if (-not $listed.versions) { throw "versions.json on the website is empty" }
+    $entry = [ordered]@{ version = $version; published = $manifest.published; size = [long]($files | ForEach-Object { $_.size } | Measure-Object -Sum).Sum }
+    $versions = @([pscustomobject]$entry) + @($listed.versions | Where-Object { $_.version -ne $version })
+    $versionsFile = Join-Path $dist "versions.json"
+    [IO.File]::WriteAllText($versionsFile, ([ordered]@{ versions = $versions } | ConvertTo-Json -Depth 4), (New-Object Text.UTF8Encoding $false))
+    Put "versions.json" $versionsFile "application/json"
+
     Put "manifest.json" (Join-Path $dist "manifest.json") "application/json"
     Write-Host ""
     Write-Host "Done. Installer link: https://scash.uk/vc/VideoConverterSetup.exe" -ForegroundColor Green

@@ -22,6 +22,9 @@ public sealed record UpdateInfo(
     string SetupSha256,
     IReadOnlyList<ChangelogSection> Notes);
 
+/// <summary>A release that can be installed from Settings → Software Update → Other Versions (vc/versions.json).</summary>
+public sealed record ReleaseVersion(string Version, DateTime? Published, long DownloadBytes);
+
 /// <summary>
 /// Software Update: compares this build with the release manifest the web installer reads
 /// (https://scash.uk/vc/manifest.json, written by installer/build_release.ps1) and installs a newer release by
@@ -31,6 +34,10 @@ public sealed record UpdateInfo(
 public static class UpdateService
 {
     public const string ManifestUrl = "https://scash.uk/vc/manifest.json";
+    public const string VersionsUrl = "https://scash.uk/vc/versions.json";
+
+    /// <summary>The first release with Software Update in it; from anything older the way back is running setup.</summary>
+    private const string FirstWithSoftwareUpdate = "27H1.27.1";
 
     /// <summary>How often a running app looks again (Automatic updates on).</summary>
     private static readonly TimeSpan AutoCheckInterval = TimeSpan.FromHours(6);
@@ -56,6 +63,17 @@ public static class UpdateService
     public static DateTime? LastChecked => SettingsService.Current.LastUpdateCheck?.ToLocalTime();
 
     public static event Action? Changed;
+
+    /// <summary>The release from Other Versions that is being installed right now (null: none).</summary>
+    public static string? InstallingVersion { get; private set; }
+
+    /// <summary>0–1 while its installer downloads; 1 once the installer is starting.</summary>
+    public static double VersionProgress { get; private set; }
+
+    /// <summary>The last install from Other Versions failed: what went wrong ("" when no detail is known).</summary>
+    public static string? VersionError { get; private set; }
+
+    public static bool HasSoftwareUpdate(string version) => CompareVersions(version, FirstWithSoftwareUpdate) >= 0;
 
     /// <summary>Checks once a little after startup and then every few hours, while Automatic updates is on.
     /// <paramref name="onFound"/> runs (once per version) when a check finds a newer release.</summary>
@@ -142,48 +160,18 @@ public static class UpdateService
     /// </summary>
     public static async Task InstallAsync()
     {
-        if (Available is not { } update || State is UpdateState.Downloading or UpdateState.Installing) return;
+        if (Available is not { } update || State is UpdateState.Downloading or UpdateState.Installing || InstallingVersion != null) return;
         Progress = 0;
         Set(UpdateState.Downloading);
         try
         {
-            var dir = Path.Combine(Path.GetTempPath(), "VideoConverterUpdate");
-            Directory.CreateDirectory(dir);
-            var file = Path.Combine(dir, "VideoConverterSetup.exe");
-
-            using (var response = await Http.GetAsync(update.SetupUrl, HttpCompletionOption.ResponseHeadersRead))
+            var file = await DownloadSetupAsync(update.SetupUrl, update.SetupSize, update.SetupSha256, p =>
             {
-                response.EnsureSuccessStatusCode();
-                long total = response.Content.Headers.ContentLength ?? update.SetupSize;
-                await using var source = await response.Content.ReadAsStreamAsync();
-                await using var target = File.Create(file);
-                var buffer = new byte[81920];
-                long done = 0;
-                int read;
-                while ((read = await source.ReadAsync(buffer)) > 0)
-                {
-                    await target.WriteAsync(buffer.AsMemory(0, read));
-                    done += read;
-                    if (total > 0)
-                    {
-                        Progress = Math.Min(1, (double)done / total);
-                        Changed?.Invoke();
-                    }
-                }
-            }
-
-            string hash;
-            await using (var stream = File.OpenRead(file))
-                hash = Convert.ToHexString(await SHA256.HashDataAsync(stream)).ToLowerInvariant();
-            if (hash != update.SetupSha256)
-                throw new InvalidDataException("the downloaded installer doesn't match the release (checksum)");
-
+                Progress = p;
+                Changed?.Invoke();
+            });
             Set(UpdateState.Installing);
-            Process.Start(new ProcessStartInfo(file, "/update") { UseShellExecute = true, WorkingDirectory = dir });
-
-            // Give the "Installing…" state a moment on screen, then close like the close button does.
-            await Task.Delay(600);
-            Application.Current.MainWindow?.Close();
+            await StartSetupAndCloseAsync(file, "/update");
         }
         catch (Exception ex)
         {
@@ -191,6 +179,113 @@ public static class UpdateService
             Error = ex is HttpRequestException or TaskCanceledException ? null : ex.Message;
             Set(UpdateState.Failed);
         }
+    }
+
+    /// <summary>The releases on the website, newest first. Throws when they can't be loaded.</summary>
+    public static async Task<IReadOnlyList<ReleaseVersion>> LoadVersionsAsync()
+    {
+        var list = await GetJsonAsync<VersionList>(VersionsUrl);
+        var versions = list.Versions?.Where(v => !string.IsNullOrWhiteSpace(v.Version)).ToList();
+        if (versions is not { Count: > 0 }) throw new InvalidDataException("the list of versions is empty");
+        return versions
+            .Select(v => new ReleaseVersion(v.Version,
+                DateTime.TryParse(v.Published, null, System.Globalization.DateTimeStyles.AdjustToUniversal, out var published) ? published.ToLocalTime() : null,
+                v.Size))
+            .OrderByDescending(v => v, Comparer<ReleaseVersion>.Create((a, b) => CompareVersions(a.Version, b.Version)))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Installs any release, older or newer: the current setup (checked against the current manifest's SHA-256) starts
+    /// with that release's own manifest, vc/&lt;version&gt;/manifest.json, which names no setup, so it stays the setup
+    /// that does the work and stays the copy in the install folder. Then the app closes, as for an update.
+    /// </summary>
+    public static async Task InstallVersionAsync(string version)
+    {
+        if (InstallingVersion != null || State is UpdateState.Downloading or UpdateState.Installing) return;
+        InstallingVersion = version;
+        VersionProgress = 0;
+        VersionError = null;
+        Changed?.Invoke();
+        try
+        {
+            var manifestUri = new Uri(new Uri(ManifestUrl), Uri.EscapeDataString(version) + "/manifest.json");
+            // Before anything is closed: this release really is there and is the one asked for.
+            var target = await GetJsonAsync<Manifest>(manifestUri.AbsoluteUri);
+            if (!string.Equals(target.Version, version, StringComparison.OrdinalIgnoreCase) || target.Files is not { Count: > 0 })
+                throw new InvalidDataException("the release information is incomplete");
+
+            var current = await GetJsonAsync<Manifest>(ManifestUrl);
+            if (current.Setup is not { Path.Length: > 0, Sha256.Length: 64 })
+                throw new InvalidDataException("the release information is incomplete");
+
+            var file = await DownloadSetupAsync(new Uri(new Uri(ManifestUrl), current.Setup.Path), current.Setup.Size, current.Setup.Sha256.ToLowerInvariant(), p =>
+            {
+                VersionProgress = p;
+                Changed?.Invoke();
+            });
+            VersionProgress = 1;
+            Changed?.Invoke();
+            await StartSetupAndCloseAsync(file, $"/update /manifest={manifestUri.AbsoluteUri}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"UpdateService: installing {version} failed: {ex}");
+            VersionError = ex is HttpRequestException or TaskCanceledException ? "" : ex.Message;
+            InstallingVersion = null;
+            Changed?.Invoke();
+        }
+    }
+
+    private static async Task<T> GetJsonAsync<T>(string url)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+        using var response = await Http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        return JsonSerializer.Deserialize<T>(await response.Content.ReadAsStringAsync())
+               ?? throw new InvalidDataException("empty release information");
+    }
+
+    /// <summary>Downloads a setup to a temp folder and checks its SHA-256. Returns the file.</summary>
+    private static async Task<string> DownloadSetupAsync(Uri url, long expectedSize, string sha256, Action<double> progress)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "VideoConverterUpdate");
+        Directory.CreateDirectory(dir);
+        var file = Path.Combine(dir, "VideoConverterSetup.exe");
+
+        using (var response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+        {
+            response.EnsureSuccessStatusCode();
+            long total = response.Content.Headers.ContentLength ?? expectedSize;
+            await using var source = await response.Content.ReadAsStreamAsync();
+            await using var target = File.Create(file);
+            var buffer = new byte[81920];
+            long done = 0;
+            int read;
+            while ((read = await source.ReadAsync(buffer)) > 0)
+            {
+                await target.WriteAsync(buffer.AsMemory(0, read));
+                done += read;
+                if (total > 0) progress(Math.Min(1, (double)done / total));
+            }
+        }
+
+        string hash;
+        await using (var stream = File.OpenRead(file))
+            hash = Convert.ToHexString(await SHA256.HashDataAsync(stream)).ToLowerInvariant();
+        if (hash != sha256)
+            throw new InvalidDataException("the downloaded installer doesn't match the release (checksum)");
+        return file;
+    }
+
+    private static async Task StartSetupAndCloseAsync(string file, string arguments)
+    {
+        Process.Start(new ProcessStartInfo(file, arguments) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(file)! });
+
+        // Give the "Installing…" state a moment on screen, then close like the close button does.
+        await Task.Delay(600);
+        Application.Current.MainWindow?.Close();
     }
 
     private static void Set(UpdateState state)
@@ -234,6 +329,20 @@ public static class UpdateService
         [JsonPropertyName("files")] public List<ManifestFile>? Files { get; set; }
         [JsonPropertyName("setup")] public ManifestFile? Setup { get; set; }
         [JsonPropertyName("notes")] public List<ManifestNotes>? Notes { get; set; }
+    }
+
+    // versions.json: every release that can still be installed (installer/build_release.ps1 adds each new one)
+
+    private sealed class VersionList
+    {
+        [JsonPropertyName("versions")] public List<VersionEntry>? Versions { get; set; }
+    }
+
+    private sealed class VersionEntry
+    {
+        [JsonPropertyName("version")] public string Version { get; set; } = "";
+        [JsonPropertyName("published")] public string? Published { get; set; }
+        [JsonPropertyName("size")] public long Size { get; set; }
     }
 
     private sealed class ManifestFile

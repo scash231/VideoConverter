@@ -439,6 +439,14 @@
                                         <TextBlock x:Name="TxtUpdateChannel" Style="{StaticResource Value}" DockPanel.Dock="Right"/>
                                         <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefUpdateChannel}"/>
                                     </DockPanel>
+                                    <Border Style="{StaticResource Sep}"/>
+                                    <Button Style="{StaticResource NavRow}" Click="OpenOtherVersions_Click">
+                                        <DockPanel Style="{StaticResource Row}">
+                                            <ui:SymbolIcon Symbol="ChevronRight24" DockPanel.Dock="Right" FontSize="12" Margin="6,0,0,0"
+                                                           Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/>
+                                            <TextBlock Style="{StaticResource Label}" Text="{DynamicResource PrefOtherVersions}"/>
+                                        </DockPanel>
+                                    </Button>
                                 </StackPanel>
                             </Border>
 
@@ -518,6 +526,64 @@
                                 </Border>
                                 <TextBlock Style="{StaticResource Footer}" Text="{DynamicResource PrefUpdateFooter}"/>
                             </StackPanel>
+                        </StackPanel>
+
+                        <!-- ── Software Update → Other Versions: every release still on the website (vc/versions.json) ── -->
+                        <StackPanel x:Name="PaneOtherVersions" Visibility="Collapsed">
+                            <TextBlock Style="{StaticResource Sub}" Margin="2,0,2,14" Text="{DynamicResource PrefVersionsIntro}"/>
+                            <StackPanel x:Name="VersionInstallPanel" Visibility="Collapsed" Margin="2,0,2,14">
+                                <Grid Height="4">
+                                    <Border CornerRadius="2" Background="{DynamicResource Tint1F}"/>
+                                    <Border CornerRadius="2" Background="{DynamicResource Accent}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform><ScaleTransform x:Name="VersionProgressScale" ScaleX="0"/></Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <TextBlock x:Name="TxtVersionProgress" Style="{StaticResource Sub}" Margin="0,5,0,0"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtVersionError" Style="{StaticResource Sub}" Margin="2,0,2,14" Visibility="Collapsed"
+                                       Foreground="{DynamicResource ErrorRed}"/>
+                            <StackPanel x:Name="VersionsStatus" HorizontalAlignment="Center" Margin="0,22,0,8">
+                                <TextBlock x:Name="TxtVersionsStatus" Style="{StaticResource Sub}" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="340"/>
+                                <Button x:Name="BtnVersionsRetry" Style="{StaticResource Push}" HorizontalAlignment="Center" Margin="0,14,0,0" Visibility="Collapsed"
+                                        Content="{DynamicResource PrefUpdateTryAgain}" Click="VersionsRetry_Click"/>
+                            </StackPanel>
+                            <Border x:Name="VersionsGroup" Style="{StaticResource Group}" Visibility="Collapsed">
+                                <ItemsControl x:Name="VersionsList" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <Border x:Name="RowSep" Style="{StaticResource Sep}"/>
+                                                <DockPanel Style="{StaticResource Row}">
+                                                    <Button x:Name="BtnInstall" Style="{StaticResource Push}" Content="{DynamicResource PrefVersionInstall}"
+                                                            IsEnabled="{Binding Enabled}" Click="InstallVersion_Click"/>
+                                                    <Border x:Name="CurrentChip" DockPanel.Dock="Right" Visibility="Collapsed" Background="{DynamicResource Accent}" CornerRadius="5"
+                                                            Padding="6,1,6,2" VerticalAlignment="Center">
+                                                        <TextBlock Text="{DynamicResource PrefCurrentVersion}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                                    </Border>
+                                                    <Button x:Name="BtnNotes" DockPanel.Dock="Right" Style="{StaticResource LinkBtn}" Margin="0,0,12,0" VerticalAlignment="Center"
+                                                            Visibility="Collapsed" Content="{DynamicResource PrefVersionNotes}" Click="VersionNotes_Click"/>
+                                                    <StackPanel Style="{StaticResource LabelStack}">
+                                                        <TextBlock Style="{StaticResource LabelInStack}" Text="{Binding Version}"/>
+                                                        <TextBlock Style="{StaticResource Sub}" Text="{Binding Detail}"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </StackPanel>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                                                    <Setter TargetName="RowSep" Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                    <Setter TargetName="CurrentChip" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="BtnInstall" Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding HasNotes}" Value="True">
+                                                    <Setter TargetName="BtnNotes" Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
                         </StackPanel>
 
                         <!-- ── Appearance ── -->

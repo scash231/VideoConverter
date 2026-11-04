@@ -32,6 +32,7 @@ public partial class SettingsWindow
 
     private void UpdateUpdateUi()
     {
+        UpdateVersionInstallUi();
         var state = UpdateService.State;
         var update = UpdateService.Available;
         bool available = update != null && state is UpdateState.Available or UpdateState.Downloading or UpdateState.Installing;
@@ -125,6 +126,110 @@ public partial class SettingsWindow
             try { return CultureInfo.GetCultureInfo(L("LangCode")); }
             catch (CultureNotFoundException) { return CultureInfo.CurrentCulture; }
         }
+    }
+
+    // ═══ Software Update → Other Versions: install any release still on the website ═══
+
+    private sealed record VersionRow(string Version, string Detail, bool IsCurrent, bool HasNotes, ChangelogRelease? Release, bool Enabled);
+
+    private IReadOnlyList<ReleaseVersion>? _versions;
+    private bool _versionsFailed;
+    private bool _versionRowsEnabled = true;
+
+    private void OpenOtherVersions_Click(object sender, RoutedEventArgs e)
+    {
+        string updateTitle = TxtPaneTitle.Text; // what Back puts back
+        TxtPaneTitle.Text = L("PrefOtherVersions");
+        BindVersions();
+        PushSubPage(PaneOtherVersions, PaneUpdate, updateTitle);
+        _ = LoadVersionsAsync();
+    }
+
+    private void VersionsRetry_Click(object sender, RoutedEventArgs e) => _ = LoadVersionsAsync();
+
+    private async Task LoadVersionsAsync()
+    {
+        _versionsFailed = false;
+        BindVersions();
+        try
+        {
+            var notes = WhatsNewService.LoadAsync(false); // the rows' Notes; the list works without them
+            _versions = await UpdateService.LoadVersionsAsync();
+            BindVersions();
+            await notes;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Other Versions: {ex.Message}");
+            _versionsFailed = _versions == null;
+        }
+        if (IsLoaded) BindVersions();
+    }
+
+    private void BindVersions()
+    {
+        bool have = _versions != null;
+        VersionsGroup.Visibility = have ? Visibility.Visible : Visibility.Collapsed;
+        VersionsStatus.Visibility = have ? Visibility.Collapsed : Visibility.Visible;
+        BtnVersionsRetry.Visibility = _versionsFailed ? Visibility.Visible : Visibility.Collapsed;
+        TxtVersionsStatus.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, _versionsFailed ? "PrefVersionsFailed" : "PrefVersionsLoading");
+        _versionRowsEnabled = UpdateService.InstallingVersion == null;
+        if (!have) return;
+
+        var notes = WhatsNewService.Last is { Failed: false } loaded
+            ? loaded.Versions.SelectMany(v => v.Releases).GroupBy(r => r.Version).ToDictionary(g => g.Key, g => g.First())
+            : new Dictionary<string, ChangelogRelease>();
+        VersionsList.ItemsSource = _versions!.Select(v =>
+        {
+            notes.TryGetValue(v.Version, out var release);
+            var detail = new List<string>();
+            if (v.Published is { } published) detail.Add(published.ToString("d", UiCulture));
+            if (v.DownloadBytes > 0) detail.Add(string.Format(UiCulture, "{0:0.0} MB", v.DownloadBytes / 1048576.0));
+            return new VersionRow(v.Version, string.Join("  ·  ", detail), v.Version == BuildInfoService.BuildVersion,
+                release is { Sections.Count: > 0 }, release, _versionRowsEnabled);
+        }).ToList();
+    }
+
+    private void UpdateVersionInstallUi()
+    {
+        var installing = UpdateService.InstallingVersion;
+        VersionInstallPanel.Visibility = installing != null ? Visibility.Visible : Visibility.Collapsed;
+        if (installing != null)
+        {
+            VersionProgressScale.ScaleX = UpdateService.VersionProgress;
+            TxtVersionProgress.Text = string.Format(L(UpdateService.VersionProgress >= 1 ? "PrefVersionStarting" : "PrefVersionDownloading"), installing);
+        }
+        TxtVersionError.Visibility = UpdateService.VersionError != null ? Visibility.Visible : Visibility.Collapsed;
+        if (UpdateService.VersionError is { } error)
+            TxtVersionError.Text = error.Length > 0 ? string.Format(L("PrefUpdateFailedDetail"), error) : L("PrefUpdateFailedOffline");
+        if (_versionRowsEnabled != (installing == null)) BindVersions();
+    }
+
+    private void InstallVersion_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not VersionRow row) return;
+        bool older = UpdateService.CompareVersions(row.Version, BuildInfoService.BuildVersion) < 0;
+        var message = new List<string>();
+        if (EngineProvider.IsBusy) message.Add(L("PrefVersionBusy"));
+        message.Add(L(older ? "PrefVersionConfirmOlder" : "PrefVersionConfirmNewer"));
+        if (!UpdateService.HasSoftwareUpdate(row.Version)) message.Add(L("PrefVersionNoUpdates"));
+        ShowSheet(string.Format(L("PrefVersionConfirmTitle"), row.Version), string.Join("\n\n", message), L("PrefVersionInstall"), false,
+            onConfirm: () =>
+            {
+                ThemeService.FlushPendingSave();
+                _ = UpdateService.InstallVersionAsync(row.Version);
+            });
+    }
+
+    private void VersionNotes_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not VersionRow { Release: { } release }) return;
+        TxtReleaseDate.Text = release.Date;
+        TxtReleaseDate.Visibility = string.IsNullOrEmpty(release.Date) ? Visibility.Collapsed : Visibility.Visible;
+        ReleaseSections.ItemsSource = release.Sections;
+        string title = TxtPaneTitle.Text;
+        TxtPaneTitle.Text = release.Version;
+        PushSubPage(PaneRelease, PaneOtherVersions, title);
     }
 
     private void OpenUpdate_Click(object sender, RoutedEventArgs e) => OpenSubPage(PaneUpdate, PaneGeneral, "PrefSoftwareUpdate");
