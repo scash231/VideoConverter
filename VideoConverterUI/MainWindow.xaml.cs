@@ -54,6 +54,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SetupThumbReflection();
+        SetupStartReflection();
         BorderMeta.SizeChanged += (_, _) => UpdateQuickActionLabels();
         Loaded += OnLoaded;
         Closing += MainWindow_Closing;
@@ -1459,6 +1460,60 @@ public partial class MainWindow : Window
         BorderMeta.IsVisibleChanged += (_, _) => Place();
         System.ComponentModel.DependencyPropertyDescriptor.FromProperty(OpacityProperty, typeof(Border))
             ?.AddValueChanged(BorderMeta, (_, _) => Place());
+    }
+
+    // How far the running progress must grow before the glass gets to see it: the backdrop's every change redraws all the
+    // window's glass, and the progress bar moves on every frame.
+    private const double StartReflectionStep = 16;
+    private const double StartBackdropBlur = 8;
+    private const double StartProgressReflectionOpacity = 0.55;
+
+    /// <summary>
+    /// The window's glass backdrop gets a copy of the Start button's fill where it is on screen, so the rims of the cards
+    /// above it lens and reflect its colour. While a job runs the copy is the progress capsule instead, in steps. Blurred and
+    /// cached for the same reasons as the thumbnail's copy (<see cref="SetupThumbReflection"/>).
+    /// </summary>
+    private void SetupStartReflection()
+    {
+        var onBackdrop = new Border
+        {
+            Effect = new BlurEffect { Radius = StartBackdropBlur, RenderingBias = RenderingBias.Performance },
+            CacheMode = new BitmapCache(),
+            Visibility = Visibility.Collapsed,
+        };
+        onBackdrop.SetResourceReference(Border.BackgroundProperty, "Accent");
+        ((Canvas)GlassBackdrop.Child).Children.Insert(0, onBackdrop);
+
+        void Place()
+        {
+            bool running = StartProgressFill.Visibility == Visibility.Visible && StartIdleBg.Visibility != Visibility.Visible;
+            var shown = running ? (FrameworkElement)StartProgressFill : StartContainer;
+            if (shown.ActualWidth <= 0 || !StartContainer.IsVisible)
+            {
+                onBackdrop.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var at = shown.TransformToVisual(GlassBackdrop).TransformBounds(new Rect(shown.RenderSize));
+            if (!running || Math.Abs(at.Width - onBackdrop.Width) >= StartReflectionStep || double.IsNaN(onBackdrop.Width)
+                || at.Width >= StartContainer.ActualWidth - 8)
+            {
+                onBackdrop.Width = at.Width;
+            }
+            Canvas.SetLeft(onBackdrop, at.X);
+            Canvas.SetTop(onBackdrop, at.Y);
+            onBackdrop.Height = at.Height;
+            onBackdrop.CornerRadius = new CornerRadius(at.Height / 2);
+            onBackdrop.Opacity = running ? StartProgressFill.Opacity * StartProgressReflectionOpacity : StartIdleBg.Opacity;
+            onBackdrop.Visibility = Visibility.Visible;
+        }
+
+        StartContainer.LayoutUpdated += (_, _) => Place();
+        StartIdleBg.IsVisibleChanged += (_, _) => Place();
+        StartProgressFill.IsVisibleChanged += (_, _) => Place();
+        // Also every frame of the fill's fade between idle and running.
+        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(OpacityProperty, typeof(GlassChrome))
+            ?.AddValueChanged(StartIdleBg, (_, _) => Place());
     }
 
     /// <summary>A live copy of what the thumbnail shows: its letterbox colour and the picture, fitted the same way.</summary>
