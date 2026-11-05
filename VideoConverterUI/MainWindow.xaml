@@ -588,16 +588,16 @@
                         </Border.Effect>
                         <StackPanel x:Name="WindowControlsStack" Orientation="Horizontal" VerticalAlignment="Center" UseLayoutRounding="True">
                             <Button Style="{StaticResource PillGlassBtn}"
-                                    Foreground="{DynamicResource TextSec}" Width="34" Height="34" Padding="0"
+                                    Foreground="{DynamicResource TextPrimary}" Width="34" Height="34" Padding="0"
                                     ToolTip="{DynamicResource TipMinimize}"
                                     Click="Minimize_Click">
-                                <Grid><ui:SymbolIcon Symbol="Subtract24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
+                                <Grid><ui:SymbolIcon Symbol="Subtract24" FontSize="15" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
                             </Button>
                             <Button Style="{StaticResource PillGlassBtn}"
-                                    Foreground="{DynamicResource TextSec}" Width="34" Height="34" Padding="0"
+                                    Foreground="{DynamicResource TextPrimary}" Width="34" Height="34" Padding="0"
                                     ToolTip="{DynamicResource TipClose}"
                                     Click="Close_Click">
-                                <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="14" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
+                                <Grid><ui:SymbolIcon Symbol="Dismiss24" FontSize="1%" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center"/></Grid>
                             </Button>
                         </StackPanel>
                     </Border>
